@@ -32,32 +32,35 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
     throw new Error("Credenciais inválidas");
   }
 
-  // Buscar dados do perfil do usuário
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", data.user.id)
-    .single();
+  try {
+    // Buscar dados do perfil do usuário usando a função security definer
+    const { data: profileData, error: profileError } = await supabase
+      .rpc('get_profile_by_id', { user_id: data.user.id })
+      .single();
 
-  if (profileError) {
-    console.error("Erro ao buscar perfil:", profileError);
+    if (profileError) {
+      console.error("Erro ao buscar perfil:", profileError);
+      throw new Error("Erro ao buscar perfil do usuário");
+    }
+
+    if (!profileData) {
+      throw new Error("Perfil de usuário não encontrado");
+    }
+
+    // Criar objeto AuthUser combinando dados do auth e do perfil
+    const authUser: AuthUser = {
+      id: data.user.id,
+      email: data.user.email || "",
+      name: profileData.name,
+      role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
+      company: profileData.company,
+    };
+
+    return authUser;
+  } catch (error) {
+    console.error("Erro ao processar perfil:", error);
     throw new Error("Erro ao buscar perfil do usuário");
   }
-
-  if (!profileData) {
-    throw new Error("Perfil de usuário não encontrado");
-  }
-
-  // Criar objeto AuthUser combinando dados do auth e do perfil
-  const authUser: AuthUser = {
-    id: data.user.id,
-    email: data.user.email || "",
-    name: profileData.name,
-    role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
-    company: profileData.company,
-  };
-
-  return authUser;
 };
 
 // Helper para fazer logout com Supabase
@@ -76,32 +79,35 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     return null;
   }
   
-  // Buscar dados do perfil do usuário
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", session.user.id)
-    .single();
+  try {
+    // Buscar dados do perfil do usuário usando a função security definer
+    const { data: profileData, error: profileError } = await supabase
+      .rpc('get_profile_by_id', { user_id: session.user.id })
+      .single();
 
-  if (profileError) {
-    console.error("Erro ao buscar perfil:", profileError);
+    if (profileError) {
+      console.error("Erro ao buscar perfil:", profileError);
+      return null;
+    }
+    
+    if (!profileData) {
+      return null;
+    }
+    
+    // Criar objeto AuthUser combinando dados do auth e do perfil
+    const authUser: AuthUser = {
+      id: session.user.id,
+      email: session.user.email || "",
+      name: profileData.name,
+      role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
+      company: profileData.company,
+    };
+    
+    return authUser;
+  } catch (error) {
+    console.error("Erro ao processar perfil do usuário atual:", error);
     return null;
   }
-  
-  if (!profileData) {
-    return null;
-  }
-  
-  // Criar objeto AuthUser combinando dados do auth e do perfil
-  const authUser: AuthUser = {
-    id: session.user.id,
-    email: session.user.email || "",
-    name: profileData.name,
-    role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
-    company: profileData.company,
-  };
-  
-  return authUser;
 };
 
 // Helper para registrar um novo usuário
@@ -139,9 +145,7 @@ export const registerUser = async (
   // Tentar buscar o perfil algumas vezes, pois pode haver um pequeno atraso na criação
   for (let i = 0; i < 3; i++) {
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", data.user.id)
+      .rpc('get_profile_by_id', { user_id: data.user.id })
       .single();
       
     if (profile) {
