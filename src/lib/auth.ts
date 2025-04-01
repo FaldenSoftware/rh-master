@@ -165,6 +165,30 @@ export const registerUser = async (
   return authUser;
 };
 
+// Helper para criar usuários de teste via edge function
+export const createTestUsers = async (): Promise<void> => {
+  try {
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/create-test-users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabase.supabaseKey}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Erro ao criar usuários de teste: ${errorData.error || response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Usuários de teste criados:", data);
+  } catch (error) {
+    console.error("Erro ao chamar a função create-test-users:", error);
+    throw error;
+  }
+};
+
 // Verificar se o usuário tem acesso a uma rota específica com base na função
 export const hasAccess = (user: AuthUser | null, role: "mentor" | "client" | "any"): boolean => {
   if (!user) return false;

@@ -34,61 +34,101 @@ serve(async (req) => {
 
     // Criar usuário mentor (admin)
     const adminEmail = "admin@example.com";
-    const { data: existingAdmin } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("email", adminEmail)
-      .maybeSingle();
+    const adminPassword = "admin1234";
+    const adminName = "Administrador";
+    const adminRole = "mentor";
 
-    if (!existingAdmin) {
-      // Criar usuário mentor
-      const { data: adminUser, error: adminError } = await supabaseAdmin.auth.admin.createUser({
+    // Check if admin exists
+    const { data: existingAdminUser } = await supabaseAdmin.auth.admin.listUsers();
+    const adminExists = existingAdminUser?.users.some(user => user.email === adminEmail);
+
+    if (!adminExists) {
+      // Criar usuário admin no auth
+      const { data: adminUser, error: adminAuthError } = await supabaseAdmin.auth.admin.createUser({
         email: adminEmail,
-        password: "admin1234",
-        email_confirm: true,
-        user_metadata: {
-          name: "Administrador",
-          role: "mentor"
-        }
+        password: adminPassword,
+        email_confirm: true
       });
 
-      if (adminError) {
-        console.error("Erro ao criar mentor:", adminError);
-        throw adminError;
+      if (adminAuthError) {
+        console.error("Erro ao criar usuário mentor:", adminAuthError);
+        throw adminAuthError;
       }
 
-      console.log("Mentor criado com sucesso:", adminUser);
+      // Criar perfil do mentor
+      if (adminUser?.user) {
+        const { error: adminProfileError } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            id: adminUser.user.id,
+            name: adminName,
+            role: adminRole
+          });
+
+        if (adminProfileError) {
+          console.error("Erro ao criar perfil do mentor:", adminProfileError);
+          // Try to rollback auth user if profile creation fails
+          try {
+            await supabaseAdmin.auth.admin.deleteUser(adminUser.user.id);
+          } catch (e) {
+            console.error("Falha ao excluir usuário auth após erro no perfil:", e);
+          }
+          throw adminProfileError;
+        }
+
+        console.log("Mentor criado com sucesso:", adminUser.user.email);
+      }
     } else {
       console.log("Mentor já existe");
     }
 
     // Criar usuário cliente
     const clientEmail = "cliente@example.com";
-    const { data: existingClient } = await supabaseAdmin
-      .from("profiles")
-      .select("*")
-      .eq("email", clientEmail)
-      .maybeSingle();
+    const clientPassword = "teste1234";
+    const clientName = "Cliente Teste";
+    const clientRole = "client";
+    const clientCompany = "Empresa Teste";
 
-    if (!existingClient) {
-      // Criar usuário cliente
-      const { data: clientUser, error: clientError } = await supabaseAdmin.auth.admin.createUser({
+    // Check if client exists
+    const clientExists = existingAdminUser?.users.some(user => user.email === clientEmail);
+
+    if (!clientExists) {
+      // Criar usuário cliente no auth
+      const { data: clientUser, error: clientAuthError } = await supabaseAdmin.auth.admin.createUser({
         email: clientEmail,
-        password: "teste1234",
-        email_confirm: true,
-        user_metadata: {
-          name: "Cliente Teste",
-          role: "client",
-          company: "Empresa Teste"
-        }
+        password: clientPassword,
+        email_confirm: true
       });
 
-      if (clientError) {
-        console.error("Erro ao criar cliente:", clientError);
-        throw clientError;
+      if (clientAuthError) {
+        console.error("Erro ao criar usuário cliente:", clientAuthError);
+        throw clientAuthError;
       }
 
-      console.log("Cliente criado com sucesso:", clientUser);
+      // Criar perfil do cliente
+      if (clientUser?.user) {
+        const { error: clientProfileError } = await supabaseAdmin
+          .from("profiles")
+          .insert({
+            id: clientUser.user.id,
+            name: clientName,
+            role: clientRole,
+            company: clientCompany
+          });
+
+        if (clientProfileError) {
+          console.error("Erro ao criar perfil do cliente:", clientProfileError);
+          // Try to rollback auth user if profile creation fails
+          try {
+            await supabaseAdmin.auth.admin.deleteUser(clientUser.user.id);
+          } catch (e) {
+            console.error("Falha ao excluir usuário auth após erro no perfil:", e);
+          }
+          throw clientProfileError;
+        }
+
+        console.log("Cliente criado com sucesso:", clientUser.user.email);
+      }
     } else {
       console.log("Cliente já existe");
     }
