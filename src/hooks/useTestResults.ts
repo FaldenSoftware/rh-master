@@ -31,7 +31,7 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Usar a função segura para buscar testes do cliente, evitando recursão infinita
+      // Usar a função RPC segura para buscar testes do cliente
       const { data: clientTests, error: testsError } = await supabase
         .rpc('get_client_tests_for_user', { user_id: userId });
 
@@ -44,7 +44,7 @@ export const useTestResults = (userId?: string) => {
         return [];
       }
 
-      // Buscar informações dos testes usando a função segura
+      // Buscar informações dos testes usando a função RPC
       const testIds = clientTests.map(test => test.test_id);
       const testDataPromises = testIds.map(testId => 
         supabase.rpc('get_test_info', { test_id: testId })
@@ -60,7 +60,7 @@ export const useTestResults = (userId?: string) => {
         }
       });
 
-      // Buscar resultados dos testes
+      // Buscar resultados dos testes usando a função RPC
       const testResultsPromises = clientTests.map(test => 
         supabase.rpc('get_test_results_for_client_test', { client_test_id: test.id })
       );
