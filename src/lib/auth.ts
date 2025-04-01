@@ -155,44 +155,30 @@ export const registerUser = async (
     }
   }
   
-  // Se ainda não temos o perfil, criamos manualmente
+  // Se ainda não temos o perfil, vamos confiar no trigger do banco de dados
+  // e apenas retornar os dados que temos
   if (!profileData) {
-    const { data: newProfile, error: insertError } = await supabase
-      .from("profiles")
-      .insert([
-        {
-          id: data.user.id,
-          name: name,
-          role: role,
-          company: company,
-        }
-      ])
-      .select()
-      .single();
-      
-    if (insertError) {
-      console.error("Erro ao criar perfil:", insertError);
-      
-      // Tentar deletar o usuário de auth se falhar a criação do perfil
-      try {
-        await supabase.auth.admin.deleteUser(data.user.id);
-      } catch (e) {
-        console.error("Erro ao limpar usuário após falha no perfil:", e);
-      }
-      
-      throw new Error("Erro ao criar perfil do usuário");
-    }
+    console.log("Perfil não encontrado após cadastro. Confiando no trigger do banco de dados.");
     
-    profileData = newProfile;
+    // Criar objeto AuthUser com os dados disponíveis
+    const authUser: AuthUser = {
+      id: data.user.id,
+      email: data.user.email || "",
+      name: name,
+      role: role,
+      company: company,
+    };
+    
+    return authUser;
   }
 
-  // 3. Criar objeto AuthUser com os dados do perfil criado
+  // 3. Criar objeto AuthUser com os dados do perfil
   const authUser: AuthUser = {
     id: data.user.id,
     email: data.user.email || "",
-    name: name,
-    role: role,
-    company: company,
+    name: profileData.name || name,
+    role: profileData.role as "mentor" | "client" || role,
+    company: profileData.company || company,
   };
 
   return authUser;
