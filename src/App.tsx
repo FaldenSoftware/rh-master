@@ -22,38 +22,40 @@ import ClientLogin from "./pages/ClientLogin";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          
-          {/* Leader Routes */}
-          <Route path="/leader" element={<LeaderDashboard />} />
-          <Route path="/leader/clients" element={<LeaderClients />} />
-          <Route path="/leader/results" element={<LeaderResults />} />
-          <Route path="/leader/rankings" element={<LeaderRankings />} />
-          <Route path="/leader/reports" element={<LeaderReports />} />
-          <Route path="/leader/subscription" element={<LeaderSubscription />} />
-          <Route path="/leader/settings" element={<LeaderSettings />} />
-          
-          {/* Client Routes */}
-          <Route path="/client/login" element={<ClientLogin />} />
-          <Route path="/client" element={<ClientDashboard />} />
-          <Route path="/client/tests" element={<ClientTests />} />
-          <Route path="/client/results" element={<ClientResults />} />
-          <Route path="/client/profile" element={<ClientProfile />} />
-          <Route path="/client/account" element={<ClientAccount />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            
+            {/* Leader Routes */}
+            <Route path="/leader" element={<LeaderDashboard />} />
+            <Route path="/leader/clients" element={<LeaderClients />} />
+            <Route path="/leader/results" element={<LeaderResults />} />
+            <Route path="/leader/rankings" element={<LeaderRankings />} />
+            <Route path="/leader/reports" element={<LeaderReports />} />
+            <Route path="/leader/subscription" element={<LeaderSubscription />} />
+            <Route path="/leader/settings" element={<LeaderSettings />} />
+            
+            {/* Client Routes */}
+            <Route path="/client/login" element={<ClientLogin />} />
+            <Route path="/client" element={<ClientDashboard />} />
+            <Route path="/client/tests" element={<ClientTests />} />
+            <Route path="/client/results" element={<ClientResults />} />
+            <Route path="/client/profile" element={<ClientProfile />} />
+            <Route path="/client/account" element={<ClientAccount />} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
