@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -6,12 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { createTestUsers } from "@/lib/auth";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isCreatingTestUsers, setIsCreatingTestUsers] = useState(false);
   const { login, isLoading, error } = useAuth();
   const { toast } = useToast();
 
@@ -22,30 +21,6 @@ const ClientLogin = () => {
     } catch (error) {
       // Erro já é tratado no contexto de autenticação
       console.error("Erro no login:", error);
-    }
-  };
-
-  const handleCreateTestUsers = async () => {
-    setIsCreatingTestUsers(true);
-    try {
-      await createTestUsers();
-      toast({
-        title: "Usuários de teste criados com sucesso",
-        description: "Email: admin@example.com / Senha: admin1234 (mentor)\nEmail: cliente@example.com / Senha: teste1234 (cliente)",
-        duration: 10000,
-      });
-
-      // Auto-preencher o formulário com as credenciais do admin para facilitar o teste
-      setEmail("admin@example.com");
-      setPassword("admin1234");
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao criar usuários de teste",
-        description: error.message,
-      });
-    } finally {
-      setIsCreatingTestUsers(false);
     }
   };
 
@@ -94,20 +69,6 @@ const ClientLogin = () => {
               {isLoading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
-          
-          <div className="mt-4">
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={handleCreateTestUsers}
-              disabled={isCreatingTestUsers}
-            >
-              {isCreatingTestUsers ? "Criando usuários..." : "Criar usuários de teste"}
-            </Button>
-            <p className="text-xs text-gray-500 mt-1 text-center">
-              Cria contas de admin e cliente para teste
-            </p>
-          </div>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-gray-500">

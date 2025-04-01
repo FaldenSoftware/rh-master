@@ -116,6 +116,13 @@ export const registerUser = async (
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        name,
+        role,
+        company
+      }
+    }
   });
 
   if (error) {
@@ -126,31 +133,57 @@ export const registerUser = async (
     throw new Error("Erro ao criar usuário");
   }
 
-  // 2. Criar explicitamente o perfil do usuário na tabela profiles
-  const { data: profileData, error: profileError } = await supabase
-    .from("profiles")
-    .insert([
-      {
-        id: data.user.id,
-        name: name,
-        role: role,
-        company: company,
-      }
-    ])
-    .select()
-    .single();
-
-  if (profileError) {
-    console.error("Erro ao criar perfil:", profileError);
-    
-    // Tentar deletar o usuário de auth se falhar a criação do perfil
-    try {
-      await supabase.auth.admin.deleteUser(data.user.id);
-    } catch (e) {
-      console.error("Erro ao limpar usuário após falha no perfil:", e);
+  // 2. Verificamos se o perfil já foi criado pelo trigger on_auth_user_created
+  let profileData;
+  
+  // Tentar buscar o perfil algumas vezes, pois pode haver um pequeno atraso na criação
+  for (let i = 0; i < 3; i++) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", data.user.id)
+      .single();
+      
+    if (profile) {
+      profileData = profile;
+      break;
     }
     
-    throw new Error("Erro ao criar perfil do usuário");
+    if (i < 2) {
+      // Pequena pausa antes de tentar novamente
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+  
+  // Se ainda não temos o perfil, criamos manualmente
+  if (!profileData) {
+    const { data: newProfile, error: insertError } = await supabase
+      .from("profiles")
+      .insert([
+        {
+          id: data.user.id,
+          name: name,
+          role: role,
+          company: company,
+        }
+      ])
+      .select()
+      .single();
+      
+    if (insertError) {
+      console.error("Erro ao criar perfil:", insertError);
+      
+      // Tentar deletar o usuário de auth se falhar a criação do perfil
+      try {
+        await supabase.auth.admin.deleteUser(data.user.id);
+      } catch (e) {
+        console.error("Erro ao limpar usuário após falha no perfil:", e);
+      }
+      
+      throw new Error("Erro ao criar perfil do usuário");
+    }
+    
+    profileData = newProfile;
   }
 
   // 3. Criar objeto AuthUser com os dados do perfil criado
@@ -163,37 +196,6 @@ export const registerUser = async (
   };
 
   return authUser;
-};
-
-// Helper para criar usuários de teste via edge function
-export const createTestUsers = async (): Promise<void> => {
-  try {
-    // Get the Supabase URL from environment variable or fall back to a fixed URL
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://gudkehzonntowrmxshnf.supabase.co";
-    
-    // Get the current session to use its access token
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData.session?.access_token;
-    
-    const response = await fetch(`${supabaseUrl}/functions/v1/create-test-users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken || ''}`
-      }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Erro ao criar usuários de teste: ${errorData.error || response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log("Usuários de teste criados:", data);
-  } catch (error) {
-    console.error("Erro ao chamar a função create-test-users:", error);
-    throw error;
-  }
 };
 
 // Verificar se o usuário tem acesso a uma rota específica com base na função
