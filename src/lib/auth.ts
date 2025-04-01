@@ -168,13 +168,18 @@ export const registerUser = async (
 // Helper para criar usuários de teste via edge function
 export const createTestUsers = async (): Promise<void> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || supabase.supabaseUrl;
+    // Get the Supabase URL from environment variable or fall back to a fixed URL
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://gudkehzonntowrmxshnf.supabase.co";
+    
+    // Get the current session to use its access token
+    const { data } = await supabase.auth.getSession();
+    const accessToken = data.session?.access_token;
     
     const response = await fetch(`${supabaseUrl}/functions/v1/create-test-users`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabase.auth.anon.getToken()}`
+        'Authorization': `Bearer ${accessToken || ''}`
       }
     });
     
