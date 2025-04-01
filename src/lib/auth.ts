@@ -53,7 +53,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
     id: data.user.id,
     email: data.user.email || "",
     name: profileData.name,
-    role: profileData.role as "mentor" | "client", // Use type assertion here
+    role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
     company: profileData.company,
   };
 
@@ -97,7 +97,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     id: session.user.id,
     email: session.user.email || "",
     name: profileData.name,
-    role: profileData.role as "mentor" | "client", // Use type assertion here
+    role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
     company: profileData.company,
   };
   
@@ -112,16 +112,10 @@ export const registerUser = async (
   role: "mentor" | "client",
   company?: string
 ): Promise<AuthUser> => {
+  // 1. Registrar o usuário na autenticação
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        name,
-        role,
-        company
-      }
-    }
   });
 
   if (error) {
@@ -132,7 +126,34 @@ export const registerUser = async (
     throw new Error("Erro ao criar usuário");
   }
 
-  // Criar objeto AuthUser
+  // 2. Criar explicitamente o perfil do usuário na tabela profiles
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .insert([
+      {
+        id: data.user.id,
+        name: name,
+        role: role,
+        company: company,
+      }
+    ])
+    .select()
+    .single();
+
+  if (profileError) {
+    console.error("Erro ao criar perfil:", profileError);
+    
+    // Tentar deletar o usuário de auth se falhar a criação do perfil
+    try {
+      await supabase.auth.admin.deleteUser(data.user.id);
+    } catch (e) {
+      console.error("Erro ao limpar usuário após falha no perfil:", e);
+    }
+    
+    throw new Error("Erro ao criar perfil do usuário");
+  }
+
+  // 3. Criar objeto AuthUser com os dados do perfil criado
   const authUser: AuthUser = {
     id: data.user.id,
     email: data.user.email || "",

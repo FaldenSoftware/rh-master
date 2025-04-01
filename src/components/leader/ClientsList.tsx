@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -18,20 +18,51 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
 
-// Mock data for clients
-const mockClients = [
-  { id: "1", name: "Ana Silva", email: "ana.silva@empresa.com", status: "active", lastTest: "12/06/2024" },
-  { id: "2", name: "Carlos Mendes", email: "carlos.mendes@empresa.com", status: "active", lastTest: "10/06/2024" },
-  { id: "3", name: "Juliana Costa", email: "juliana.costa@empresa.com", status: "active", lastTest: "08/06/2024" },
-  { id: "4", name: "Pedro Santos", email: "pedro.santos@empresa.com", status: "pending", lastTest: "-" },
-  { id: "5", name: "Mariana Lima", email: "mariana.lima@empresa.com", status: "pending", lastTest: "-" },
-];
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  status: "active" | "pending";
+  lastTest?: string;
+}
 
 const ClientsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  const filteredClients = mockClients.filter(client => 
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        // In a real app, this would fetch actual clients associated with the mentor
+        // For now, as we're building the initial version, we'll just show an empty list
+        setClients([]);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar clientes",
+          description: "Não foi possível buscar a lista de clientes. Tente novamente mais tarde."
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchClients();
+  }, [user, toast]);
+  
+  const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     client.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -63,7 +94,18 @@ const ClientsList = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredClients.length > 0 ? (
+            {isLoading ? (
+              // Skeleton loading state
+              Array.from({ length: 3 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-8" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredClients.length > 0 ? (
               filteredClients.map(client => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
@@ -75,7 +117,7 @@ const ClientsList = () => {
                       <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pendente</Badge>
                     )}
                   </TableCell>
-                  <TableCell>{client.lastTest}</TableCell>
+                  <TableCell>{client.lastTest || "-"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -95,7 +137,7 @@ const ClientsList = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                  Nenhum cliente encontrado
+                  {searchQuery ? "Nenhum cliente encontrado com os filtros atuais" : "Você ainda não tem clientes cadastrados"}
                 </TableCell>
               </TableRow>
             )}
