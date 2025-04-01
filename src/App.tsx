@@ -13,6 +13,9 @@ import LeaderRankings from "./pages/LeaderRankings";
 import LeaderReports from "./pages/LeaderReports";
 import LeaderSubscription from "./pages/LeaderSubscription";
 import LeaderSettings from "./pages/LeaderSettings";
+import ClientDashboard from "./pages/ClientDashboard";
+import ClientTests from "./pages/ClientTests";
+import ClientResults from "./pages/ClientResults";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          
+          {/* Leader Routes */}
           <Route path="/leader" element={<LeaderDashboard />} />
           <Route path="/leader/clients" element={<LeaderClients />} />
           <Route path="/leader/results" element={<LeaderResults />} />
@@ -31,6 +36,12 @@ const App = () => (
           <Route path="/leader/reports" element={<LeaderReports />} />
           <Route path="/leader/subscription" element={<LeaderSubscription />} />
           <Route path="/leader/settings" element={<LeaderSettings />} />
+          
+          {/* Client Routes */}
+          <Route path="/client" element={<ClientDashboard />} />
+          <Route path="/client/tests" element={<ClientTests />} />
+          <Route path="/client/results" element={<ClientResults />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
