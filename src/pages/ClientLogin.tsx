@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -35,6 +34,10 @@ const ClientLogin = () => {
         description: "Email: admin@example.com / Senha: admin1234 (mentor)\nEmail: cliente@example.com / Senha: teste1234 (cliente)",
         duration: 10000,
       });
+
+      // Auto-preencher o formulário com as credenciais do admin para facilitar o teste
+      setEmail("admin@example.com");
+      setPassword("admin1234");
     } catch (error) {
       toast({
         variant: "destructive",
