@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User } from "@supabase/supabase-js";
+import { Database } from "@/integrations/supabase/types";
 
 export interface AuthUser {
   id: string;
@@ -16,6 +17,9 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+// Define o tipo para os dados do perfil retornados pela função RPC
+type ProfileData = Database["public"]["Functions"]["get_profile_by_id"]["Returns"][0];
 
 // Helper para fazer login com Supabase
 export const loginUser = async (email: string, password: string): Promise<AuthUser> => {
@@ -35,7 +39,10 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
   try {
     // Buscar dados do perfil do usuário usando a função security definer
     const { data: profileData, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: data.user.id });
+      .rpc('get_profile_by_id', { user_id: data.user.id }) as {
+        data: ProfileData[] | null,
+        error: any
+      };
 
     if (profileError) {
       console.error("Erro ao buscar perfil:", profileError);
@@ -83,7 +90,10 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
     // Buscar dados do perfil do usuário usando a função security definer
     const { data: profileData, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: session.user.id });
+      .rpc('get_profile_by_id', { user_id: session.user.id }) as {
+        data: ProfileData[] | null,
+        error: any
+      };
 
     if (profileError) {
       console.error("Erro ao buscar perfil:", profileError);
@@ -147,7 +157,10 @@ export const registerUser = async (
   // Tentar buscar o perfil algumas vezes, pois pode haver um pequeno atraso na criação
   for (let i = 0; i < 3; i++) {
     const { data: profiles, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: data.user.id });
+      .rpc('get_profile_by_id', { user_id: data.user.id }) as {
+        data: ProfileData[] | null,
+        error: any
+      };
       
     if (profiles && profiles.length > 0) {
       profileData = profiles[0];
