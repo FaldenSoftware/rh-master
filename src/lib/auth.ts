@@ -44,6 +44,10 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
     throw new Error("Erro ao buscar perfil do usuário");
   }
 
+  if (!profileData) {
+    throw new Error("Perfil de usuário não encontrado");
+  }
+
   // Criar objeto AuthUser combinando dados do auth e do perfil
   const authUser: AuthUser = {
     id: data.user.id,
@@ -81,6 +85,10 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 
   if (profileError) {
     console.error("Erro ao buscar perfil:", profileError);
+    return null;
+  }
+  
+  if (!profileData) {
     return null;
   }
   
