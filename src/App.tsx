@@ -16,6 +16,9 @@ import LeaderSettings from "./pages/LeaderSettings";
 import ClientDashboard from "./pages/ClientDashboard";
 import ClientTests from "./pages/ClientTests";
 import ClientResults from "./pages/ClientResults";
+import ClientProfile from "./pages/ClientProfile";
+import ClientAccount from "./pages/ClientAccount";
+import ClientLogin from "./pages/ClientLogin";
 
 const queryClient = new QueryClient();
 
@@ -38,9 +41,12 @@ const App = () => (
           <Route path="/leader/settings" element={<LeaderSettings />} />
           
           {/* Client Routes */}
+          <Route path="/client/login" element={<ClientLogin />} />
           <Route path="/client" element={<ClientDashboard />} />
           <Route path="/client/tests" element={<ClientTests />} />
           <Route path="/client/results" element={<ClientResults />} />
+          <Route path="/client/profile" element={<ClientProfile />} />
+          <Route path="/client/account" element={<ClientAccount />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

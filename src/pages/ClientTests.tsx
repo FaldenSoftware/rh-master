@@ -1,221 +1,173 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { ClipboardCheck, Clock, CheckCircle, AlertCircle, Brain, Heart, Users } from "lucide-react";
 import ClientLayout from "@/components/client/ClientLayout";
 
+// Dados simulados dos testes
 const testData = [
-  { id: "T-1001", name: "Avaliação de Desempenho", department: "Vendas", assigned: 12, completed: 8, status: "Em Andamento" },
-  { id: "T-1002", name: "Perfil Comportamental", department: "Recursos Humanos", assigned: 5, completed: 5, status: "Concluído" },
-  { id: "T-1003", name: "Análise de Competências", department: "TI", assigned: 8, completed: 2, status: "Em Andamento" },
-  { id: "T-1004", name: "Pesquisa de Clima", department: "Todos", assigned: 45, completed: 30, status: "Em Andamento" },
-  { id: "T-1005", name: "Avaliação 360", department: "Diretoria", assigned: 6, completed: 0, status: "Não Iniciado" },
+  {
+    id: "T-1001",
+    title: "Perfil Comportamental DISC",
+    description: "Avaliação dos traços de comportamento: Dominância, Influência, Estabilidade e Conformidade",
+    status: "pendente",
+    timeEstimate: "20 minutos",
+    icon: Brain,
+    dueDate: "15/06/2023",
+    category: "comportamental"
+  },
+  {
+    id: "T-1002",
+    title: "Inteligência Emocional",
+    description: "Análise das habilidades de reconhecer e gerenciar emoções próprias e de outros",
+    status: "pendente",
+    timeEstimate: "15 minutos",
+    icon: Heart,
+    dueDate: "18/06/2023",
+    category: "comportamental"
+  },
+  {
+    id: "T-1003",
+    title: "Trabalho em Equipe",
+    description: "Avaliação de comportamentos e aptidões para colaboração em grupo",
+    status: "concluído",
+    timeEstimate: "25 minutos",
+    icon: Users,
+    completedDate: "10/05/2023",
+    category: "comportamental"
+  },
+  {
+    id: "T-1004",
+    title: "Proatividade",
+    description: "Análise da capacidade de antecipar problemas e buscar soluções de forma autônoma",
+    status: "concluído",
+    timeEstimate: "15 minutos",
+    icon: ClipboardCheck,
+    completedDate: "05/05/2023",
+    category: "comportamental"
+  }
 ];
 
 const ClientTests = () => {
   return (
-    <ClientLayout title="Testes">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar testes..."
-              className="w-full pl-8 md:w-[300px]"
-            />
-          </div>
-          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Filtros
-          </Button>
-        </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Teste
-        </Button>
-      </div>
-      
-      <Tabs defaultValue="all" className="w-full">
+    <ClientLayout title="Meus Testes">
+      <Tabs defaultValue="pending" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="active">Em Andamento</TabsTrigger>
+          <TabsTrigger value="pending">Pendentes</TabsTrigger>
           <TabsTrigger value="completed">Concluídos</TabsTrigger>
-          <TabsTrigger value="scheduled">Agendados</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all">
-          <Card>
-            <CardHeader>
-              <CardTitle>Todos os Testes</CardTitle>
-              <CardDescription>
-                Visualize e gerencie todos os testes da sua empresa
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Atribuídos</TableHead>
-                    <TableHead>Concluídos</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {testData.map((test) => (
-                    <TableRow key={test.id}>
-                      <TableCell className="font-medium">{test.id}</TableCell>
-                      <TableCell>{test.name}</TableCell>
-                      <TableCell>{test.department}</TableCell>
-                      <TableCell>{test.assigned}</TableCell>
-                      <TableCell>{test.completed}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            test.status === "Concluído" ? "border-green-200 text-green-800 bg-green-50" :
-                            test.status === "Em Andamento" ? "border-amber-200 text-amber-800 bg-amber-50" :
-                            "border-gray-200 text-gray-800 bg-gray-50"
-                          }
-                        >
-                          {test.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">Detalhes</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="active">
-          <Card>
-            <CardHeader>
-              <CardTitle>Testes em Andamento</CardTitle>
-              <CardDescription>
-                Testes que estão sendo realizados no momento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Atribuídos</TableHead>
-                    <TableHead>Concluídos</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {testData.filter(test => test.status === "Em Andamento").map((test) => (
-                    <TableRow key={test.id}>
-                      <TableCell className="font-medium">{test.id}</TableCell>
-                      <TableCell>{test.name}</TableCell>
-                      <TableCell>{test.department}</TableCell>
-                      <TableCell>{test.assigned}</TableCell>
-                      <TableCell>{test.completed}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">Detalhes</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        <TabsContent value="pending">
+          <div className="grid gap-6 md:grid-cols-2">
+            {testData.filter(test => test.status === "pendente").map((test) => (
+              <Card key={test.id} className="overflow-hidden">
+                <CardHeader className="bg-gray-50 pb-4">
+                  <div className="flex justify-between items-start">
+                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
+                      Pendente
+                    </Badge>
+                    <div className="flex items-center text-amber-600">
+                      <Clock className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Prazo: {test.dueDate}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 mt-3">
+                    <div className="bg-purple-100 p-2 rounded-md">
+                      <test.icon className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{test.title}</CardTitle>
+                      <CardDescription className="mt-1">
+                        {test.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Progresso</span>
+                        <span className="font-medium">0%</span>
+                      </div>
+                      <Progress value={0} className="h-2" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-muted-foreground">
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span>Tempo estimado: {test.timeEstimate}</span>
+                      </div>
+                      <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                        {test.category}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t bg-gray-50 py-3">
+                  <Button className="w-full">Iniciar Teste</Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
         
         <TabsContent value="completed">
-          {/* Similar structure to "active" tab with filtered data */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Testes Concluídos</CardTitle>
-              <CardDescription>
-                Testes que já foram finalizados
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Atribuídos</TableHead>
-                    <TableHead>Concluídos</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {testData.filter(test => test.status === "Concluído").map((test) => (
-                    <TableRow key={test.id}>
-                      <TableCell className="font-medium">{test.id}</TableCell>
-                      <TableCell>{test.name}</TableCell>
-                      <TableCell>{test.department}</TableCell>
-                      <TableCell>{test.assigned}</TableCell>
-                      <TableCell>{test.completed}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">Ver Relatório</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="scheduled">
-          <Card>
-            <CardHeader>
-              <CardTitle>Testes Agendados</CardTitle>
-              <CardDescription>
-                Testes que serão aplicados no futuro
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Departamento</TableHead>
-                    <TableHead>Atribuídos</TableHead>
-                    <TableHead>Data Programada</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {testData.filter(test => test.status === "Não Iniciado").map((test) => (
-                    <TableRow key={test.id}>
-                      <TableCell className="font-medium">{test.id}</TableCell>
-                      <TableCell>{test.name}</TableCell>
-                      <TableCell>{test.department}</TableCell>
-                      <TableCell>{test.assigned}</TableCell>
-                      <TableCell>15/07/2023</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">Editar</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            {testData.filter(test => test.status === "concluído").map((test) => (
+              <Card key={test.id} className="overflow-hidden">
+                <CardHeader className="bg-gray-50 pb-4">
+                  <div className="flex justify-between items-start">
+                    <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                      Concluído
+                    </Badge>
+                    <div className="flex items-center text-green-600">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Realizado: {test.completedDate}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 mt-3">
+                    <div className="bg-purple-100 p-2 rounded-md">
+                      <test.icon className="h-6 w-6 text-purple-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{test.title}</CardTitle>
+                      <CardDescription className="mt-1">
+                        {test.description}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Progresso</span>
+                        <span className="font-medium">100%</span>
+                      </div>
+                      <Progress value={100} className="h-2" />
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-muted-foreground">
+                        <Clock className="h-4 w-4 mr-1" />
+                        <span>Tempo estimado: {test.timeEstimate}</span>
+                      </div>
+                      <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                        {test.category}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t bg-gray-50 py-3">
+                  <Button variant="outline" className="w-full">Ver Resultados</Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </ClientLayout>

@@ -1,14 +1,13 @@
 
 import { Link } from "react-router-dom";
-import { Home, ClipboardCheck, LineChart, Award, FileText, Settings } from "lucide-react";
+import { Home, ClipboardCheck, LineChart, User, Award } from "lucide-react";
 
 const navItems = [
   { icon: Home, label: "Dashboard", href: "/client" },
-  { icon: ClipboardCheck, label: "Testes", href: "/client/tests" },
+  { icon: ClipboardCheck, label: "Meus Testes", href: "/client/tests" },
   { icon: LineChart, label: "Resultados", href: "/client/results" },
-  { icon: Award, label: "Rankings", href: "/client/rankings" },
-  { icon: FileText, label: "Relatórios", href: "/client/reports" },
-  { icon: Settings, label: "Configurações", href: "/client/settings" }
+  { icon: Award, label: "Perfil Comportamental", href: "/client/profile" },
+  { icon: User, label: "Minha Conta", href: "/client/account" }
 ];
 
 const ClientSidebar = () => {
@@ -34,8 +33,9 @@ const ClientSidebar = () => {
       </nav>
       <div className="mt-auto px-6 py-4 border-t">
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-muted-foreground">Empresa</p>
-          <p className="text-sm font-medium">Cliente ABC Ltda</p>
+          <p className="text-xs text-muted-foreground">Cliente</p>
+          <p className="text-sm font-medium">João Silva</p>
+          <p className="text-xs text-muted-foreground">Empresa ABC Ltda</p>
         </div>
       </div>
     </aside>
