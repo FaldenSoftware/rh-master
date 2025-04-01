@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,37 +25,39 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
+    <React.StrictMode>
       <BrowserRouter>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            
-            {/* Leader Routes */}
-            <Route path="/leader" element={<LeaderDashboard />} />
-            <Route path="/leader/clients" element={<LeaderClients />} />
-            <Route path="/leader/results" element={<LeaderResults />} />
-            <Route path="/leader/rankings" element={<LeaderRankings />} />
-            <Route path="/leader/reports" element={<LeaderReports />} />
-            <Route path="/leader/subscription" element={<LeaderSubscription />} />
-            <Route path="/leader/settings" element={<LeaderSettings />} />
-            
-            {/* Client Routes */}
-            <Route path="/client/login" element={<ClientLogin />} />
-            <Route path="/client" element={<ClientDashboard />} />
-            <Route path="/client/tests" element={<ClientTests />} />
-            <Route path="/client/results" element={<ClientResults />} />
-            <Route path="/client/profile" element={<ClientProfile />} />
-            <Route path="/client/account" element={<ClientAccount />} />
-            
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              
+              {/* Leader Routes */}
+              <Route path="/leader" element={<LeaderDashboard />} />
+              <Route path="/leader/clients" element={<LeaderClients />} />
+              <Route path="/leader/results" element={<LeaderResults />} />
+              <Route path="/leader/rankings" element={<LeaderRankings />} />
+              <Route path="/leader/reports" element={<LeaderReports />} />
+              <Route path="/leader/subscription" element={<LeaderSubscription />} />
+              <Route path="/leader/settings" element={<LeaderSettings />} />
+              
+              {/* Client Routes */}
+              <Route path="/client/login" element={<ClientLogin />} />
+              <Route path="/client" element={<ClientDashboard />} />
+              <Route path="/client/tests" element={<ClientTests />} />
+              <Route path="/client/results" element={<ClientResults />} />
+              <Route path="/client/profile" element={<ClientProfile />} />
+              <Route path="/client/account" element={<ClientAccount />} />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </QueryClientProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </React.StrictMode>
   );
 };
 
