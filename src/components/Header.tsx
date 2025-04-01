@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,12 +43,16 @@ const Header = () => {
           <a href="#contato" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
             Contato
           </a>
-          <Button variant="ghost" className="text-sm font-medium hover:bg-gray-100">
-            Login
-          </Button>
-          <Button className="text-sm font-medium bg-brand-blue hover:bg-brand-blue/90 shadow-md shadow-brand-blue/20 button-glow">
-            Começar grátis
-          </Button>
+          <Link to="/client/login">
+            <Button variant="ghost" className="text-sm font-medium hover:bg-gray-100">
+              Login
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button className="text-sm font-medium bg-brand-blue hover:bg-brand-blue/90 shadow-md shadow-brand-blue/20 button-glow">
+              Começar grátis
+            </Button>
+          </Link>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -99,12 +104,16 @@ const Header = () => {
               </a>
             </div>
             <div className="flex flex-col space-y-4 mt-auto">
-              <Button variant="outline" className="w-full justify-center h-14 text-base">
-                Login
-              </Button>
-              <Button className="w-full justify-center h-14 text-base bg-brand-blue hover:bg-brand-blue/90 shadow-md">
-                Começar grátis
-              </Button>
+              <Link to="/client/login" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="outline" className="w-full justify-center h-14 text-base">
+                  Login
+                </Button>
+              </Link>
+              <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Button className="w-full justify-center h-14 text-base bg-brand-blue hover:bg-brand-blue/90 shadow-md">
+                  Começar grátis
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
