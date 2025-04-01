@@ -53,7 +53,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
     id: data.user.id,
     email: data.user.email || "",
     name: profileData.name,
-    role: profileData.role,
+    role: profileData.role as "mentor" | "client", // Use type assertion here
     company: profileData.company,
   };
 
@@ -97,7 +97,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     id: session.user.id,
     email: session.user.email || "",
     name: profileData.name,
-    role: profileData.role,
+    role: profileData.role as "mentor" | "client", // Use type assertion here
     company: profileData.company,
   };
   
