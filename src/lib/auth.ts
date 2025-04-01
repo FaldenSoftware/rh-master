@@ -1,5 +1,6 @@
 
-import { users } from "./db";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
 export interface AuthUser {
   id: string;
@@ -16,63 +17,127 @@ export interface AuthState {
   error: string | null;
 }
 
-// Store the current user in localStorage
-const AUTH_KEY = "rh-mentor-auth";
+// Helper para fazer login com Supabase
+export const loginUser = async (email: string, password: string): Promise<AuthUser> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-// Helper to get the current authenticated user
-export const getCurrentUser = (): AuthUser | null => {
-  try {
-    const authData = localStorage.getItem(AUTH_KEY);
-    if (authData) {
-      return JSON.parse(authData);
-    }
-    return null;
-  } catch (error) {
-    console.error("Error getting current user:", error);
-    return null;
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data.user) {
+    throw new Error("Credenciais inválidas");
+  }
+
+  // Buscar dados do perfil do usuário
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", data.user.id)
+    .single();
+
+  if (profileError) {
+    console.error("Erro ao buscar perfil:", profileError);
+    throw new Error("Erro ao buscar perfil do usuário");
+  }
+
+  // Criar objeto AuthUser combinando dados do auth e do perfil
+  const authUser: AuthUser = {
+    id: data.user.id,
+    email: data.user.email || "",
+    name: profileData.name,
+    role: profileData.role,
+    company: profileData.company,
+  };
+
+  return authUser;
+};
+
+// Helper para fazer logout com Supabase
+export const logoutUser = async (): Promise<void> => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    throw new Error(error.message);
   }
 };
 
-// Helper to authenticate a user
-export const loginUser = (email: string, password: string): Promise<AuthUser> => {
-  return new Promise((resolve, reject) => {
-    // Simulate network delay
-    setTimeout(() => {
-      const user = users.find(
-        (u) => u.email === email && u.password === password
-      );
+// Helper para obter o usuário atual do Supabase
+export const getCurrentUser = async (): Promise<AuthUser | null> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.user) {
+    return null;
+  }
+  
+  // Buscar dados do perfil do usuário
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", session.user.id)
+    .single();
 
-      if (user) {
-        // Create a sanitized user object (without password)
-        const authUser: AuthUser = {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          company: user.company,
-        };
+  if (profileError) {
+    console.error("Erro ao buscar perfil:", profileError);
+    return null;
+  }
+  
+  // Criar objeto AuthUser combinando dados do auth e do perfil
+  const authUser: AuthUser = {
+    id: session.user.id,
+    email: session.user.email || "",
+    name: profileData.name,
+    role: profileData.role,
+    company: profileData.company,
+  };
+  
+  return authUser;
+};
 
-        // Save to localStorage
-        localStorage.setItem(AUTH_KEY, JSON.stringify(authUser));
-        resolve(authUser);
-      } else {
-        reject(new Error("Credenciais inválidas"));
+// Helper para registrar um novo usuário
+export const registerUser = async (
+  email: string, 
+  password: string, 
+  name: string, 
+  role: "mentor" | "client",
+  company?: string
+): Promise<AuthUser> => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        name,
+        role,
+        company
       }
-    }, 800);
+    }
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data.user) {
+    throw new Error("Erro ao criar usuário");
+  }
+
+  // Criar objeto AuthUser
+  const authUser: AuthUser = {
+    id: data.user.id,
+    email: data.user.email || "",
+    name: name,
+    role: role,
+    company: company,
+  };
+
+  return authUser;
 };
 
-// Helper to log out a user
-export const logoutUser = (): Promise<void> => {
-  return new Promise((resolve) => {
-    localStorage.removeItem(AUTH_KEY);
-    resolve();
-  });
-};
-
-// Check if user has access to a specific route based on role
-export const hasAccess = (role: "mentor" | "client" | "any"): boolean => {
-  const user = getCurrentUser();
+// Verificar se o usuário tem acesso a uma rota específica com base na função
+export const hasAccess = (user: AuthUser | null, role: "mentor" | "client" | "any"): boolean => {
   if (!user) return false;
   if (role === "any") return true;
   return user.role === role;

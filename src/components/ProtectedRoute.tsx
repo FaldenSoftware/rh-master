@@ -2,6 +2,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { hasAccess } from "@/lib/auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,19 +16,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
-  // Show loading state if still checking authentication
+  // Mostrar estado de carregamento se ainda estiver verificando autenticação
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen">Carregando...</div>;
   }
 
-  // Not authenticated - redirect to login
+  // Não autenticado - redirecionar para login
   if (!isAuthenticated || !user) {
     return <Navigate to="/client/login" state={{ from: location }} replace />;
   }
 
-  // Check role-based access
-  if (requiredRole !== "any" && user.role !== requiredRole) {
-    // Redirect to appropriate dashboard based on role
+  // Verificar acesso baseado em função
+  if (!hasAccess(user, requiredRole)) {
+    // Redirecionar para dashboard apropriado baseado na função
     if (user.role === "mentor") {
       return <Navigate to="/leader" replace />;
     } else {
@@ -35,7 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
 
-  // Render children if all checks pass
+  // Renderizar filhos se todas as verificações passarem
   return <>{children}</>;
 };
 
