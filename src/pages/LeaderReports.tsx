@@ -11,7 +11,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { FileText, Download, Calendar, Filter, Search, FileSpreadsheet, FilePdf } from "lucide-react";
+import { FileText, Download, Calendar, Filter, Search, FileSpreadsheet, File } from "lucide-react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
 
 // Mock data for reports
@@ -91,7 +91,7 @@ const LeaderReports = () => {
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="icon" title="Baixar como PDF">
-                              <FilePdf className="h-4 w-4 text-red-500" />
+                              <File className="h-4 w-4 text-red-500" />
                             </Button>
                             <Button variant="ghost" size="icon" title="Baixar como Excel">
                               <FileSpreadsheet className="h-4 w-4 text-green-600" />
