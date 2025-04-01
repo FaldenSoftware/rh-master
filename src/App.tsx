@@ -5,6 +5,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LeaderDashboard from "./pages/LeaderDashboard";
@@ -28,33 +31,119 @@ const App = () => {
     <React.StrictMode>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              
-              {/* Leader Routes */}
-              <Route path="/leader" element={<LeaderDashboard />} />
-              <Route path="/leader/clients" element={<LeaderClients />} />
-              <Route path="/leader/results" element={<LeaderResults />} />
-              <Route path="/leader/rankings" element={<LeaderRankings />} />
-              <Route path="/leader/reports" element={<LeaderReports />} />
-              <Route path="/leader/subscription" element={<LeaderSubscription />} />
-              <Route path="/leader/settings" element={<LeaderSettings />} />
-              
-              {/* Client Routes */}
-              <Route path="/client/login" element={<ClientLogin />} />
-              <Route path="/client" element={<ClientDashboard />} />
-              <Route path="/client/tests" element={<ClientTests />} />
-              <Route path="/client/results" element={<ClientResults />} />
-              <Route path="/client/profile" element={<ClientProfile />} />
-              <Route path="/client/account" element={<ClientAccount />} />
-              
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/client/login" element={<ClientLogin />} />
+                
+                {/* Leader (Mentor) Routes - Protected */}
+                <Route 
+                  path="/leader" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/clients" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderClients />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/results" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderResults />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/rankings" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderRankings />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/reports" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderReports />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/subscription" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderSubscription />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/leader/settings" 
+                  element={
+                    <ProtectedRoute requiredRole="mentor">
+                      <LeaderSettings />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Client Routes - Protected */}
+                <Route 
+                  path="/client" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ClientDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/tests" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ClientTests />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/results" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ClientResults />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/profile" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ClientProfile />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/account" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ClientAccount />
+                    </ProtectedRoute>
+                  } 
+                />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </React.StrictMode>

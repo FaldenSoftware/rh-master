@@ -1,41 +1,20 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Mail, Key, LogIn } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const { login, isLoading, error } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulação de login
-    setTimeout(() => {
-      setIsLoading(false);
-      if (email && password) {
-        toast({
-          title: "Login realizado com sucesso",
-          description: "Bem-vindo ao Portal do Cliente",
-        });
-        navigate("/client");
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao fazer login",
-          description: "Verifique suas credenciais",
-        });
-      }
-    }, 1500);
+    await login(email, password);
   };
 
   return (
@@ -57,14 +36,19 @@ const ClientLogin = () => {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Login</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
-                    type="email"
-                    placeholder="seu.email@empresa.com"
+                    type="text"
+                    placeholder="Seu login (email ou nome de usuário)"
                     className="pl-10"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

@@ -1,6 +1,8 @@
 
 import { Link } from "react-router-dom";
-import { Home, ClipboardCheck, LineChart, User, Award } from "lucide-react";
+import { Home, ClipboardCheck, LineChart, User, Award, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { icon: Home, label: "Dashboard", href: "/client" },
@@ -11,6 +13,8 @@ const navItems = [
 ];
 
 const ClientSidebar = () => {
+  const { user, logout } = useAuth();
+
   return (
     <aside className="hidden md:flex h-screen w-64 flex-col bg-white border-r pt-6">
       <div className="flex px-6 py-2">
@@ -32,11 +36,20 @@ const ClientSidebar = () => {
         </ul>
       </nav>
       <div className="mt-auto px-6 py-4 border-t">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 mb-4">
           <p className="text-xs text-muted-foreground">Cliente</p>
-          <p className="text-sm font-medium">João Silva</p>
-          <p className="text-xs text-muted-foreground">Empresa ABC Ltda</p>
+          <p className="text-sm font-medium">{user?.name || "Nome do Cliente"}</p>
+          <p className="text-xs text-muted-foreground">{user?.company || "Empresa"}</p>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center w-full justify-start"
+          onClick={() => logout()}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
       </div>
     </aside>
   );
