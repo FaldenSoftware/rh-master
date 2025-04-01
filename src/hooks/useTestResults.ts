@@ -31,17 +31,13 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Buscar testes concluídos do cliente
+      // Buscar testes concluídos do cliente - modificado para evitar a recursão infinita
       const { data: clientTests, error: testsError } = await supabase
         .from('client_tests')
         .select(`
           id,
           completed_at,
-          tests (
-            id,
-            title,
-            description
-          ),
+          test_id,
           test_results (
             id,
             data
@@ -54,58 +50,83 @@ export const useTestResults = (userId?: string) => {
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
       }
 
+      // Retorna array vazio se não houver testes
       if (!clientTests || clientTests.length === 0) {
         return [];
       }
 
+      // Buscar informações básicas dos testes separadamente para evitar recursão
+      const testIds = clientTests.map(test => test.test_id);
+      const { data: testsData, error: testsDataError } = await supabase
+        .from('tests')
+        .select('id, title, description')
+        .in('id', testIds);
+
+      if (testsDataError) {
+        throw new Error(`Erro ao buscar informações dos testes: ${testsDataError.message}`);
+      }
+
+      // Criar um map para acessar facilmente os dados dos testes
+      const testsMap = new Map(testsData?.map(test => [test.id, test]) || []);
+
       // Formatar os dados para o formato esperado pelos componentes
-      const formattedResults: TestResult[] = clientTests.map((test) => {
-        const testDate = test.completed_at 
-          ? new Date(test.completed_at).toLocaleDateString('pt-BR')
-          : "Data não registrada";
-        
-        // Obter resultado do teste com pontuação
-        const testResult = test.test_results?.[0]?.data as TestResultData | undefined;
-        const score = testResult?.score || Math.floor(Math.random() * 20) + 70; // Fallback para teste
+      const formattedResults: TestResult[] = clientTests
+        .filter(test => {
+          // Filtrar apenas testes com informações completas
+          const testInfo = testsMap.get(test.test_id);
+          return !!testInfo; // Garantir que temos informações do teste
+        })
+        .map(test => {
+          const testInfo = testsMap.get(test.test_id);
+          
+          const testDate = test.completed_at 
+            ? new Date(test.completed_at).toLocaleDateString('pt-BR')
+            : "Data não registrada";
+          
+          // Obter resultado do teste com pontuação
+          const testResult = test.test_results?.[0]?.data as TestResultData | undefined;
+          
+          // Se não houver resultado, use valor padrão zero para usuários novos
+          const score = testResult?.score !== undefined ? testResult.score : 0;
 
-        // Gerar dados de habilidades baseados no resultado ou dados aleatórios para desenvolvimento
-        const skillScores = testResult?.skills || [
-          { skill: "Comunicação", value: Math.floor(Math.random() * 30) + 60 },
-          { skill: "Proatividade", value: Math.floor(Math.random() * 30) + 60 },
-          { skill: "Trabalho em Equipe", value: Math.floor(Math.random() * 30) + 60 },
-          { skill: "Liderança", value: Math.floor(Math.random() * 30) + 60 },
-          { skill: "Inteligência Emocional", value: Math.floor(Math.random() * 30) + 60 }
-        ];
+          // Gerar dados de habilidades baseados no resultado ou usar valores padrão para novos usuários
+          const skillScores = testResult?.skills || [
+            { skill: "Comunicação", value: 0 },
+            { skill: "Proatividade", value: 0 },
+            { skill: "Trabalho em Equipe", value: 0 },
+            { skill: "Liderança", value: 0 },
+            { skill: "Inteligência Emocional", value: 0 }
+          ];
 
-        // Gerar dados de perfil baseados no resultado ou dados aleatórios para desenvolvimento
-        const profileScores = testResult?.profile || [
-          { name: "Analítico", value: Math.floor(Math.random() * 30) + 50 },
-          { name: "Comunicador", value: Math.floor(Math.random() * 30) + 40 },
-          { name: "Executor", value: Math.floor(Math.random() * 30) + 30 },
-          { name: "Planejador", value: Math.floor(Math.random() * 30) + 60 }
-        ];
+          // Gerar dados de perfil baseados no resultado ou usar valores padrão para novos usuários
+          const profileScores = testResult?.profile || [
+            { name: "Analítico", value: 0 },
+            { name: "Comunicador", value: 0 },
+            { name: "Executor", value: 0 },
+            { name: "Planejador", value: 0 }
+          ];
 
-        // Gerar dados de radar baseados no resultado ou dados aleatórios para desenvolvimento
-        const radarData = testResult?.radar || [
-          { subject: "Comunicação", value: Math.floor(Math.random() * 30) + 60, fullMark: 100 },
-          { subject: "Liderança", value: Math.floor(Math.random() * 30) + 50, fullMark: 100 },
-          { subject: "Proatividade", value: Math.floor(Math.random() * 30) + 70, fullMark: 100 },
-          { subject: "Trabalho em Equipe", value: Math.floor(Math.random() * 30) + 60, fullMark: 100 },
-          { subject: "Resiliência", value: Math.floor(Math.random() * 30) + 60, fullMark: 100 },
-          { subject: "Inteligência Emocional", value: Math.floor(Math.random() * 30) + 70, fullMark: 100 }
-        ];
+          // Gerar dados de radar baseados no resultado ou usar valores padrão para novos usuários
+          const radarData = testResult?.radar || [
+            { subject: "Comunicação", value: 0, fullMark: 100 },
+            { subject: "Liderança", value: 0, fullMark: 100 },
+            { subject: "Proatividade", value: 0, fullMark: 100 },
+            { subject: "Trabalho em Equipe", value: 0, fullMark: 100 },
+            { subject: "Resiliência", value: 0, fullMark: 100 },
+            { subject: "Inteligência Emocional", value: 0, fullMark: 100 }
+          ];
 
-        return {
-          id: test.id,
-          name: test.tests.title,
-          date: testDate,
-          score: score,
-          category: testResult?.category || "comportamental",
-          skillScores,
-          profileScores,
-          radarData
-        };
-      });
+          return {
+            id: test.id,
+            name: testInfo?.title || "Teste",
+            date: testDate,
+            score: score,
+            category: testResult?.category || "comportamental",
+            skillScores,
+            profileScores,
+            radarData
+          };
+        });
 
       return formattedResults;
     } catch (error) {
