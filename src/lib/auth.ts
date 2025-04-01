@@ -35,25 +35,26 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
   try {
     // Buscar dados do perfil do usuário usando a função security definer
     const { data: profileData, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: data.user.id })
-      .single();
+      .rpc('get_profile_by_id', { user_id: data.user.id });
 
     if (profileError) {
       console.error("Erro ao buscar perfil:", profileError);
       throw new Error("Erro ao buscar perfil do usuário");
     }
 
-    if (!profileData) {
+    if (!profileData || profileData.length === 0) {
       throw new Error("Perfil de usuário não encontrado");
     }
+    
+    const profile = profileData[0];
 
     // Criar objeto AuthUser combinando dados do auth e do perfil
     const authUser: AuthUser = {
       id: data.user.id,
       email: data.user.email || "",
-      name: profileData.name,
-      role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
-      company: profileData.company,
+      name: profile.name,
+      role: profile.role as "mentor" | "client", // Type assertion para garantir tipo correto
+      company: profile.company,
     };
 
     return authUser;
@@ -82,25 +83,26 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
     // Buscar dados do perfil do usuário usando a função security definer
     const { data: profileData, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: session.user.id })
-      .single();
+      .rpc('get_profile_by_id', { user_id: session.user.id });
 
     if (profileError) {
       console.error("Erro ao buscar perfil:", profileError);
       return null;
     }
     
-    if (!profileData) {
+    if (!profileData || profileData.length === 0) {
       return null;
     }
+    
+    const profile = profileData[0];
     
     // Criar objeto AuthUser combinando dados do auth e do perfil
     const authUser: AuthUser = {
       id: session.user.id,
       email: session.user.email || "",
-      name: profileData.name,
-      role: profileData.role as "mentor" | "client", // Type assertion para garantir tipo correto
-      company: profileData.company,
+      name: profile.name,
+      role: profile.role as "mentor" | "client", // Type assertion para garantir tipo correto
+      company: profile.company,
     };
     
     return authUser;
@@ -144,12 +146,11 @@ export const registerUser = async (
   
   // Tentar buscar o perfil algumas vezes, pois pode haver um pequeno atraso na criação
   for (let i = 0; i < 3; i++) {
-    const { data: profile, error: profileError } = await supabase
-      .rpc('get_profile_by_id', { user_id: data.user.id })
-      .single();
+    const { data: profiles, error: profileError } = await supabase
+      .rpc('get_profile_by_id', { user_id: data.user.id });
       
-    if (profile) {
-      profileData = profile;
+    if (profiles && profiles.length > 0) {
+      profileData = profiles[0];
       break;
     }
     
