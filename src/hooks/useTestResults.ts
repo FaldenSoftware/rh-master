@@ -14,6 +14,14 @@ export interface TestResult {
   radarData?: { subject: string; value: number; fullMark: number }[];
 }
 
+interface TestResultData {
+  score?: number;
+  skills?: { skill: string; value: number }[];
+  profile?: { name: string; value: number }[];
+  radar?: { subject: string; value: number; fullMark: number }[];
+  category?: string;
+}
+
 export const useTestResults = (userId?: string) => {
   const { toast } = useToast();
 
@@ -57,7 +65,7 @@ export const useTestResults = (userId?: string) => {
           : "Data não registrada";
         
         // Obter resultado do teste com pontuação
-        const testResult = test.test_results?.[0]?.data;
+        const testResult = test.test_results?.[0]?.data as TestResultData | undefined;
         const score = testResult?.score || Math.floor(Math.random() * 20) + 70; // Fallback para teste
 
         // Gerar dados de habilidades baseados no resultado ou dados aleatórios para desenvolvimento
