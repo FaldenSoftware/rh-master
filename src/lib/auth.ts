@@ -172,8 +172,8 @@ export const createTestUsers = async (): Promise<void> => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://gudkehzonntowrmxshnf.supabase.co";
     
     // Get the current session to use its access token
-    const { data } = await supabase.auth.getSession();
-    const accessToken = data.session?.access_token;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
     
     const response = await fetch(`${supabaseUrl}/functions/v1/create-test-users`, {
       method: 'POST',
