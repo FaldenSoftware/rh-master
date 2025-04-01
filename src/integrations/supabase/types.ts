@@ -156,6 +156,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_client_tests_for_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          is_completed: boolean
+          started_at: string | null
+          test_id: string
+          updated_at: string
+        }[]
+      }
       get_profile_by_id: {
         Args: {
           user_id: string
@@ -166,6 +181,31 @@ export type Database = {
           id: string
           name: string
           role: string
+          updated_at: string
+        }[]
+      }
+      get_test_info: {
+        Args: {
+          test_id: string
+        }
+        Returns: {
+          created_at: string
+          description: string | null
+          id: string
+          mentor_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_test_results_for_client_test: {
+        Args: {
+          client_test_id: string
+        }
+        Returns: {
+          client_test_id: string
+          created_at: string
+          data: Json
+          id: string
           updated_at: string
         }[]
       }

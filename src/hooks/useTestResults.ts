@@ -31,20 +31,9 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Buscar testes concluídos do cliente - modificado para evitar a recursão infinita
+      // Usar a função segura para buscar testes do cliente, evitando recursão infinita
       const { data: clientTests, error: testsError } = await supabase
-        .from('client_tests')
-        .select(`
-          id,
-          completed_at,
-          test_id,
-          test_results (
-            id,
-            data
-          )
-        `)
-        .eq('client_id', userId)
-        .eq('is_completed', true);
+        .rpc('get_client_tests_for_user', { user_id: userId });
 
       if (testsError) {
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
@@ -55,19 +44,36 @@ export const useTestResults = (userId?: string) => {
         return [];
       }
 
-      // Buscar informações básicas dos testes separadamente para evitar recursão
+      // Buscar informações dos testes usando a função segura
       const testIds = clientTests.map(test => test.test_id);
-      const { data: testsData, error: testsDataError } = await supabase
-        .from('tests')
-        .select('id, title, description')
-        .in('id', testIds);
+      const testDataPromises = testIds.map(testId => 
+        supabase.rpc('get_test_info', { test_id: testId })
+      );
+      
+      const testDataResults = await Promise.all(testDataPromises);
+      
+      // Criar mapeamento de IDs para dados de teste
+      const testsMap = new Map();
+      testDataResults.forEach((result, index) => {
+        if (result.data && result.data.length > 0) {
+          testsMap.set(testIds[index], result.data[0]);
+        }
+      });
 
-      if (testsDataError) {
-        throw new Error(`Erro ao buscar informações dos testes: ${testsDataError.message}`);
-      }
-
-      // Criar um map para acessar facilmente os dados dos testes
-      const testsMap = new Map(testsData?.map(test => [test.id, test]) || []);
+      // Buscar resultados dos testes
+      const testResultsPromises = clientTests.map(test => 
+        supabase.rpc('get_test_results_for_client_test', { client_test_id: test.id })
+      );
+      
+      const testResultsData = await Promise.all(testResultsPromises);
+      
+      // Mapear resultados para os testes
+      const resultsMap = new Map();
+      testResultsData.forEach((result, index) => {
+        if (result.data && result.data.length > 0) {
+          resultsMap.set(clientTests[index].id, result.data[0]);
+        }
+      });
 
       // Formatar os dados para o formato esperado pelos componentes
       const formattedResults: TestResult[] = clientTests
@@ -83,14 +89,15 @@ export const useTestResults = (userId?: string) => {
             ? new Date(test.completed_at).toLocaleDateString('pt-BR')
             : "Data não registrada";
           
-          // Obter resultado do teste com pontuação
-          const testResult = test.test_results?.[0]?.data as TestResultData | undefined;
+          // Obter resultado do teste ou usar valor padrão
+          const testResult = resultsMap.get(test.id);
+          const resultData = testResult?.data as TestResultData | undefined;
           
           // Se não houver resultado, use valor padrão zero para usuários novos
-          const score = testResult?.score !== undefined ? testResult.score : 0;
+          const score = resultData?.score !== undefined ? resultData.score : 0;
 
           // Gerar dados de habilidades baseados no resultado ou usar valores padrão para novos usuários
-          const skillScores = testResult?.skills || [
+          const skillScores = resultData?.skills || [
             { skill: "Comunicação", value: 0 },
             { skill: "Proatividade", value: 0 },
             { skill: "Trabalho em Equipe", value: 0 },
@@ -99,7 +106,7 @@ export const useTestResults = (userId?: string) => {
           ];
 
           // Gerar dados de perfil baseados no resultado ou usar valores padrão para novos usuários
-          const profileScores = testResult?.profile || [
+          const profileScores = resultData?.profile || [
             { name: "Analítico", value: 0 },
             { name: "Comunicador", value: 0 },
             { name: "Executor", value: 0 },
@@ -107,7 +114,7 @@ export const useTestResults = (userId?: string) => {
           ];
 
           // Gerar dados de radar baseados no resultado ou usar valores padrão para novos usuários
-          const radarData = testResult?.radar || [
+          const radarData = resultData?.radar || [
             { subject: "Comunicação", value: 0, fullMark: 100 },
             { subject: "Liderança", value: 0, fullMark: 100 },
             { subject: "Proatividade", value: 0, fullMark: 100 },
@@ -121,7 +128,7 @@ export const useTestResults = (userId?: string) => {
             name: testInfo?.title || "Teste",
             date: testDate,
             score: score,
-            category: testResult?.category || "comportamental",
+            category: resultData?.category || "comportamental",
             skillScores,
             profileScores,
             radarData
