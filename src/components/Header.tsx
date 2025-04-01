@@ -1,13 +1,26 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Detectar scroll para mudar a aparência do header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="w-full py-4 px-4 md:px-6 lg:px-8 border-b">
+    <header className={`sticky top-0 w-full py-4 px-4 md:px-6 lg:px-8 z-50 transition-all duration-300 ${
+      isScrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
+    }`}>
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple text-transparent bg-clip-text">
@@ -16,24 +29,24 @@ const Header = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <a href="#funcionalidades" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+        <nav className="hidden md:flex items-center space-x-8">
+          <a href="#funcionalidades" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
             Funcionalidades
           </a>
-          <a href="#planos" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#planos" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
             Planos
           </a>
-          <a href="#depoimentos" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#depoimentos" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
             Depoimentos
           </a>
-          <a href="#contato" className="text-sm font-medium text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#contato" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
             Contato
           </a>
-          <Button variant="outline" className="text-sm font-medium">
+          <Button variant="ghost" className="text-sm font-medium hover:bg-gray-100">
             Login
           </Button>
-          <Button className="text-sm font-medium bg-brand-blue hover:bg-brand-blue/90">
-            Começar agora
+          <Button className="text-sm font-medium bg-brand-blue hover:bg-brand-blue/90 shadow-md shadow-brand-blue/20 button-glow">
+            Começar grátis
           </Button>
         </nav>
 
@@ -44,6 +57,7 @@ const Header = () => {
             size="icon" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+            className="hover:bg-gray-100"
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
@@ -52,42 +66,44 @@ const Header = () => {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 z-50 bg-white border-b shadow-lg">
-          <div className="container mx-auto py-4 px-4 space-y-4">
-            <a 
-              href="#funcionalidades" 
-              className="block text-base font-medium text-gray-700 hover:text-brand-blue transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Funcionalidades
-            </a>
-            <a 
-              href="#planos" 
-              className="block text-base font-medium text-gray-700 hover:text-brand-blue transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Planos
-            </a>
-            <a 
-              href="#depoimentos" 
-              className="block text-base font-medium text-gray-700 hover:text-brand-blue transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Depoimentos
-            </a>
-            <a 
-              href="#contato" 
-              className="block text-base font-medium text-gray-700 hover:text-brand-blue transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Contato
-            </a>
-            <div className="flex flex-col space-y-2 pt-2">
-              <Button variant="outline" className="w-full justify-center">
+        <div className="md:hidden fixed inset-0 z-50 bg-white" style={{ paddingTop: '4rem' }}>
+          <div className="container mx-auto py-8 px-4 flex flex-col h-full">
+            <div className="space-y-6 flex-1">
+              <a 
+                href="#funcionalidades" 
+                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Funcionalidades
+              </a>
+              <a 
+                href="#planos" 
+                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Planos
+              </a>
+              <a 
+                href="#depoimentos" 
+                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Depoimentos
+              </a>
+              <a 
+                href="#contato" 
+                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contato
+              </a>
+            </div>
+            <div className="flex flex-col space-y-4 mt-auto">
+              <Button variant="outline" className="w-full justify-center h-14 text-base">
                 Login
               </Button>
-              <Button className="w-full justify-center bg-brand-blue hover:bg-brand-blue/90">
-                Começar agora
+              <Button className="w-full justify-center h-14 text-base bg-brand-blue hover:bg-brand-blue/90 shadow-md">
+                Começar grátis
               </Button>
             </div>
           </div>
