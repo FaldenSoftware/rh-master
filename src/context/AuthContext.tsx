@@ -50,13 +50,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           // Usar setTimeout para evitar deadlock
           setTimeout(async () => {
-            const user = await getCurrentUser();
-            setAuthState({
-              user,
-              isAuthenticated: !!user,
-              isLoading: false,
-              error: null,
-            });
+            try {
+              const user = await getCurrentUser();
+              setAuthState({
+                user,
+                isAuthenticated: !!user,
+                isLoading: false,
+                error: null,
+              });
+            } catch (error) {
+              console.error("Erro ao buscar perfil de usuário:", error);
+              setAuthState(prev => ({
+                ...prev,
+                isLoading: false,
+                error: (error as Error).message,
+              }));
+            }
           }, 0);
         } else if (event === "SIGNED_OUT") {
           setAuthState({
@@ -82,6 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const user = await loginUser(email, password);
+      
+      if (!user) {
+        throw new Error("Falha na autenticação. Usuário não encontrado.");
+      }
+      
       setAuthState({
         user,
         isAuthenticated: true,
@@ -102,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
     } catch (error) {
+      console.error("Erro ao fazer login:", error);
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,

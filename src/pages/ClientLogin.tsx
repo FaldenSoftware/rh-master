@@ -19,8 +19,8 @@ const ClientLogin = () => {
     e.preventDefault();
     try {
       await login(email, password);
-    } catch (error) {
-      // Erro já é tratado no contexto de autenticação
+    } catch (error: any) {
+      // O erro já é tratado no contexto de autenticação
       console.error("Erro no login:", error);
     }
   };

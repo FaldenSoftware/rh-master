@@ -23,6 +23,16 @@ interface Client {
   company?: string;
 }
 
+interface Profile {
+  id: string;
+  name: string;
+  role: string;
+  company?: string;
+  created_at: string;
+  updated_at: string;
+  email?: string; // Adicionado o campo email opcional ao tipo Profile
+}
+
 interface ClientsListProps {
   onEdit: (client: Client) => void;
   onDelete: (clientId: string) => void;
@@ -52,10 +62,10 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
       }
       
       // Map the data to the Client interface format
-      const formattedClients = (data || []).map(profile => ({
+      const formattedClients = (data || []).map((profile: Profile) => ({
         id: profile.id,
         name: profile.name,
-        email: profile.email || 'Email não disponível',
+        email: profile.email || 'Email não disponível', // Usa o email do perfil se disponível
         company: profile.company
       }));
       

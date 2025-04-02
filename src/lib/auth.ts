@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -27,11 +26,17 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
     
     if (error) {
       console.error('Erro ao buscar perfil:', error);
-      return null;
+      throw error;
     }
     
     if (!data) {
+      console.error('Perfil não encontrado para o usuário:', user.id);
       return null;
+    }
+    
+    if (!data.name || !data.role) {
+      console.error('Dados de perfil incompletos:', data);
+      throw new Error('Dados de perfil incompletos');
     }
     
     return {
@@ -43,7 +48,7 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
-    return null;
+    throw error;
   }
 };
 
