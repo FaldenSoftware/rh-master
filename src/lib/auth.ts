@@ -9,6 +9,7 @@ export interface AuthUser {
   name: string;
   role: "mentor" | "client";
   company?: string;
+  mentorId?: string; // Novo campo para clientes vinculados a um mentor
 }
 
 export interface AuthState {
@@ -62,6 +63,7 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
       name: profile.name,
       role: profile.role as "mentor" | "client", // Type assertion para garantir tipo correto
       company: profile.company,
+      mentorId: profile.mentor_id, // Adicionar o ID do mentor, se existir
     };
 
     return authUser;
@@ -113,6 +115,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       name: profile.name,
       role: profile.role as "mentor" | "client", // Type assertion para garantir tipo correto
       company: profile.company,
+      mentorId: profile.mentor_id, // Adicionar o ID do mentor, se existir
     };
     
     return authUser;
@@ -128,7 +131,8 @@ export const registerUser = async (
   password: string, 
   name: string, 
   role: "mentor" | "client",
-  company?: string
+  company?: string,
+  mentorId?: string // Novo parâmetro para vincular cliente a um mentor
 ): Promise<AuthUser> => {
   // 1. Registrar o usuário na autenticação
   const { data, error } = await supabase.auth.signUp({
@@ -138,7 +142,8 @@ export const registerUser = async (
       data: {
         name,
         role,
-        company
+        company,
+        mentor_id: mentorId // Incluir ID do mentor nos metadados, se fornecido
       }
     }
   });
@@ -185,6 +190,7 @@ export const registerUser = async (
       name: name,
       role: role,
       company: company,
+      mentorId: mentorId,
     };
     
     return authUser;
@@ -197,6 +203,7 @@ export const registerUser = async (
     name: profileData.name || name,
     role: profileData.role as "mentor" | "client" || role,
     company: profileData.company || company,
+    mentorId: profileData.mentor_id || mentorId,
   };
 
   return authUser;

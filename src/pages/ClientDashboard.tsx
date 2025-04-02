@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -36,21 +35,9 @@ const ClientDashboard = () => {
     if (!userId) return null;
 
     try {
-      // Buscar testes do cliente
+      // Usar a função RPC segura para buscar testes do cliente
       const { data: clientTests, error: testsError } = await supabase
-        .from('client_tests')
-        .select(`
-          id,
-          is_completed,
-          started_at,
-          completed_at,
-          tests (
-            id,
-            title,
-            description
-          )
-        `)
-        .eq('client_id', userId);
+        .rpc('get_client_tests_for_user', { user_id: userId });
 
       if (testsError) {
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
@@ -58,10 +45,7 @@ const ClientDashboard = () => {
 
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .rpc('get_profile_by_id', { user_id: userId });
 
       if (profileError) {
         console.error("Erro ao buscar perfil:", profileError);
@@ -75,7 +59,7 @@ const ClientDashboard = () => {
       return {
         pendingTests,
         completedTests,
-        profile: profileData || null,
+        profile: profileData?.[0] || null,
         totalTests: clientTests?.length || 0
       };
     } catch (error) {
