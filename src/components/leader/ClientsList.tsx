@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -10,7 +11,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,7 +49,19 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
         throw error;
       }
       
-      return data || [];
+      // Verificar se temos emails - estamos juntando auth.users e profiles
+      const clientsWithEmail = await Promise.all(
+        (data || []).map(async (profile) => {
+          // Buscar o usuário associado para obter o email
+          const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
+          return {
+            ...profile,
+            email: userData?.user?.email || 'Email não disponível'
+          };
+        })
+      );
+      
+      return clientsWithEmail || [];
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
       throw error;
@@ -57,7 +71,7 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
   const fetchClientsData = async () => {
     try {
       const clientsData = await fetchClients();
-      setClients(clientsData);
+      setClients(clientsData as Client[]);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar clientes",

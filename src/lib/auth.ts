@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -7,6 +8,13 @@ export interface AuthUser {
   name: string;
   role: string;
   company?: string;
+}
+
+export interface AuthState {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
 }
 
 export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
@@ -42,11 +50,9 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
 export const registerUser = async (
   email: string,
   password: string,
-  userData: {
-    name: string;
-    role: string;
-    company?: string;
-  }
+  name: string, 
+  role: "mentor" | "client", 
+  company?: string
 ): Promise<AuthUser | null> => {
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -54,9 +60,9 @@ export const registerUser = async (
       password,
       options: {
         data: {
-          name: userData.name,
-          role: userData.role,
-          company: userData.company
+          name,
+          role,
+          company
         }
       }
     });
@@ -69,9 +75,9 @@ export const registerUser = async (
       return {
         id: data.user.id,
         email: data.user.email || '',
-        name: userData.name,
-        role: userData.role,
-        company: userData.company
+        name,
+        role,
+        company
       };
     }
     
@@ -80,4 +86,65 @@ export const registerUser = async (
     console.error('Erro ao registrar usuário:', error);
     throw error;
   }
+};
+
+export const loginUser = async (email: string, password: string): Promise<AuthUser | null> => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (data.user) {
+      return await getUserProfile(data.user);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao fazer login:', error);
+    throw error;
+  }
+};
+
+export const logoutUser = async (): Promise<void> => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    throw error;
+  }
+};
+
+export const getCurrentUser = async (): Promise<AuthUser | null> => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (data.session?.user) {
+      return await getUserProfile(data.session.user);
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao obter usuário atual:', error);
+    return null;
+  }
+};
+
+export const hasAccess = (user: AuthUser, requiredRole: "mentor" | "client" | "any"): boolean => {
+  if (!user) return false;
+  
+  if (requiredRole === "any") return true;
+  
+  return user.role === requiredRole;
 };
