@@ -17,6 +17,7 @@ interface Client {
 const LeaderClients = () => {
   const { toast } = useToast();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [activeTab, setActiveTab] = useState("list");
 
   const handleEditClient = (client: Client) => {
     setSelectedClient(client);
@@ -33,12 +34,17 @@ const LeaderClients = () => {
     });
   };
 
+  const handleCancelInvite = () => {
+    // Switch back to list tab when cancel is clicked
+    setActiveTab("list");
+  };
+
   return (
-    <LeaderLayout>
+    <LeaderLayout title="Gestão de Clientes">
       <div className="container mx-auto py-6">
         <h1 className="text-2xl font-bold mb-6">Gestão de Clientes</h1>
         
-        <Tabs defaultValue="list">
+        <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="list">Lista de Clientes</TabsTrigger>
             <TabsTrigger value="invite">Convidar Cliente</TabsTrigger>
@@ -67,7 +73,7 @@ const LeaderClients = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ClientInviteForm />
+                <ClientInviteForm onCancel={handleCancelInvite} />
               </CardContent>
             </Card>
           </TabsContent>
