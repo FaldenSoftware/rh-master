@@ -35,17 +35,47 @@ const ClientDashboard = () => {
     if (!userId) return null;
 
     try {
-      // Usar a função RPC segura para buscar testes do cliente
+      // Buscar testes do cliente
       const { data: clientTests, error: testsError } = await supabase
-        .rpc('get_client_tests_for_user', { user_id: userId });
+        .from('client_tests')
+        .select('*')
+        .eq('client_id', userId);
 
       if (testsError) {
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
       }
 
+      // Buscar informações dos testes
+      const testIds = clientTests?.map(test => test.test_id) || [];
+      const { data: testsInfo, error: testsInfoError } = await supabase
+        .from('tests')
+        .select('*')
+        .in('id', testIds);
+      
+      if (testsInfoError) {
+        console.error("Erro ao buscar informações dos testes:", testsInfoError);
+      }
+
+      // Criar mapeamento de testes
+      const testsMap = new Map();
+      if (testsInfo) {
+        testsInfo.forEach(test => {
+          testsMap.set(test.id, test);
+        });
+      }
+
+      // Enriquecer os dados de client_tests com as informações dos testes
+      const enrichedClientTests = clientTests?.map(test => ({
+        ...test,
+        testInfo: testsMap.get(test.test_id) || { title: "Teste", description: "Sem descrição" }
+      })) || [];
+
       // Buscar perfil do usuário
       const { data: profileData, error: profileError } = await supabase
-        .rpc('get_profile_by_id', { user_id: userId });
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
       if (profileError) {
         console.error("Erro ao buscar perfil:", profileError);
@@ -53,14 +83,14 @@ const ClientDashboard = () => {
       }
 
       // Processar os dados para o formato necessário para o dashboard
-      const completedTests = clientTests?.filter(test => test.is_completed) || [];
-      const pendingTests = clientTests?.filter(test => !test.is_completed) || [];
+      const completedTests = enrichedClientTests?.filter(test => test.is_completed) || [];
+      const pendingTests = enrichedClientTests?.filter(test => !test.is_completed) || [];
 
       return {
         pendingTests,
         completedTests,
-        profile: profileData?.[0] || null,
-        totalTests: clientTests?.length || 0
+        profile: profileData || null,
+        totalTests: enrichedClientTests?.length || 0
       };
     } catch (error) {
       console.error("Erro ao buscar dados do dashboard:", error);
@@ -264,7 +294,7 @@ const ClientDashboard = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between mb-1">
-                          <h3 className="text-sm font-medium">{test.tests.title}</h3>
+                          <h3 className="text-sm font-medium">{test.testInfo.title}</h3>
                           <Badge variant="outline" className="text-amber-600 bg-amber-50 border-amber-200">
                             Pendente
                           </Badge>

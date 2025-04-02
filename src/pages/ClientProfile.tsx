@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ClientLayout from "@/components/client/ClientLayout";
@@ -26,10 +25,8 @@ const ClientProfile = () => {
   
   const { data: testResults = [], isLoading, isError } = useTestResults(userId || undefined);
   
-  // Selecionar o teste mais recente para exibir os dados
   const latestTest = testResults.length > 0 ? testResults[0] : null;
   
-  // Se estiver carregando, mostre um indicador de loading
   if (isLoading) {
     return (
       <ClientLayout title="Perfil Comportamental">
@@ -41,7 +38,6 @@ const ClientProfile = () => {
     );
   }
 
-  // Se ocorreu um erro, mostre uma mensagem de erro
   if (isError) {
     return (
       <ClientLayout title="Perfil Comportamental">
@@ -61,7 +57,6 @@ const ClientProfile = () => {
     );
   }
 
-  // Se não houver testes concluídos, exibir mensagem informativa
   if (!latestTest) {
     return (
       <ClientLayout title="Perfil Comportamental">
@@ -90,7 +85,7 @@ const ClientProfile = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {latestTest.profileScores && latestTest.profileScores.length > 0 ? (
+              {latestTest?.profileScores && latestTest.profileScores.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -107,38 +102,40 @@ const ClientProfile = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip formatter={(value) => `${Number(value).toFixed(0)}%`} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">Dados de perfil não disponíveis</p>
+                  <p className="text-muted-foreground">Complete um teste para visualizar seu perfil completo</p>
                 </div>
               )}
             </div>
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <h3 className="font-medium text-blue-800 mb-2">
-                Perfil Predominante: {latestTest.profileScores && latestTest.profileScores.length > 0 
+                Perfil Predominante: {latestTest?.profileScores && latestTest.profileScores.length > 0 
                   ? latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name 
                   : "Não determinado"}
               </h3>
               <p className="text-sm text-gray-700">
-                {latestTest.profileScores && latestTest.profileScores.length > 0 && 
-                 latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name === "Planejador" ? (
-                  "Pessoas com perfil planejador são organizadas, metódicas e priorizam estrutura e processos. Possuem excelente capacidade analítica e atenção aos detalhes."
-                ) : latestTest.profileScores && latestTest.profileScores.length > 0 && 
-                   latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name === "Analítico" ? (
-                  "Pessoas com perfil analítico são atentas aos detalhes, precisas e metódicas. Valorizam dados e fatos para tomar decisões e resolver problemas de forma lógica."
-                ) : latestTest.profileScores && latestTest.profileScores.length > 0 && 
-                   latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name === "Comunicador" ? (
-                  "Pessoas com perfil comunicador são expressivas, entusiasmadas e sociáveis. Gostam de interagir com os outros e têm grande capacidade de influência e persuasão."
-                ) : latestTest.profileScores && latestTest.profileScores.length > 0 && 
-                   latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name === "Executor" ? (
-                  "Pessoas com perfil executor são orientadas a resultados, decididas e práticas. Preferem agir rapidamente e são eficientes na implementação de tarefas."
-                ) : (
-                  "Complete mais testes para obter uma análise detalhada do seu perfil comportamental predominante."
-                )}
+                {latestTest?.profileScores && latestTest.profileScores.length > 0 ? 
+                  (() => {
+                    const dominantProfile = latestTest.profileScores.sort((a, b) => b.value - a.value)[0].name;
+                    switch (dominantProfile) {
+                      case "Planejador":
+                        return "Pessoas com perfil planejador são organizadas, metódicas e priorizam estrutura e processos. Possuem excelente capacidade analítica e atenção aos detalhes.";
+                      case "Analítico":
+                        return "Pessoas com perfil analítico são atentas aos detalhes, precisas e metódicas. Valorizam dados e fatos para tomar decisões e resolver problemas de forma lógica.";
+                      case "Comunicador":
+                        return "Pessoas com perfil comunicador são expressivas, entusiasmadas e sociáveis. Gostam de interagir com os outros e têm grande capacidade de influência e persuasão.";
+                      case "Executor":
+                        return "Pessoas com perfil executor são orientadas a resultados, decididas e práticas. Preferem agir rapidamente e são eficientes na implementação de tarefas.";
+                      default:
+                        return "Complete mais testes para obter uma análise detalhada do seu perfil comportamental predominante.";
+                    }
+                  })()
+                  : "Complete pelo menos um teste comportamental para visualizar seu perfil predominante."}
               </p>
             </div>
           </CardContent>
@@ -153,7 +150,7 @@ const ClientProfile = () => {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {latestTest.radarData && latestTest.radarData.length > 0 ? (
+              {latestTest?.radarData && latestTest.radarData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={latestTest.radarData}>
                     <PolarGrid />
@@ -161,27 +158,27 @@ const ClientProfile = () => {
                     <PolarRadiusAxis angle={30} domain={[0, 100]} />
                     <Radar name="Competências" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                     <Legend />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => `${Number(value).toFixed(0)}/100`} />
                   </RadarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">Dados de características não disponíveis</p>
+                  <p className="text-muted-foreground">Complete um teste para visualizar suas competências</p>
                 </div>
               )}
             </div>
             <div className="mt-4 p-4 bg-purple-50 rounded-lg">
               <h3 className="font-medium text-purple-800 mb-2">
-                Destaque: {latestTest.radarData && latestTest.radarData.length > 0 
+                Destaque: {latestTest?.radarData && latestTest.radarData.length > 0 
                   ? latestTest.radarData.sort((a, b) => b.value - a.value)[0].subject 
                   : "Não determinado"}
               </h3>
               <p className="text-sm text-gray-700">
-                {latestTest.radarData && latestTest.radarData.length > 0 ? (
+                {latestTest?.radarData && latestTest.radarData.length > 0 ? (
                   `Você demonstra alta capacidade em ${latestTest.radarData.sort((a, b) => b.value - a.value)[0].subject}, 
                   característica muito valorizada em ambientes profissionais dinâmicos.`
                 ) : (
-                  "Complete mais testes para obter uma análise detalhada das suas características comportamentais."
+                  "Complete um teste comportamental para visualizar suas características em destaque."
                 )}
               </p>
             </div>

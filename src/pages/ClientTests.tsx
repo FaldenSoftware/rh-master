@@ -11,11 +11,11 @@ import ClientLayout from "@/components/client/ClientLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthUser } from "@/lib/auth";
 
 // Interface para os dados dos testes
 interface TestData {
   id: string;
+  client_test_id: string;
   title: string;
   description: string | null;
   icon: any;
@@ -39,6 +39,7 @@ const iconMap: Record<string, any> = {
 const ClientTests = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isStartingTest, setIsStartingTest] = useState<string | null>(null);
 
   // Função para buscar os testes do usuário atual
   const fetchUserTests = async () => {
@@ -53,17 +54,7 @@ const ClientTests = () => {
       // Buscar todos os testes associados ao usuário (cliente)
       const { data: clientTests, error: clientTestsError } = await supabase
         .from('client_tests')
-        .select(`
-          id,
-          is_completed,
-          started_at,
-          completed_at,
-          tests (
-            id,
-            title,
-            description
-          )
-        `)
+        .select('*')
         .eq('client_id', session.user.id);
       
       if (clientTestsError) {
@@ -75,25 +66,42 @@ const ClientTests = () => {
         return [];
       }
       
+      // Buscar informações dos testes
+      const { data: testsInfo, error: testsInfoError } = await supabase
+        .from('tests')
+        .select('*')
+        .in('id', clientTests.map(test => test.test_id));
+      
+      if (testsInfoError) {
+        throw new Error(`Erro ao buscar informações dos testes: ${testsInfoError.message}`);
+      }
+      
       // Transformar os dados para o formato esperado pelo componente
-      const formattedTests: TestData[] = clientTests.map((test: any) => {
-        // Definir valores padrão para categorias e ícones baseados em alguma lógica
-        const category = "comportamental"; // Podemos melhorar isso no futuro
-        const iconKey = category === "comportamental" ? "brain" : "clipboard";
+      const formattedTests: TestData[] = [];
+      
+      clientTests.forEach(test => {
+        const testInfo = testsInfo?.find(t => t.id === test.test_id);
         
-        return {
-          id: test.tests.id,
-          title: test.tests.title,
-          description: test.tests.description || "Sem descrição disponível",
-          status: test.is_completed ? "concluído" : "pendente",
-          timeEstimate: "20 minutos", // Podemos adicionar esse campo na tabela de testes no futuro
-          icon: iconMap[iconKey],
-          category: category,
-          startedAt: test.started_at,
-          completedAt: test.completed_at,
-          dueDate: test.is_completed ? undefined : "15/06/2023", // Placeholder, pode ser melhorado
-          completedDate: test.is_completed ? (test.completed_at ? new Date(test.completed_at).toLocaleDateString('pt-BR') : "Data não registrada") : undefined
-        };
+        if (testInfo) {
+          // Definir valores padrão para categorias e ícones
+          const category = "comportamental"; 
+          const iconKey = category === "comportamental" ? "brain" : "clipboard";
+          
+          formattedTests.push({
+            id: testInfo.id,
+            client_test_id: test.id,
+            title: testInfo.title,
+            description: testInfo.description || "Teste comportamental para avaliar suas habilidades e perfil profissional.",
+            status: test.is_completed ? "concluído" : "pendente",
+            timeEstimate: "20 minutos",
+            icon: iconMap[iconKey],
+            category: category,
+            startedAt: test.started_at,
+            completedAt: test.completed_at,
+            dueDate: test.is_completed ? undefined : "Em aberto",
+            completedDate: test.is_completed ? (test.completed_at ? new Date(test.completed_at).toLocaleDateString('pt-BR') : "Data não registrada") : undefined
+          });
+        }
       });
       
       return formattedTests;
@@ -105,7 +113,7 @@ const ClientTests = () => {
   };
 
   // Usar React Query para gerenciar o estado da busca
-  const { data: testData = [], isLoading, isError, error } = useQuery({
+  const { data: testData = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['clientTests'],
     queryFn: fetchUserTests,
     retry: 1,
@@ -123,15 +131,48 @@ const ClientTests = () => {
   }, [isError, error, toast]);
 
   // Função para iniciar um teste
-  const handleStartTest = (testId: string) => {
-    // Aqui você poderia redirecionar para a página específica do teste
-    // ou atualizar o status do teste para "iniciado"
-    console.log(`Iniciando teste ${testId}`);
-    toast({
-      title: "Teste iniciado",
-      description: "Você será redirecionado para o teste em breve.",
-    });
-    // navigate(`/client/test/${testId}`);
+  const handleStartTest = async (test: TestData) => {
+    setIsStartingTest(test.client_test_id);
+    
+    try {
+      // Atualizar o status do teste para iniciado
+      const { error } = await supabase
+        .from('client_tests')
+        .update({
+          started_at: new Date().toISOString()
+        })
+        .eq('id', test.client_test_id);
+        
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Teste iniciado",
+        description: "Você será redirecionado para o teste em breve.",
+      });
+      
+      // Refetch dados para atualizar a interface
+      refetch();
+      
+      // Aqui você redirecionaria para a página do teste específico
+      setTimeout(() => {
+        // navigate(`/client/test/${test.id}`);
+        toast({
+          title: "Página em desenvolvimento",
+          description: "A página do teste ainda está sendo implementada.",
+        });
+        setIsStartingTest(null);
+      }, 1500);
+    } catch (error) {
+      console.error("Erro ao iniciar teste:", error);
+      toast({
+        title: "Erro ao iniciar teste",
+        description: error instanceof Error ? error.message : "Ocorreu um erro desconhecido",
+        variant: "destructive",
+      });
+      setIsStartingTest(null);
+    }
   };
 
   // Função para ver os resultados de um teste
@@ -141,7 +182,7 @@ const ClientTests = () => {
       title: "Carregando resultados",
       description: "Os resultados do teste serão exibidos em breve.",
     });
-    // navigate(`/client/test/${testId}/results`);
+    navigate(`/client/profile`);
   };
 
   // Renderizar estados de carregamento ou erro
@@ -168,7 +209,7 @@ const ClientTests = () => {
           {testData.filter(test => test.status === "pendente").length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2">
               {testData.filter(test => test.status === "pendente").map((test) => (
-                <Card key={test.id} className="overflow-hidden">
+                <Card key={test.client_test_id} className="overflow-hidden">
                   <CardHeader className="bg-gray-50 pb-4">
                     <div className="flex justify-between items-start">
                       <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
@@ -196,9 +237,11 @@ const ClientTests = () => {
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-muted-foreground">Progresso</span>
-                          <span className="font-medium">0%</span>
+                          <span className="font-medium">
+                            {test.startedAt ? "Iniciado" : "0%"}
+                          </span>
                         </div>
-                        <Progress value={0} className="h-2" />
+                        <Progress value={test.startedAt ? 30 : 0} className="h-2" />
                       </div>
                       
                       <div className="flex items-center justify-between text-sm">
@@ -213,7 +256,18 @@ const ClientTests = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="border-t bg-gray-50 py-3">
-                    <Button className="w-full" onClick={() => handleStartTest(test.id)}>Iniciar Teste</Button>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => handleStartTest(test)}
+                      disabled={isStartingTest === test.client_test_id}
+                    >
+                      {isStartingTest === test.client_test_id ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Iniciando...
+                        </>
+                      ) : test.startedAt ? "Continuar Teste" : "Iniciar Teste"}
+                    </Button>
                   </CardFooter>
                 </Card>
               ))}
@@ -236,7 +290,7 @@ const ClientTests = () => {
           {testData.filter(test => test.status === "concluído").length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2">
               {testData.filter(test => test.status === "concluído").map((test) => (
-                <Card key={test.id} className="overflow-hidden">
+                <Card key={test.client_test_id} className="overflow-hidden">
                   <CardHeader className="bg-gray-50 pb-4">
                     <div className="flex justify-between items-start">
                       <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">

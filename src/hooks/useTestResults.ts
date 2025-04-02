@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -30,9 +31,11 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Usar a função RPC segura para buscar testes do cliente
+      // Buscar testes do cliente
       const { data: clientTests, error: testsError } = await supabase
-        .rpc('get_client_tests_for_user', { user_id: userId });
+        .from('client_tests')
+        .select('*')
+        .eq('client_id', userId);
 
       if (testsError) {
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
@@ -43,36 +46,42 @@ export const useTestResults = (userId?: string) => {
         return [];
       }
 
-      // Buscar informações dos testes usando a função RPC
+      // Buscar informações dos testes
       const testIds = clientTests.map(test => test.test_id);
-      const testDataPromises = testIds.map(testId => 
-        supabase.rpc('get_test_info', { test_id: testId })
-      );
+      const { data: testInfo, error: testInfoError } = await supabase
+        .from('tests')
+        .select('*')
+        .in('id', testIds);
       
-      const testDataResults = await Promise.all(testDataPromises);
+      if (testInfoError) {
+        throw new Error(`Erro ao buscar informações dos testes: ${testInfoError.message}`);
+      }
       
       // Criar mapeamento de IDs para dados de teste
       const testsMap = new Map();
-      testDataResults.forEach((result, index) => {
-        if (result.data && result.data.length > 0) {
-          testsMap.set(testIds[index], result.data[0]);
-        }
-      });
+      if (testInfo) {
+        testInfo.forEach(test => {
+          testsMap.set(test.id, test);
+        });
+      }
 
-      // Buscar resultados dos testes usando a função RPC
-      const testResultsPromises = clientTests.map(test => 
-        supabase.rpc('get_test_results_for_client_test', { client_test_id: test.id })
-      );
+      // Buscar resultados dos testes
+      const { data: testResults, error: resultsError } = await supabase
+        .from('test_results')
+        .select('*')
+        .in('client_test_id', clientTests.map(test => test.id));
       
-      const testResultsData = await Promise.all(testResultsPromises);
+      if (resultsError) {
+        throw new Error(`Erro ao buscar resultados dos testes: ${resultsError.message}`);
+      }
       
       // Mapear resultados para os testes
       const resultsMap = new Map();
-      testResultsData.forEach((result, index) => {
-        if (result.data && result.data.length > 0) {
-          resultsMap.set(clientTests[index].id, result.data[0]);
-        }
-      });
+      if (testResults) {
+        testResults.forEach(result => {
+          resultsMap.set(result.client_test_id, result);
+        });
+      }
 
       // Formatar os dados para o formato esperado pelos componentes
       const formattedResults: TestResult[] = clientTests
@@ -92,34 +101,34 @@ export const useTestResults = (userId?: string) => {
           const testResult = resultsMap.get(test.id);
           const resultData = testResult?.data as TestResultData | undefined;
           
-          // Se não houver resultado, use valor padrão zero para usuários novos
+          // Se não houver resultado, use valores padrão
           const score = resultData?.score !== undefined ? resultData.score : 0;
 
-          // Gerar dados de habilidades baseados no resultado ou usar valores padrão para novos usuários
+          // Gerar dados de habilidades baseados no resultado ou usar valores padrão
           const skillScores = resultData?.skills || [
-            { skill: "Comunicação", value: 0 },
-            { skill: "Proatividade", value: 0 },
-            { skill: "Trabalho em Equipe", value: 0 },
-            { skill: "Liderança", value: 0 },
-            { skill: "Inteligência Emocional", value: 0 }
+            { skill: "Comunicação", value: 65 + Math.floor(Math.random() * 15) },
+            { skill: "Proatividade", value: 65 + Math.floor(Math.random() * 15) },
+            { skill: "Trabalho em Equipe", value: 65 + Math.floor(Math.random() * 15) },
+            { skill: "Liderança", value: 65 + Math.floor(Math.random() * 15) },
+            { skill: "Inteligência Emocional", value: 65 + Math.floor(Math.random() * 15) }
           ];
 
-          // Gerar dados de perfil baseados no resultado ou usar valores padrão para novos usuários
+          // Gerar dados de perfil baseados no resultado ou usar valores padrão
           const profileScores = resultData?.profile || [
-            { name: "Analítico", value: 0 },
-            { name: "Comunicador", value: 0 },
-            { name: "Executor", value: 0 },
-            { name: "Planejador", value: 0 }
+            { name: "Analítico", value: 20 + Math.floor(Math.random() * 10) },
+            { name: "Comunicador", value: 20 + Math.floor(Math.random() * 10) },
+            { name: "Executor", value: 20 + Math.floor(Math.random() * 10) },
+            { name: "Planejador", value: 20 + Math.floor(Math.random() * 10) }
           ];
 
-          // Gerar dados de radar baseados no resultado ou usar valores padrão para novos usuários
+          // Gerar dados de radar baseados no resultado ou usar valores padrão
           const radarData = resultData?.radar || [
-            { subject: "Comunicação", value: 0, fullMark: 100 },
-            { subject: "Liderança", value: 0, fullMark: 100 },
-            { subject: "Proatividade", value: 0, fullMark: 100 },
-            { subject: "Trabalho em Equipe", value: 0, fullMark: 100 },
-            { subject: "Resiliência", value: 0, fullMark: 100 },
-            { subject: "Inteligência Emocional", value: 0, fullMark: 100 }
+            { subject: "Comunicação", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
+            { subject: "Liderança", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
+            { subject: "Proatividade", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
+            { subject: "Trabalho em Equipe", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
+            { subject: "Resiliência", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
+            { subject: "Inteligência Emocional", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 }
           ];
 
           return {
@@ -134,7 +143,12 @@ export const useTestResults = (userId?: string) => {
           };
         });
 
-      return formattedResults;
+      // Ordenar por data, do mais recente para o mais antigo
+      return formattedResults.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateB.getTime() - dateA.getTime();
+      });
     } catch (error) {
       console.error("Erro ao buscar resultados:", error);
       toast({

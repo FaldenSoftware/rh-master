@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,31 +29,52 @@ const ClientResults = () => {
 
   const { data: testResults = [], isLoading, isError } = useTestResults(userId || undefined);
   
-  // Gerar dados para o gráfico de progresso mensal baseado nos resultados
   const generateMonthlyProgressData = () => {
-    const lastSixMonths = [];
-    const currentDate = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const month = new Date(currentDate);
-      month.setMonth(currentDate.getMonth() - i);
-      
-      // Nomes dos meses em português
-      const monthName = month.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-      const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-      
-      lastSixMonths.push({
-        month: capitalizedMonth,
-        score: 65 + Math.floor(Math.random() * 3) * 5 + i * 3 // Valor base + variação aleatória + progressão
+    if (testResults.length >= 2) {
+      const sortedResults = [...testResults].sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateA.getTime() - dateB.getTime();
       });
+      
+      return sortedResults.map(result => ({
+        month: new Date(result.date.split('/').reverse().join('-'))
+          .toLocaleDateString('pt-BR', { month: 'short' })
+          .replace('.', '')
+          .charAt(0).toUpperCase() + 
+          new Date(result.date.split('/').reverse().join('-'))
+          .toLocaleDateString('pt-BR', { month: 'short' })
+          .replace('.', '')
+          .slice(1),
+        score: result.score
+      }));
+    } else {
+      const lastSixMonths = [];
+      const currentDate = new Date();
+      
+      for (let i = 5; i >= 0; i--) {
+        const month = new Date(currentDate);
+        month.setMonth(currentDate.getMonth() - i);
+        
+        const monthName = month.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        
+        const score = i === 0 && testResults.length > 0 
+          ? testResults[0].score 
+          : 65 + Math.floor(Math.random() * 3) * 5 + i * 3;
+        
+        lastSixMonths.push({
+          month: capitalizedMonth,
+          score: score
+        });
+      }
+      
+      return lastSixMonths;
     }
-    
-    return lastSixMonths;
   };
   
   const monthlyProgressData = generateMonthlyProgressData();
 
-  // Se estiver carregando, mostre um indicador de loading
   if (isLoading) {
     return (
       <ClientLayout title="Resultados">
@@ -66,7 +86,6 @@ const ClientResults = () => {
     );
   }
 
-  // Se ocorreu um erro, mostre uma mensagem de erro
   if (isError) {
     return (
       <ClientLayout title="Resultados">
@@ -96,7 +115,6 @@ const ClientResults = () => {
           <TabsTrigger value="reports">Relatórios</TabsTrigger>
         </TabsList>
         
-        {/* Visão Geral */}
         <TabsContent value="overview">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
@@ -157,7 +175,7 @@ const ClientResults = () => {
                       <PolarRadiusAxis angle={30} domain={[0, 100]} />
                       <Radar name="Perfil" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                       <Legend />
-                      <Tooltip />
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(0)}/100`} />
                     </RadarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -172,7 +190,6 @@ const ClientResults = () => {
           </div>
         </TabsContent>
         
-        {/* Testes Realizados */}
         <TabsContent value="tests">
           <Card>
             <CardHeader>
@@ -248,7 +265,6 @@ const ClientResults = () => {
           </Card>
         </TabsContent>
         
-        {/* Perfil Comportamental */}
         <TabsContent value="profile">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
@@ -279,7 +295,7 @@ const ClientResults = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(0)}%`} />
                       <Legend />
                     </RechartsPieChart>
                   </ResponsiveContainer>
@@ -325,7 +341,7 @@ const ClientResults = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" domain={[0, 100]} />
                       <YAxis type="category" dataKey="skill" />
-                      <Tooltip />
+                      <Tooltip formatter={(value) => `${Number(value).toFixed(0)}/100`} />
                       <Legend />
                       <Bar dataKey="value" name="Pontuação" fill="#8884d8" />
                     </RechartsBarChart>
@@ -359,7 +375,6 @@ const ClientResults = () => {
           </div>
         </TabsContent>
         
-        {/* Relatórios */}
         <TabsContent value="reports">
           <Card>
             <CardHeader>
