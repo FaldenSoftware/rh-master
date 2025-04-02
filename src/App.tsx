@@ -23,6 +23,7 @@ import ClientResults from "./pages/ClientResults";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAccount from "./pages/ClientAccount";
 import ClientLogin from "./pages/ClientLogin";
+import ClientRegister from "./pages/ClientRegister"; // Nova página
 import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/client/login" element={<ClientLogin />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/client/register" element={<ClientRegister />} />
                 
                 {/* Leader (Mentor) Routes - Protected */}
                 <Route 

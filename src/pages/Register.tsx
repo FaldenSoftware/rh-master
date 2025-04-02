@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 
 const Register = () => {
@@ -14,7 +13,6 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"mentor" | "client">("client");
   const [company, setCompany] = useState("");
   const { register, isLoading } = useAuth();
   const { toast } = useToast();
@@ -41,7 +39,8 @@ const Register = () => {
     }
     
     try {
-      await register(email, password, name, role, company);
+      // Sempre registra como mentor
+      await register(email, password, name, "mentor", company);
     } catch (error) {
       // Erro já é tratado no contexto de autenticação
       console.error("Erro no registro:", error);
@@ -52,9 +51,9 @@ const Register = () => {
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Criar Conta de Mentor</CardTitle>
           <CardDescription className="text-center">
-            Preencha os dados abaixo para se registrar
+            Registre-se como mentor para começar a convidar seus clientes
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -108,36 +107,18 @@ const Register = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="role">Tipo de Conta</Label>
-              <Select 
-                value={role} 
-                onValueChange={(value: "mentor" | "client") => setRole(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de conta" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="client">Cliente</SelectItem>
-                  <SelectItem value="mentor">Mentor</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="company">Empresa</Label>
+              <Input
+                id="company"
+                type="text"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Digite o nome da sua empresa (opcional)"
+              />
             </div>
             
-            {role === "client" && (
-              <div className="space-y-2">
-                <Label htmlFor="company">Empresa</Label>
-                <Input
-                  id="company"
-                  type="text"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Digite o nome da sua empresa (opcional)"
-                />
-              </div>
-            )}
-            
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Registrando..." : "Registrar"}
+              {isLoading ? "Registrando..." : "Registrar como Mentor"}
             </Button>
           </form>
         </CardContent>
