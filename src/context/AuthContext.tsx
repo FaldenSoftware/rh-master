@@ -35,11 +35,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: null,
         });
       } catch (error) {
+        console.error("Erro ao verificar usuário:", error);
         setAuthState({
           user: null,
           isAuthenticated: false,
           isLoading: false,
-          error: (error as Error).message,
+          error: error instanceof Error ? error.message : "Erro ao verificar usuário",
         });
       }
     };
@@ -47,11 +48,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Configurar listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
+        
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
           // Usar setTimeout para evitar deadlock
           setTimeout(async () => {
             try {
               const user = await getCurrentUser();
+              console.log("User fetched after sign in:", user);
+              
               setAuthState({
                 user,
                 isAuthenticated: !!user,
@@ -63,11 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setAuthState(prev => ({
                 ...prev,
                 isLoading: false,
-                error: (error as Error).message,
+                error: error instanceof Error ? error.message : "Erro ao buscar perfil",
               }));
             }
           }, 0);
         } else if (event === "SIGNED_OUT") {
+          console.log("User signed out");
           setAuthState({
             user: null,
             isAuthenticated: false,
@@ -90,12 +96,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      console.log("Attempting login for:", email);
       const user = await loginUser(email, password);
       
       if (!user) {
+        console.error("Login successful but user not found");
         throw new Error("Falha na autenticação. Usuário não encontrado.");
       }
       
+      console.log("Login successful for user:", user);
       setAuthState({
         user,
         isAuthenticated: true,
@@ -117,16 +126,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error("Erro ao fazer login:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Ocorreu um erro ao fazer login. Tente novamente.";
+        
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: (error as Error).message,
+        error: errorMessage,
       }));
       
       toast({
         variant: "destructive",
         title: "Erro ao fazer login",
-        description: (error as Error).message,
+        description: errorMessage,
       });
     }
   };
@@ -149,16 +162,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       navigate("/");
     } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Ocorreu um erro ao fazer logout. Tente novamente.";
+        
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: (error as Error).message,
+        error: errorMessage,
       }));
       
       toast({
         variant: "destructive",
         title: "Erro ao fazer logout",
-        description: (error as Error).message,
+        description: errorMessage,
       });
     }
   };
@@ -173,7 +190,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
     
     try {
+      console.log("Registering user:", { email, name, role, company });
       const user = await registerUser(email, password, name, role, company);
+      
+      if (!user) {
+        console.error("Registration successful but user not found");
+        throw new Error("Falha no registro. Tente novamente.");
+      }
+      
+      console.log("Registration successful for user:", user);
       setAuthState({
         user,
         isAuthenticated: true,
@@ -194,16 +219,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
     } catch (error) {
+      console.error("Erro ao registrar:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Ocorreu um erro ao registrar. Tente novamente.";
+        
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,
-        error: (error as Error).message,
+        error: errorMessage,
       }));
       
       toast({
         variant: "destructive",
         title: "Erro ao registrar",
-        description: (error as Error).message,
+        description: errorMessage,
       });
     }
   };

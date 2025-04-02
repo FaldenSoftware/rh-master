@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +19,7 @@ export interface AuthState {
 
 export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
   try {
+    // Primeiro tenta buscar o perfil do usuário
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -34,9 +36,20 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       return null;
     }
     
+    // Verifica se os dados essenciais estão presentes
     if (!data.name || !data.role) {
       console.error('Dados de perfil incompletos:', data);
-      throw new Error('Dados de perfil incompletos');
+      
+      // Tenta criar um perfil padrão se não houver um perfil completo
+      const defaultProfile: AuthUser = {
+        id: user.id,
+        email: user.email || '',
+        name: 'Usuário',
+        role: 'client',
+        company: data.company
+      };
+      
+      return defaultProfile;
     }
     
     return {
@@ -105,7 +118,21 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
     }
     
     if (data.user) {
-      return await getUserProfile(data.user);
+      try {
+        const profile = await getUserProfile(data.user);
+        return profile;
+      } catch (profileError) {
+        console.error('Erro ao buscar perfil após login:', profileError);
+        
+        // Fallback para um perfil básico se não conseguir buscar o perfil
+        return {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: 'Usuário',
+          role: 'client',
+          company: undefined
+        };
+      }
     }
     
     return null;
@@ -136,7 +163,20 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     }
     
     if (data.session?.user) {
-      return await getUserProfile(data.session.user);
+      try {
+        return await getUserProfile(data.session.user);
+      } catch (profileError) {
+        console.error('Erro ao buscar perfil do usuário atual:', profileError);
+        
+        // Fallback para um perfil básico
+        return {
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          name: 'Usuário',
+          role: 'client',
+          company: undefined
+        };
+      }
     }
     
     return null;
@@ -146,7 +186,7 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
   }
 };
 
-export const hasAccess = (user: AuthUser, requiredRole: "mentor" | "client" | "any"): boolean => {
+export const hasAccess = (user: AuthUser | null, requiredRole: "mentor" | "client" | "any"): boolean => {
   if (!user) return false;
   
   if (requiredRole === "any") return true;
