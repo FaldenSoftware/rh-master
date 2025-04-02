@@ -7,6 +7,7 @@ import ClientsList from "@/components/leader/ClientsList";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TestResult } from "@/types/models";
 
 interface Client {
   id: string;
@@ -29,6 +30,14 @@ interface DashboardStats {
     name: string;
     valor: number;
   }>;
+}
+
+// Interface for test result data structure
+interface TestResultData {
+  skills?: Array<{ skill: string; value: number }>;
+  profile?: Array<{ name: string; value: number }>;
+  category?: string;
+  score?: number;
 }
 
 const LeaderDashboard = () => {
@@ -110,8 +119,11 @@ const LeaderDashboard = () => {
       
       if (results && results.length > 0) {
         results.forEach(result => {
-          if (result.data && result.data.skills) {
-            result.data.skills.forEach((skill: { skill: string, value: number }) => {
+          // Typecast the data as our expected TestResultData structure
+          const resultData = result.data as TestResultData;
+          
+          if (resultData && resultData.skills) {
+            resultData.skills.forEach(skill => {
               if (!categoriesCount[skill.skill]) {
                 categoriesCount[skill.skill] = { total: 0, count: 0 };
               }

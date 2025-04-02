@@ -15,6 +15,14 @@ interface ResultData {
   skillAverages: Array<{ subject: string; value: number; fullMark: number }>;
 }
 
+// Interface to define the expected structure of the test result data
+interface TestResultData {
+  profile?: Array<{ name: string; value: number }>;
+  category?: string;
+  skills?: Array<{ skill: string; value: number }>;
+  score?: number;
+}
+
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
 const LeaderResults = () => {
@@ -78,8 +86,11 @@ const LeaderResults = () => {
       };
       
       testResults?.forEach(result => {
-        if (result.data && result.data.profile) {
-          result.data.profile.forEach((profile: { name: string; value: number }) => {
+        // Typecast the data as TestResultData
+        const resultData = result.data as TestResultData;
+        
+        if (resultData && resultData.profile) {
+          resultData.profile.forEach(profile => {
             if (profileCounts[profile.name] !== undefined) {
               profileCounts[profile.name] += profile.value;
             }
@@ -101,8 +112,11 @@ const LeaderResults = () => {
       };
       
       testResults?.forEach(result => {
-        if (result.data && result.data.category) {
-          const category = result.data.category;
+        // Typecast the data as TestResultData
+        const resultData = result.data as TestResultData;
+        
+        if (resultData && resultData.category) {
+          const category = resultData.category;
           if (typeCounts[category] !== undefined) {
             typeCounts[category]++;
           } else if (category === "comportamental") {
@@ -129,8 +143,11 @@ const LeaderResults = () => {
       const skillTotals: Record<string, { total: number; count: number }> = {};
       
       testResults?.forEach(result => {
-        if (result.data && result.data.skills) {
-          result.data.skills.forEach((skill: { skill: string; value: number }) => {
+        // Typecast the data as TestResultData
+        const resultData = result.data as TestResultData;
+        
+        if (resultData && resultData.skills) {
+          resultData.skills.forEach(skill => {
             if (!skillTotals[skill.skill]) {
               skillTotals[skill.skill] = { total: 0, count: 0 };
             }
