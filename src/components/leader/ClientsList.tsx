@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Edit, Trash } from "lucide-react";
+import { MoreVertical, Edit, Trash, UserX } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,16 +30,18 @@ interface ClientsListProps {
 
 const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
   const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchClientsData();
   }, []);
 
-  // Função para buscar clientes
+  // Function to fetch clients
   const fetchClients = async () => {
     try {
-      // Buscar perfis com role=client
+      // Fetch profiles with role=client
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -49,19 +51,15 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
         throw error;
       }
       
-      // Verificar se temos emails - estamos juntando auth.users e profiles
-      const clientsWithEmail = await Promise.all(
-        (data || []).map(async (profile) => {
-          // Buscar o usuário associado para obter o email
-          const { data: userData } = await supabase.auth.admin.getUserById(profile.id);
-          return {
-            ...profile,
-            email: userData?.user?.email || 'Email não disponível'
-          };
-        })
-      );
+      // Map the data to the Client interface format
+      const formattedClients = (data || []).map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email || 'Email não disponível',
+        company: profile.company
+      }));
       
-      return clientsWithEmail || [];
+      return formattedClients;
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
       throw error;
@@ -70,16 +68,59 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
 
   const fetchClientsData = async () => {
     try {
+      setIsLoading(true);
+      setError(null);
       const clientsData = await fetchClients();
       setClients(clientsData as Client[]);
     } catch (error: any) {
+      console.error("Erro ao carregar clientes:", error);
+      setError(error.message || "Ocorreu um erro ao carregar a lista de clientes.");
       toast({
         title: "Erro ao carregar clientes",
         description: error.message || "Ocorreu um erro ao carregar a lista de clientes.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <p className="font-medium">Erro ao carregar clientes</p>
+        <p className="text-sm">{error}</p>
+        <Button 
+          onClick={fetchClientsData} 
+          variant="outline" 
+          size="sm" 
+          className="mt-2"
+        >
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (clients.length === 0) {
+    return (
+      <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
+        <UserX className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Sem clientes</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Você ainda não tem clientes registrados. Convide novos clientes para começar.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">

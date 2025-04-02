@@ -50,6 +50,7 @@ const LeaderDashboard = () => {
     monthlyData: [],
     resultadosData: []
   });
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     fetchDashboardData();
@@ -57,6 +58,7 @@ const LeaderDashboard = () => {
   
   const fetchDashboardData = async () => {
     try {
+      setIsLoading(true);
       // Fetch client count
       const { data: clients, error: clientsError } = await supabase
         .from('profiles')
@@ -167,6 +169,8 @@ const LeaderDashboard = () => {
         description: "Não foi possível carregar os dados do dashboard",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -189,94 +193,102 @@ const LeaderDashboard = () => {
       <div className="container mx-auto py-6">
         <h1 className="text-2xl font-bold mb-6">Dashboard do Mentor</h1>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.clientCount}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total de Testes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.testCount}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Testes Completos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.completedTests}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Testes Pendentes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingTests}</div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Testes Aplicados</CardTitle>
-              <CardDescription>Visão geral dos testes aplicados nos últimos 6 meses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={stats.monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="completos" fill="#8884d8" name="Testes Completos" />
-                  <Bar dataKey="pendentes" fill="#82ca9d" name="Testes Pendentes" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Resultados Médios</CardTitle>
-              <CardDescription>Médias de resultados por categoria</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={stats.resultadosData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="valor" stroke="#8884d8" activeDot={{ r: 8 }} name="Valor" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Clientes Recentes</CardTitle>
-            <CardDescription>
-              Seus clientes mais recentes e suas informações básicas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ClientsList onEdit={handleEditClient} onDelete={handleDeleteClient} />
-          </CardContent>
-        </Card>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.clientCount}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Testes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.testCount}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Testes Completos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.completedTests}</div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Testes Pendentes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.pendingTests}</div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Testes Aplicados</CardTitle>
+                  <CardDescription>Visão geral dos testes aplicados nos últimos 6 meses</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={stats.monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="completos" fill="#8884d8" name="Testes Completos" />
+                      <Bar dataKey="pendentes" fill="#82ca9d" name="Testes Pendentes" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resultados Médios</CardTitle>
+                  <CardDescription>Médias de resultados por categoria</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={stats.resultadosData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="valor" stroke="#8884d8" activeDot={{ r: 8 }} name="Valor" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Clientes Recentes</CardTitle>
+                <CardDescription>
+                  Seus clientes mais recentes e suas informações básicas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ClientsList onEdit={handleEditClient} onDelete={handleDeleteClient} />
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
     </LeaderLayout>
   );
