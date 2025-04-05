@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -14,11 +15,21 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
-  const { register, isLoading } = useAuth();
+  const { register, isLoading, error } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validações no lado cliente
+    if (!email || !password || !name) {
+      toast({
+        variant: "destructive",
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios",
+      });
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast({
@@ -50,12 +61,9 @@ const Register = () => {
     try {
       // Sempre registra como mentor
       await register(email, password, name, "mentor", company);
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Erro no registro",
-        description: error.message || "Ocorreu um erro ao registrar sua conta",
-      });
+    } catch (error) {
+      // Erro já tratado no AuthContext
+      console.error("Erro capturado na página de registro:", error);
     }
   };
 
@@ -131,6 +139,12 @@ const Register = () => {
                 placeholder="Digite o nome da sua empresa"
               />
             </div>
+            
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Registrando..." : "Registrar como Mentor"}

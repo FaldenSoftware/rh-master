@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthState, AuthUser, getCurrentUser, loginUser, logoutUser, registerUser } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
@@ -43,8 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // IMPORTANTE: Configurar o listener de eventos auth ANTES de verificar a sessão atual
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log("Auth state changed:", event);
         
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
     
+    // Depois de configurar o listener, verificar o usuário atual
     checkUser();
     
     return () => {
@@ -121,9 +124,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Ocorreu um erro ao fazer login. Tente novamente.";
+      
+      // Mensagens de erro mais amigáveis para problemas comuns
+      let errorMessage = "Ocorreu um erro ao fazer login. Tente novamente.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Credenciais inválidas. Verifique seu email e senha.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Email não confirmado. Verifique sua caixa de entrada.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
         
       setAuthState((prev) => ({
         ...prev,
@@ -186,6 +199,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log("Registering user:", { email, name, role, company });
+      
+      // Validação adicional para campos obrigatórios
+      if (!email || !password || !name) {
+        throw new Error("Preencha todos os campos obrigatórios");
+      }
+      
+      if (role === "mentor" && (!company || company.trim() === '')) {
+        throw new Error("Empresa é obrigatória para mentores");
+      }
+      
       const user = await registerUser(email, password, name, role, company);
       
       if (!user) {
@@ -216,15 +239,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error("Erro ao registrar:", error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "Ocorreu um erro ao registrar. Tente novamente.";
+      
+      // Mensagens de erro mais amigáveis para problemas comuns
+      let errorMessage = "Ocorreu um erro ao registrar. Tente novamente.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("Email already registered")) {
+          errorMessage = "Email já registrado. Faça login ou use outro email.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
         
       setAuthState((prev) => ({
         ...prev,
         isLoading: false,
         error: errorMessage,
       }));
+      
+      toast({
+        variant: "destructive",
+        title: "Erro ao registrar",
+        description: errorMessage,
+      });
       
       throw error;
     }

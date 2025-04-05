@@ -42,9 +42,9 @@ const ClientLogin = () => {
     
     try {
       await login(email, password);
-    } catch (error: any) {
+    } catch (error) {
       // O erro já é tratado no contexto de autenticação
-      console.error("Erro no login:", error);
+      console.error("Erro no login (capturado em ClientLogin):", error);
     }
   };
 
@@ -84,7 +84,7 @@ const ClientLogin = () => {
             </div>
             
             {error && (
-              <Alert variant="destructive" className="text-sm text-red-500 font-medium">
+              <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
