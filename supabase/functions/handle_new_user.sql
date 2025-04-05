@@ -6,12 +6,14 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 AS $$
 DECLARE
   company_value TEXT;
+  role_value TEXT;
 BEGIN
-  -- Extrair o valor da empresa dos metadados, ou definir como NULL se não existir
+  -- Extrair valores dos metadados
   company_value := NEW.raw_user_meta_data->>'company';
+  role_value := NEW.raw_user_meta_data->>'role';
   
-  -- Para mentores, empresa não pode ser NULL ou vazia
-  IF NEW.raw_user_meta_data->>'role' = 'mentor' AND (company_value IS NULL OR company_value = '') THEN
+  -- Para mentores, empresa é obrigatória
+  IF role_value = 'mentor' AND (company_value IS NULL OR company_value = '') THEN
     RAISE EXCEPTION 'Company is required for mentors';
   END IF;
 
@@ -24,7 +26,7 @@ BEGIN
   VALUES (
     NEW.id, 
     COALESCE(NEW.raw_user_meta_data->>'name', 'Usuário'),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
+    COALESCE(role_value, 'client'),
     company_value
   );
   RETURN NEW;

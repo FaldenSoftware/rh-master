@@ -77,6 +77,7 @@ const Register = () => {
       isValid = false;
     }
 
+    // Validação específica para empresa de mentores
     if (!company || company.trim() === '') {
       errors.company = "Empresa é obrigatória para mentores";
       isValid = false;
@@ -106,15 +107,20 @@ const Register = () => {
     try {
       console.log("Registrando mentor com empresa:", company);
       
-      // Certifica-se de que a empresa não é undefined ou string vazia
+      // Certifica-se de que a empresa não está vazia antes de enviar
       const companyValue = company.trim();
       if (!companyValue) {
         setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
+        toast({
+          variant: "destructive",
+          title: "Campo inválido",
+          description: "Empresa é obrigatória para mentores",
+        });
         setIsSubmitting(false);
         return;
       }
       
-      // Sempre registra como mentor
+      // Registra como mentor com a empresa
       await register(email, password, name.trim(), "mentor", companyValue);
       
       toast({
@@ -125,8 +131,13 @@ const Register = () => {
       // O redirecionamento já é tratado no AuthContext
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
+      
+      // Adiciona tratamento específico para erro relacionado à empresa
+      if (error instanceof Error && error.message.includes("Empresa é obrigatória")) {
+        setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
+      }
+      
       setIsSubmitting(false);
-      // O erro já é tratado pelo AuthContext, só precisamos resetar o estado de submissão
     }
   };
 
@@ -232,6 +243,7 @@ const Register = () => {
               {formErrors.company && (
                 <p className="text-xs text-red-500 mt-1">{formErrors.company}</p>
               )}
+              <p className="text-xs text-gray-500">Campo obrigatório para mentores</p>
             </div>
                         
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>

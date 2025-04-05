@@ -101,22 +101,24 @@ export const registerUser = async (
     }
     
     // Validate company field for mentors at the application level
-    if (role === "mentor" && (!company || company.trim() === '')) {
-      throw new Error("Empresa é obrigatória para mentores");
-    }
-    
-    // Certifique-se de que company está definido corretamente como string vazia se for undefined
-    const companyValue = company ? company.trim() : '';
-    
-    // Para mentores, empresa não pode ser vazia
-    if (role === "mentor" && companyValue === '') {
-      throw new Error("Empresa é obrigatória para mentores");
+    if (role === "mentor") {
+      if (!company) {
+        throw new Error("Empresa é obrigatória para mentores");
+      }
+      
+      const companyTrimmed = company.trim();
+      if (companyTrimmed === '') {
+        throw new Error("Empresa é obrigatória para mentores");
+      }
+      
+      // Use the trimmed company value
+      company = companyTrimmed;
     }
     
     const userMetadata = {
       name: name.trim(),
       role,
-      company: companyValue
+      company
     };
     
     console.log("Registrando usuário com metadados:", userMetadata);
@@ -181,7 +183,7 @@ export const registerUser = async (
           id: data.user.id,
           name: name.trim(),
           role,
-          company: companyValue
+          company
         });
       
       if (insertError) {
@@ -204,7 +206,7 @@ export const registerUser = async (
                 id: data.user.id,
                 name: name.trim(),
                 role,
-                company: companyValue
+                company
               });
             
             if (retryError) {
@@ -233,7 +235,7 @@ export const registerUser = async (
       email: data.user.email || '',
       name: name.trim(),
       role,
-      company: companyValue
+      company
     };
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
