@@ -95,15 +95,20 @@ export const registerUser = async (
       throw new Error("Empresa é obrigatória para mentores");
     }
     
+    // Certifique-se de que company esteja definida como string vazia se for undefined
+    const userMetadata = {
+      name,
+      role,
+      company: company || ''
+    };
+    
+    console.log("Registrando usuário com metadados:", userMetadata);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          name,
-          role,
-          company
-        }
+        data: userMetadata
       }
     });
     
@@ -120,7 +125,7 @@ export const registerUser = async (
     }
     
     // Aguardar um momento para garantir que o perfil foi criado pelo trigger
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     try {
       // Verifica se o perfil foi criado automaticamente pelo trigger
@@ -142,7 +147,7 @@ export const registerUser = async (
             id: data.user.id,
             name,
             role,
-            company
+            company: company || ''
           });
         
         if (insertError) {
@@ -160,7 +165,7 @@ export const registerUser = async (
       email: data.user.email || '',
       name,
       role,
-      company
+      company: company || ''
     };
     
   } catch (error) {

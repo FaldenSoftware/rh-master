@@ -15,11 +15,15 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, isLoading, error } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Limpar o estado de submissão
+    setIsSubmitting(true);
     
     // Validações no lado cliente
     if (!email || !password || !name) {
@@ -28,6 +32,7 @@ const Register = () => {
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios",
       });
+      setIsSubmitting(false);
       return;
     }
     
@@ -37,6 +42,7 @@ const Register = () => {
         title: "Senhas não coincidem",
         description: "Por favor, verifique se as senhas digitadas são iguais",
       });
+      setIsSubmitting(false);
       return;
     }
     
@@ -46,24 +52,29 @@ const Register = () => {
         title: "Senha muito curta",
         description: "A senha deve ter pelo menos 6 caracteres",
       });
+      setIsSubmitting(false);
       return;
     }
     
-    if (!company.trim()) {
+    if (!company || company.trim() === '') {
       toast({
         variant: "destructive",
         title: "Empresa é obrigatória",
         description: "Por favor, informe o nome da sua empresa",
       });
+      setIsSubmitting(false);
       return;
     }
     
     try {
+      console.log("Registrando mentor com empresa:", company);
       // Sempre registra como mentor
-      await register(email, password, name, "mentor", company);
+      await register(email, password, name, "mentor", company.trim());
     } catch (error) {
-      // Erro já tratado no AuthContext
       console.error("Erro capturado na página de registro:", error);
+      // O erro já é tratado no AuthContext, não precisamos fazer nada aqui
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -146,8 +157,8 @@ const Register = () => {
               </Alert>
             )}
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Registrando..." : "Registrar como Mentor"}
+            <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
+              {isLoading || isSubmitting ? "Registrando..." : "Registrar como Mentor"}
             </Button>
           </form>
         </CardContent>

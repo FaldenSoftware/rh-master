@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isLoading, error, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const ClientLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     if (!email || !password) {
       toast({
@@ -37,14 +39,18 @@ const ClientLogin = () => {
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos",
       });
+      setIsSubmitting(false);
       return;
     }
     
     try {
+      console.log("Tentando fazer login com:", { email });
       await login(email, password);
     } catch (error) {
       // O erro já é tratado no contexto de autenticação
       console.error("Erro no login (capturado em ClientLogin):", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,8 +95,8 @@ const ClientLogin = () => {
               </Alert>
             )}
             
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Entrando..." : "Entrar"}
+            <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
+              {isLoading || isSubmitting ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </CardContent>

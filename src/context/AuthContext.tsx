@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate("/client");
       }
       
-      return user; // Return the user object to match the function signature
+      return user;
       
     } catch (error) {
       console.error("Erro ao registrar:", error);
@@ -246,6 +246,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error instanceof Error) {
         if (error.message.includes("Email already registered")) {
           errorMessage = "Email já registrado. Faça login ou use outro email.";
+        } else if (error.message.includes("Company is required for mentors")) {
+          errorMessage = "Empresa é obrigatória para mentores.";
+        } else if (error.message.includes("Database error saving new user")) {
+          errorMessage = "Erro ao salvar usuário. Verifique se todos os campos estão preenchidos corretamente.";
         } else {
           errorMessage = error.message;
         }
