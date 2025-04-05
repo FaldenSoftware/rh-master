@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -105,7 +106,7 @@ const Register = () => {
       
       const trimmedCompany = company.trim();
       
-      await register(
+      const user = await register(
         email.trim(), 
         password, 
         name.trim(), 
@@ -113,10 +114,14 @@ const Register = () => {
         trimmedCompany
       );
       
-      toast({
-        title: "Registro realizado com sucesso",
-        description: "Redirecionando para o painel...",
-      });
+      if (user) {
+        toast({
+          title: "Registro realizado com sucesso",
+          description: "Redirecionando para o painel...",
+        });
+      } else {
+        throw new Error("Falha ao registrar usuário. Tente novamente.");
+      }
       
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
@@ -253,7 +258,7 @@ const Register = () => {
             </div>
                         
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
-              {isLoading || isSubmitting ? (
+              {(isLoading || isSubmitting) ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Registrando...
