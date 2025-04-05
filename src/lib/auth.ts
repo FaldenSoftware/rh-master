@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -87,7 +86,7 @@ export const registerUser = async (
   try {
     console.log("Iniciando registro de usuário:", { email, name, role, company });
     
-    // Validate inputs more strictly
+    // Validar entradas com mais rigor
     if (!email || !email.includes('@') || !email.includes('.')) {
       throw new Error("Email inválido");
     }
@@ -100,7 +99,7 @@ export const registerUser = async (
       throw new Error("Nome é obrigatório");
     }
     
-    // Validate company field for mentors at the application level
+    // Validar campo empresa para mentores em nível de aplicação
     if (role === "mentor") {
       if (!company) {
         throw new Error("Empresa é obrigatória para mentores");
@@ -111,10 +110,11 @@ export const registerUser = async (
         throw new Error("Empresa é obrigatória para mentores");
       }
       
-      // Use the trimmed company value
+      // Usar o valor da empresa sem espaços
       company = companyTrimmed;
     }
     
+    // Preparar os metadados de usuário
     const userMetadata = {
       name: name.trim(),
       role,
@@ -123,7 +123,7 @@ export const registerUser = async (
     
     console.log("Registrando usuário com metadados:", userMetadata);
     
-    // Step 1: Registrar o usuário no authentication service
+    // Passo 1: Registrar o usuário no serviço de autenticação
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -147,18 +147,17 @@ export const registerUser = async (
       throw new Error("Falha ao criar usuário");
     }
     
-    // Step 2: Garantir que o perfil exista
-    // Verificar se o perfil foi criado automaticamente pelo trigger
+    // Passo 2: Verificar se o perfil foi criado pelo trigger
+    // Aguardar até 3 segundos para garantir que o perfil foi criado
     let profileCreated = false;
     let attempts = 0;
     const maxAttempts = 3;
     
-    // Aguardar até 3 segundos para garantir que o perfil foi criado pelo trigger
     while (!profileCreated && attempts < maxAttempts) {
       attempts++;
       await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
       
-      // Verifica se o perfil existe
+      // Verificar perfil
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -173,10 +172,15 @@ export const registerUser = async (
       }
     }
     
+    // Se o perfil não foi criado automaticamente, tentar criá-lo manualmente
     if (!profileCreated) {
       console.log("Perfil não criado automaticamente, criando perfil manualmente");
       
-      // Tenta criar o perfil manualmente se não foi criado automaticamente
+      // Validar novamente o campo empresa para mentores
+      if (role === "mentor" && (!company || company.trim() === '')) {
+        throw new Error("Empresa é obrigatória para mentores");
+      }
+      
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
@@ -192,14 +196,14 @@ export const registerUser = async (
         if (insertError.message.includes('violates row-level security policy')) {
           console.warn("Erro de RLS ao criar perfil. Tentando novamente com login.");
           
-          // Tenta fazer login e depois criar o perfil
+          // Tentar fazer login e depois criar o perfil
           const { error: loginError } = await supabase.auth.signInWithPassword({
             email, 
             password
           });
           
           if (!loginError) {
-            // Tenta criar o perfil novamente após login
+            // Tentar criar o perfil novamente após login
             const { error: retryError } = await supabase
               .from('profiles')
               .insert({
@@ -215,7 +219,7 @@ export const registerUser = async (
             }
           }
         } else if (!insertError.message.includes('duplicate key value')) {
-          // Ignora erro de chave duplicada (significa que o perfil já foi criado pelo trigger)
+          // Ignorar erro de chave duplicada (significa que o perfil já foi criado pelo trigger)
           throw new Error(`Erro ao criar perfil: ${insertError.message}`);
         }
       }

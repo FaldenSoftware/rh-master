@@ -17,6 +17,7 @@ BEGIN
     RAISE EXCEPTION 'Company is required for mentors';
   END IF;
 
+  -- Inserir perfil com todos os campos necessários
   INSERT INTO public.profiles (
     id, 
     name, 

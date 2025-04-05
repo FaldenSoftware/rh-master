@@ -77,7 +77,7 @@ const Register = () => {
       isValid = false;
     }
 
-    // Validação específica para empresa de mentores
+    // Validação de empresa para mentores (sempre verificamos, já que essa é uma página de registro de mentor)
     if (!company || company.trim() === '') {
       errors.company = "Empresa é obrigatória para mentores";
       isValid = false;
@@ -93,35 +93,28 @@ const Register = () => {
     // Limpa o estado de submissão
     setIsSubmitting(true);
     
-    // Validações no lado cliente
-    if (!validateForm()) {
-      setIsSubmitting(false);
-      toast({
-        variant: "destructive",
-        title: "Campos inválidos",
-        description: "Por favor, corrija os erros no formulário",
-      });
-      return;
-    }
-    
     try {
-      console.log("Registrando mentor com empresa:", company);
-      
-      // Certifica-se de que a empresa não está vazia antes de enviar
-      const companyValue = company.trim();
-      if (!companyValue) {
-        setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
+      // Validações no lado cliente
+      if (!validateForm()) {
+        setIsSubmitting(false);
         toast({
           variant: "destructive",
-          title: "Campo inválido",
-          description: "Empresa é obrigatória para mentores",
+          title: "Campos inválidos",
+          description: "Por favor, corrija os erros no formulário",
         });
-        setIsSubmitting(false);
         return;
       }
       
-      // Registra como mentor com a empresa
-      await register(email, password, name.trim(), "mentor", companyValue);
+      console.log("Registrando mentor com empresa:", company);
+      
+      // Tentamos registrar o usuário como mentor com todos os dados necessários
+      await register(
+        email.trim(), 
+        password, 
+        name.trim(), 
+        "mentor", 
+        company.trim() // Garantindo que a empresa não tenha espaços em branco no início ou fim
+      );
       
       toast({
         title: "Registro realizado com sucesso",
@@ -132,9 +125,26 @@ const Register = () => {
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
       
-      // Adiciona tratamento específico para erro relacionado à empresa
-      if (error instanceof Error && error.message.includes("Empresa é obrigatória")) {
-        setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
+      // Tratamento específico de erros
+      if (error instanceof Error) {
+        // Verifica se o erro está relacionado à empresa
+        if (error.message.toLowerCase().includes("empresa é obrigatória") || 
+            error.message.toLowerCase().includes("company is required")) {
+          setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
+          
+          toast({
+            variant: "destructive",
+            title: "Campo inválido",
+            description: "Empresa é obrigatória para mentores",
+          });
+        } else {
+          // Para outros erros, exibimos a mensagem completa
+          toast({
+            variant: "destructive",
+            title: "Erro ao registrar",
+            description: error.message,
+          });
+        }
       }
       
       setIsSubmitting(false);
