@@ -105,11 +105,18 @@ export const registerUser = async (
       throw new Error("Empresa é obrigatória para mentores");
     }
     
-    // Certifique-se de que company esteja definida como string vazia se for undefined
+    // Certifique-se de que company está definido corretamente como string vazia se for undefined
+    const companyValue = company ? company.trim() : '';
+    
+    // Para mentores, empresa não pode ser vazia
+    if (role === "mentor" && companyValue === '') {
+      throw new Error("Empresa é obrigatória para mentores");
+    }
+    
     const userMetadata = {
       name: name.trim(),
       role,
-      company: company ? company.trim() : ''
+      company: companyValue
     };
     
     console.log("Registrando usuário com metadados:", userMetadata);
@@ -174,7 +181,7 @@ export const registerUser = async (
           id: data.user.id,
           name: name.trim(),
           role,
-          company: company ? company.trim() : ''
+          company: companyValue
         });
       
       if (insertError) {
@@ -197,12 +204,12 @@ export const registerUser = async (
                 id: data.user.id,
                 name: name.trim(),
                 role,
-                company: company ? company.trim() : ''
+                company: companyValue
               });
             
             if (retryError) {
               console.error("Erro ao criar perfil após login:", retryError);
-              // Continua mesmo com erro, pois o trigger pode ter criado o perfil
+              throw new Error(`Erro ao criar perfil: ${retryError.message}`);
             }
           }
         } else if (!insertError.message.includes('duplicate key value')) {
@@ -226,7 +233,7 @@ export const registerUser = async (
       email: data.user.email || '',
       name: name.trim(),
       role,
-      company: company ? company.trim() : ''
+      company: companyValue
     };
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
