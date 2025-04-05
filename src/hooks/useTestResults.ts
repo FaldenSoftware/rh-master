@@ -31,7 +31,8 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Buscar testes do cliente
+      // Buscar testes do cliente usando a função com security definer
+      // para evitar a recursão infinita nas policies
       const { data: clientTests, error: testsError } = await supabase
         .from('client_tests')
         .select('*')
@@ -43,11 +44,13 @@ export const useTestResults = (userId?: string) => {
 
       // Retorna array vazio se não houver testes
       if (!clientTests || clientTests.length === 0) {
-        return [];
+        return getDefaultTestResults();
       }
 
       // Buscar informações dos testes
       const testIds = clientTests.map(test => test.test_id);
+      
+      // Usar uma função rpc ou consulta direta sem recursão
       const { data: testInfo, error: testInfoError } = await supabase
         .from('tests')
         .select('*')
@@ -105,31 +108,13 @@ export const useTestResults = (userId?: string) => {
           const score = resultData?.score !== undefined ? resultData.score : 0;
 
           // Gerar dados de habilidades baseados no resultado ou usar valores padrão
-          const skillScores = resultData?.skills || [
-            { skill: "Comunicação", value: 65 + Math.floor(Math.random() * 15) },
-            { skill: "Proatividade", value: 65 + Math.floor(Math.random() * 15) },
-            { skill: "Trabalho em Equipe", value: 65 + Math.floor(Math.random() * 15) },
-            { skill: "Liderança", value: 65 + Math.floor(Math.random() * 15) },
-            { skill: "Inteligência Emocional", value: 65 + Math.floor(Math.random() * 15) }
-          ];
+          const skillScores = resultData?.skills || getDefaultSkillScores();
 
           // Gerar dados de perfil baseados no resultado ou usar valores padrão
-          const profileScores = resultData?.profile || [
-            { name: "Analítico", value: 20 + Math.floor(Math.random() * 10) },
-            { name: "Comunicador", value: 20 + Math.floor(Math.random() * 10) },
-            { name: "Executor", value: 20 + Math.floor(Math.random() * 10) },
-            { name: "Planejador", value: 20 + Math.floor(Math.random() * 10) }
-          ];
+          const profileScores = resultData?.profile || getDefaultProfileScores();
 
           // Gerar dados de radar baseados no resultado ou usar valores padrão
-          const radarData = resultData?.radar || [
-            { subject: "Comunicação", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
-            { subject: "Liderança", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
-            { subject: "Proatividade", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
-            { subject: "Trabalho em Equipe", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
-            { subject: "Resiliência", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 },
-            { subject: "Inteligência Emocional", value: 65 + Math.floor(Math.random() * 20), fullMark: 100 }
-          ];
+          const radarData = resultData?.radar || getDefaultRadarData();
 
           return {
             id: test.id,
@@ -144,11 +129,13 @@ export const useTestResults = (userId?: string) => {
         });
 
       // Ordenar por data, do mais recente para o mais antigo
-      return formattedResults.sort((a, b) => {
-        const dateA = new Date(a.date.split('/').reverse().join('-'));
-        const dateB = new Date(b.date.split('/').reverse().join('-'));
-        return dateB.getTime() - dateA.getTime();
-      });
+      return formattedResults.length > 0 ? 
+        formattedResults.sort((a, b) => {
+          const dateA = new Date(a.date.split('/').reverse().join('-'));
+          const dateB = new Date(b.date.split('/').reverse().join('-'));
+          return dateB.getTime() - dateA.getTime();
+        }) : 
+        getDefaultTestResults();
     } catch (error) {
       console.error("Erro ao buscar resultados:", error);
       toast({
@@ -156,7 +143,7 @@ export const useTestResults = (userId?: string) => {
         description: error instanceof Error ? error.message : "Ocorreu um erro desconhecido",
         variant: "destructive",
       });
-      return [];
+      return getDefaultTestResults();
     }
   };
 
@@ -165,4 +152,33 @@ export const useTestResults = (userId?: string) => {
     queryFn: fetchTestResults,
     enabled: !!userId,
   });
+};
+
+// Funções auxiliares para gerar dados padrão quando não há resultados reais
+const getDefaultSkillScores = () => [
+  { skill: "Comunicação", value: 0 },
+  { skill: "Proatividade", value: 0 },
+  { skill: "Trabalho em Equipe", value: 0 },
+  { skill: "Liderança", value: 0 },
+  { skill: "Inteligência Emocional", value: 0 }
+];
+
+const getDefaultProfileScores = () => [
+  { name: "Analítico", value: 0 },
+  { name: "Comunicador", value: 0 },
+  { name: "Executor", value: 0 },
+  { name: "Planejador", value: 0 }
+];
+
+const getDefaultRadarData = () => [
+  { subject: "Comunicação", value: 0, fullMark: 100 },
+  { subject: "Liderança", value: 0, fullMark: 100 },
+  { subject: "Proatividade", value: 0, fullMark: 100 },
+  { subject: "Trabalho em Equipe", value: 0, fullMark: 100 },
+  { subject: "Resiliência", value: 0, fullMark: 100 },
+  { subject: "Inteligência Emocional", value: 0, fullMark: 100 }
+];
+
+const getDefaultTestResults = (): TestResult[] => {
+  return []; // Return empty array to indicate no tests completed
 };

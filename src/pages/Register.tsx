@@ -38,6 +38,15 @@ const Register = () => {
       return;
     }
     
+    if (!company.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Empresa é obrigatória",
+        description: "Por favor, informe o nome da sua empresa",
+      });
+      return;
+    }
+    
     try {
       // Sempre registra como mentor
       await register(email, password, name, "mentor", company);
@@ -107,13 +116,16 @@ const Register = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="company">Empresa</Label>
+              <Label htmlFor="company" className="flex items-center">
+                Empresa <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Input
                 id="company"
                 type="text"
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
-                placeholder="Digite o nome da sua empresa (opcional)"
+                required
+                placeholder="Digite o nome da sua empresa"
               />
             </div>
             

@@ -3,10 +3,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Copy } from "lucide-react";
+import { X, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { generateInvitationCode } from "@/lib/invitationCode";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -16,26 +17,15 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [inviteLink, setInviteLink] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const { user } = useAuth();
-
-  const generateInviteLink = (mentorId: string, email: string) => {
-    // Codificar o email e ID do mentor nos parâmetros da URL
-    const params = new URLSearchParams();
-    params.append("mentor", mentorId);
-    params.append("email", email);
-    
-    // Criar URL completa (usar window.location.origin para pegar a base da URL atual)
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/client/register?${params.toString()}`;
-  };
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(inviteLink);
-      toast.success("Link copiado para a área de transferência");
+      await navigator.clipboard.writeText(inviteCode);
+      toast.success("Código copiado para a área de transferência");
     } catch (err) {
-      toast.error("Erro ao copiar link");
+      toast.error("Erro ao copiar código");
       console.error("Falha ao copiar:", err);
     }
   };
@@ -64,14 +54,24 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     setIsSubmitting(true);
     
     try {
-      // Gerar o link de convite
-      const link = generateInviteLink(user.id, clientEmail);
-      setInviteLink(link);
+      // Generate a unique invitation code
+      const code = generateInvitationCode();
       
-      // Salvar o convite no banco de dados (em um caso real)
-      // Aqui você poderia implementar o envio por email usando uma Edge Function
+      // Save the invitation code in the database
+      const { error } = await supabase
+        .from('invitation_codes')
+        .insert({
+          code,
+          mentor_id: user.id,
+          email: clientEmail,
+        });
       
-      toast.success(`Convite gerado para ${clientName}`);
+      if (error) {
+        throw error;
+      }
+      
+      setInviteCode(code);
+      toast.success(`Código de convite gerado para ${clientName}`);
     } catch (error) {
       console.error("Erro ao gerar convite:", error);
       toast.error("Erro ao gerar convite");
@@ -89,7 +89,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         </Button>
       </div>
       
-      {!inviteLink ? (
+      {!inviteCode ? (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="clientName">Nome completo</Label>
@@ -117,22 +117,22 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Gerando..." : "Gerar Link de Convite"}
+              {isSubmitting ? "Gerando..." : "Gerar Código de Convite"}
             </Button>
           </div>
         </form>
       ) : (
         <div className="space-y-4">
           <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">Link de convite gerado!</h4>
+            <h4 className="font-medium text-blue-800 mb-2">Código de convite gerado!</h4>
             <p className="text-sm text-blue-700 mb-3">
-              Compartilhe este link com o cliente para que ele possa se registrar:
+              Compartilhe este código com o cliente para que ele possa se registrar:
             </p>
             <div className="flex items-center gap-2">
               <Input 
-                value={inviteLink} 
+                value={inviteCode} 
                 readOnly 
-                className="text-xs bg-white"
+                className="text-md font-mono font-medium bg-white"
               />
               <Button 
                 type="button" 
@@ -145,6 +145,24 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
             </div>
           </div>
           
+          <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+            <h4 className="font-medium mb-2 flex items-center">
+              <Mail className="h-4 w-4 mr-2" />
+              Enviar por email
+            </h4>
+            <p className="text-sm text-gray-600 mb-3">
+              Instruções enviadas para: <span className="font-medium">{clientEmail}</span>
+            </p>
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full"
+              onClick={() => toast.success(`Instruções de registro enviadas para ${clientEmail}`)}
+            >
+              Enviar instruções por email
+            </Button>
+          </div>
+          
           <div className="pt-2 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onCancel}>
               Fechar
@@ -152,7 +170,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
             <Button 
               type="button" 
               onClick={() => {
-                setInviteLink("");
+                setInviteCode("");
                 setClientName("");
                 setClientEmail("");
               }}

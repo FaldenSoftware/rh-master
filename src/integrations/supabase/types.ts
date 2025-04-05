@@ -57,11 +57,60 @@ export type Database = {
           },
         ]
       }
+      invitation_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          mentor_id: string
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          mentor_id: string
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          mentor_id?: string
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_codes_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitation_codes_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company: string | null
           created_at: string
           id: string
+          mentor_id: string | null
           name: string
           role: string
           updated_at: string
@@ -70,6 +119,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           id: string
+          mentor_id?: string | null
           name: string
           role: string
           updated_at?: string
@@ -78,11 +128,20 @@ export type Database = {
           company?: string | null
           created_at?: string
           id?: string
+          mentor_id?: string | null
           name?: string
           role?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_results: {
         Row: {
@@ -156,6 +215,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      client_can_access_test: {
+        Args: {
+          client_id: string
+          test_id: string
+        }
+        Returns: boolean
+      }
       get_client_tests_for_user: {
         Args: {
           user_id: string
@@ -179,6 +245,7 @@ export type Database = {
           company: string | null
           created_at: string
           id: string
+          mentor_id: string | null
           name: string
           role: string
           updated_at: string
@@ -208,6 +275,13 @@ export type Database = {
           id: string
           updated_at: string
         }[]
+      }
+      mentor_owns_test: {
+        Args: {
+          mentor_id: string
+          test_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

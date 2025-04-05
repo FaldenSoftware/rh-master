@@ -6,6 +6,7 @@ export interface Profile {
   company?: string;
   created_at: string;
   updated_at: string;
+  mentor_id?: string;
 }
 
 export interface Test {
@@ -38,4 +39,15 @@ export interface TestResult {
   updated_at: string;
   // Relacionamentos
   client_test?: ClientTest;
+}
+
+export interface InvitationCode {
+  id: string;
+  code: string;
+  mentor_id: string;
+  email: string;
+  is_used: boolean;
+  used_by?: string;
+  created_at: string;
+  expires_at: string;
 }

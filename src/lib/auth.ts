@@ -8,6 +8,7 @@ export interface AuthUser {
   name: string;
   role: string;
   company?: string;
+  mentor_id?: string;
 }
 
 export interface AuthState {
@@ -46,7 +47,8 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
         email: user.email || '',
         name: 'Usuário',
         role: 'client',
-        company: data.company
+        company: data.company,
+        mentor_id: data.mentor_id
       };
       
       return defaultProfile;
@@ -57,7 +59,8 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       email: user.email || '',
       name: data.name,
       role: data.role,
-      company: data.company
+      company: data.company,
+      mentor_id: data.mentor_id
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
