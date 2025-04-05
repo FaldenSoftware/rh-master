@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthState, AuthUser, getCurrentUser, loginUser, logoutUser, registerUser } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
@@ -227,13 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: errorMessage,
       }));
       
-      toast({
-        variant: "destructive",
-        title: "Erro ao registrar",
-        description: errorMessage,
-      });
-
-      return null; // Return null on error to match the function signature
+      throw error;
     }
   };
 
