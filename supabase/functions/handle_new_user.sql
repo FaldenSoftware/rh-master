@@ -32,9 +32,9 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'name', 'Usuário'),
     COALESCE(role_value, 'client'),
     company_value,
-    NULL,
-    NULL,
-    NULL
+    NEW.raw_user_meta_data->>'phone',
+    NEW.raw_user_meta_data->>'position',
+    NEW.raw_user_meta_data->>'bio'
   );
   RETURN NEW;
 END;
