@@ -4,6 +4,9 @@ export interface Profile {
   name: string;
   role: "mentor" | "client";
   company?: string;
+  phone?: string;
+  position?: string;
+  bio?: string;
   created_at: string;
   updated_at: string;
   mentor_id?: string;
