@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { Loader2 } from "lucide-react";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ const Register = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { register, isLoading, error } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Limpa os erros específicos do campo quando o usuário começa a digitar
   useEffect(() => {
@@ -70,13 +72,13 @@ const Register = () => {
       isValid = false;
     }
 
-    if (!name) {
+    if (!name || name.trim() === '') {
       errors.name = "Nome é obrigatório";
       isValid = false;
     }
 
     if (!company || company.trim() === '') {
-      errors.company = "Empresa é obrigatória";
+      errors.company = "Empresa é obrigatória para mentores";
       isValid = false;
     }
 
@@ -104,11 +106,17 @@ const Register = () => {
     try {
       console.log("Registrando mentor com empresa:", company);
       // Sempre registra como mentor
-      await register(email, password, name, "mentor", company.trim());
+      await register(email, password, name.trim(), "mentor", company.trim());
+      
+      toast({
+        title: "Registro realizado com sucesso",
+        description: "Redirecionando para o painel...",
+      });
+      
+      // O redirecionamento já é tratado no AuthContext
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
       // O erro já é tratado no AuthContext, não precisamos fazer nada aqui
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -218,7 +226,14 @@ const Register = () => {
             </div>
                         
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
-              {isLoading || isSubmitting ? "Registrando..." : "Registrar como Mentor"}
+              {isLoading || isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Registrando...
+                </>
+              ) : (
+                "Registrar como Mentor"
+              )}
             </Button>
           </form>
         </CardContent>

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { Loader2 } from "lucide-react";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
@@ -141,7 +142,14 @@ const ClientLogin = () => {
             </div>
             
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
-              {isLoading || isSubmitting ? "Entrando..." : "Entrar"}
+              {isLoading || isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Entrando...
+                </>
+              ) : (
+                "Entrar"
+              )}
             </Button>
           </form>
         </CardContent>

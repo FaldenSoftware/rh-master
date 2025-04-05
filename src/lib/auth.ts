@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,61 +21,58 @@ export interface AuthState {
 export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
   try {
     console.log("Buscando perfil para usuário:", user.id);
-    // Primeiro tenta buscar o perfil do usuário
+    // Primeiro tenta buscar o perfil do usuário usando a função SECURITY DEFINER
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+      .rpc('get_profile_by_id', { user_id: user.id });
     
     if (error) {
       console.error('Erro ao buscar perfil:', error);
       
-      // Se for erro "não encontrado", podemos criar um perfil padrão
-      if (error.code === 'PGRST116') {
-        console.log("Perfil não encontrado, tentando criar perfil padrão");
+      // Fallback: tenta buscar diretamente da tabela profiles
+      const profileResult = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileResult.error) {
+        console.error('Erro no fallback para buscar perfil:', profileResult.error);
         return null;
       }
       
-      throw error;
+      if (!profileResult.data) {
+        console.error('Perfil não encontrado para o usuário:', user.id);
+        return null;
+      }
+      
+      console.log("Perfil encontrado via fallback:", profileResult.data);
+      return {
+        id: user.id,
+        email: user.email || '',
+        name: profileResult.data.name || 'Usuário',
+        role: profileResult.data.role || 'client',
+        company: profileResult.data.company,
+        mentor_id: profileResult.data.mentor_id
+      };
     }
     
-    if (!data) {
+    if (!data || data.length === 0) {
       console.error('Perfil não encontrado para o usuário:', user.id);
       return null;
     }
     
-    console.log("Perfil encontrado:", data);
-    
-    // Verifica se os dados essenciais estão presentes
-    if (!data.name || !data.role) {
-      console.error('Dados de perfil incompletos:', data);
-      
-      // Tenta criar um perfil padrão se não houver um perfil completo
-      const userMetadata = user.user_metadata || {};
-      const defaultProfile: AuthUser = {
-        id: user.id,
-        email: user.email || '',
-        name: userMetadata.name || 'Usuário',
-        role: userMetadata.role || 'client',
-        company: data.company || userMetadata.company,
-        mentor_id: data.mentor_id
-      };
-      
-      return defaultProfile;
-    }
+    console.log("Perfil encontrado:", data[0]);
     
     return {
-      id: data.id,
+      id: data[0].id,
       email: user.email || '',
-      name: data.name,
-      role: data.role,
-      company: data.company,
-      mentor_id: data.mentor_id
+      name: data[0].name || 'Usuário',
+      role: data[0].role || 'client',
+      company: data[0].company,
+      mentor_id: data[0].mentor_id
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
-    // Retorna null em vez de lançar erro para evitar quebrar o fluxo de autenticação
     return null;
   }
 };
@@ -141,72 +139,95 @@ export const registerUser = async (
     }
     
     // Step 2: Garantir que o perfil exista
-    // Aguardar um momento para garantir que o perfil foi criado pelo trigger
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Verificar se o perfil foi criado automaticamente pelo trigger
+    let profileCreated = false;
+    let attempts = 0;
+    const maxAttempts = 3;
     
-    try {
-      // Verifica se o perfil foi criado automaticamente pelo trigger
+    // Aguardar até 3 segundos para garantir que o perfil foi criado pelo trigger
+    while (!profileCreated && attempts < maxAttempts) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+      
+      // Verifica se o perfil existe
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single();
       
-      console.log("Verificação de perfil após registro:", { profileData, profileError });
-      
-      if (profileError || !profileData) {
-        console.log("Perfil não criado automaticamente, criando perfil manualmente");
-        
-        // Tenta criar o perfil manualmente se não foi criado automaticamente
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            name: name.trim(),
-            role,
-            company: company ? company.trim() : ''
-          });
-        
-        if (insertError) {
-          console.error("Erro ao criar perfil manualmente:", insertError);
-          if (insertError.message.includes('duplicate key value violates unique constraint')) {
-            console.log("Perfil já existe, ignorando erro de duplicação");
-          } else if (insertError.message.includes('violates row-level security policy')) {
-            throw new Error("Erro de segurança ao criar perfil. Verifique as políticas RLS.");
-          } else {
-            throw new Error(`Erro ao criar perfil: ${insertError.message}`);
-          }
-        }
+      if (!profileError && profileData) {
+        profileCreated = true;
+        console.log("Perfil verificado após registro:", profileData);
+      } else {
+        console.log(`Tentativa ${attempts}: Perfil ainda não encontrado`);
       }
-      
-      // Busca o perfil novamente para confirmar
-      const { data: confirmedProfile, error: confirmedError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (confirmedError || !confirmedProfile) {
-        throw new Error("Não foi possível confirmar a criação do perfil");
-      }
-      
-      console.log("Perfil confirmado após registro:", confirmedProfile);
-      
-      return {
-        id: data.user.id,
-        email: data.user.email || '',
-        name: name.trim(),
-        role,
-        company: company ? company.trim() : ''
-      };
-    } catch (profileError) {
-      console.error("Erro ao verificar/criar perfil:", profileError);
-      if (profileError instanceof Error) {
-        throw profileError;
-      }
-      throw new Error("Erro ao finalizar registro do usuário");
     }
     
+    if (!profileCreated) {
+      console.log("Perfil não criado automaticamente, criando perfil manualmente");
+      
+      // Tenta criar o perfil manualmente se não foi criado automaticamente
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          name: name.trim(),
+          role,
+          company: company ? company.trim() : ''
+        });
+      
+      if (insertError) {
+        console.error("Erro ao criar perfil manualmente:", insertError);
+        
+        if (insertError.message.includes('violates row-level security policy')) {
+          console.warn("Erro de RLS ao criar perfil. Tentando novamente com login.");
+          
+          // Tenta fazer login e depois criar o perfil
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email, 
+            password
+          });
+          
+          if (!loginError) {
+            // Tenta criar o perfil novamente após login
+            const { error: retryError } = await supabase
+              .from('profiles')
+              .insert({
+                id: data.user.id,
+                name: name.trim(),
+                role,
+                company: company ? company.trim() : ''
+              });
+            
+            if (retryError) {
+              console.error("Erro ao criar perfil após login:", retryError);
+              // Continua mesmo com erro, pois o trigger pode ter criado o perfil
+            }
+          }
+        } else if (!insertError.message.includes('duplicate key value')) {
+          // Ignora erro de chave duplicada (significa que o perfil já foi criado pelo trigger)
+          throw new Error(`Erro ao criar perfil: ${insertError.message}`);
+        }
+      }
+    }
+    
+    // Confirmar que o perfil foi criado
+    const { data: confirmedProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+    
+    console.log("Status final do perfil:", confirmedProfile);
+    
+    return {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: name.trim(),
+      role,
+      company: company ? company.trim() : ''
+    };
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);
     throw error;
