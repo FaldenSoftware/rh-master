@@ -23,17 +23,51 @@ interface TestResultData {
   score?: number;
 }
 
+// Default empty data for charts
+const DEFAULT_MONTHLY_DATA = [
+  { name: "Jan", tests: 0 },
+  { name: "Fev", tests: 0 },
+  { name: "Mar", tests: 0 },
+  { name: "Abr", tests: 0 },
+  { name: "Mai", tests: 0 },
+  { name: "Jun", tests: 0 }
+];
+
+const DEFAULT_PROFILE_DATA = [
+  { name: "Analista", value: 0 },
+  { name: "Executor", value: 0 },
+  { name: "Comunicador", value: 0 },
+  { name: "Planejador", value: 0 }
+];
+
+const DEFAULT_TEST_TYPE_DATA = [
+  { name: "Comportamental", tests: 0 },
+  { name: "Habilidades", tests: 0 },
+  { name: "Conhecimento", tests: 0 },
+  { name: "Aptidão", tests: 0 }
+];
+
+const DEFAULT_SKILL_DATA = [
+  { subject: "Comunicação", value: 0, fullMark: 100 },
+  { subject: "Liderança", value: 0, fullMark: 100 },
+  { subject: "Proatividade", value: 0, fullMark: 100 },
+  { subject: "Trabalho em Equipe", value: 0, fullMark: 100 },
+  { subject: "Resiliência", value: 0, fullMark: 100 },
+  { subject: "Inteligência Emocional", value: 0, fullMark: 100 }
+];
+
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
 
 const LeaderResults = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [resultData, setResultData] = useState<ResultData>({
-    monthlyTestCount: [],
-    profileDistribution: [],
-    testTypeData: [],
-    skillAverages: []
+    monthlyTestCount: DEFAULT_MONTHLY_DATA,
+    profileDistribution: DEFAULT_PROFILE_DATA,
+    testTypeData: DEFAULT_TEST_TYPE_DATA,
+    skillAverages: DEFAULT_SKILL_DATA
   });
+  const [hasData, setHasData] = useState(false);
 
   useEffect(() => {
     fetchResultsData();
@@ -49,6 +83,23 @@ const LeaderResults = () => {
       
       if (resultsError) throw resultsError;
 
+      // Check if we have any data
+      const hasTestResults = testResults && testResults.length > 0;
+      setHasData(hasTestResults);
+
+      // If no test results, return default data
+      if (!hasTestResults) {
+        console.log("No test results found, using default empty data");
+        setResultData({
+          monthlyTestCount: DEFAULT_MONTHLY_DATA,
+          profileDistribution: DEFAULT_PROFILE_DATA,
+          testTypeData: DEFAULT_TEST_TYPE_DATA,
+          skillAverages: DEFAULT_SKILL_DATA
+        });
+        setLoading(false);
+        return;
+      }
+      
       // Process data for monthly test counts
       const monthCounts: Record<string, number> = {};
       const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -62,7 +113,7 @@ const LeaderResults = () => {
       }
       
       // Count tests by month
-      testResults?.forEach(result => {
+      testResults.forEach(result => {
         if (result.client_tests?.completed_at) {
           const completedDate = new Date(result.client_tests.completed_at);
           const monthKey = `${monthNames[completedDate.getMonth()]}`;
@@ -85,7 +136,7 @@ const LeaderResults = () => {
         "Planejador": 0
       };
       
-      testResults?.forEach(result => {
+      testResults.forEach(result => {
         // Typecast the data as TestResultData
         const resultData = result.data as TestResultData;
         
@@ -100,7 +151,7 @@ const LeaderResults = () => {
       
       const profileDistribution = Object.entries(profileCounts).map(([name, value]) => ({
         name,
-        value: value || Math.floor(Math.random() * 30) + 10 // Fallback random value if no data
+        value: value || 0
       }));
 
       // Process test type data
@@ -111,7 +162,7 @@ const LeaderResults = () => {
         "Aptidão": 0
       };
       
-      testResults?.forEach(result => {
+      testResults.forEach(result => {
         // Typecast the data as TestResultData
         const resultData = result.data as TestResultData;
         
@@ -136,13 +187,13 @@ const LeaderResults = () => {
       
       const testTypeData = Object.entries(typeCounts).map(([name, tests]) => ({
         name,
-        tests: tests || Math.floor(Math.random() * 20) + 5 // Fallback random value if no data
+        tests
       }));
 
       // Process skill averages for radar chart
       const skillTotals: Record<string, { total: number; count: number }> = {};
       
-      testResults?.forEach(result => {
+      testResults.forEach(result => {
         // Typecast the data as TestResultData
         const resultData = result.data as TestResultData;
         
@@ -157,7 +208,7 @@ const LeaderResults = () => {
         }
       });
       
-      const skillAverages = Object.entries(skillTotals)
+      let skillAverages = Object.entries(skillTotals)
         .map(([subject, { total, count }]) => ({
           subject,
           value: Math.round(total / count),
@@ -165,16 +216,9 @@ const LeaderResults = () => {
         }))
         .slice(0, 6); // Take top 6 skills for radar chart
       
-      // If no radar data, use sample data
+      // If no skills data, use default empty data
       if (skillAverages.length === 0) {
-        [
-          { subject: "Comunicação", value: 75, fullMark: 100 },
-          { subject: "Liderança", value: 60, fullMark: 100 },
-          { subject: "Proatividade", value: 85, fullMark: 100 },
-          { subject: "Trabalho em Equipe", value: 70, fullMark: 100 },
-          { subject: "Resiliência", value: 90, fullMark: 100 },
-          { subject: "Inteligência Emocional", value: 80, fullMark: 100 }
-        ].forEach(item => skillAverages.push(item));
+        skillAverages = DEFAULT_SKILL_DATA;
       }
 
       setResultData({
@@ -185,20 +229,43 @@ const LeaderResults = () => {
       });
     } catch (error) {
       console.error("Erro ao buscar resultados:", error);
+      // Use default data on error
+      setResultData({
+        monthlyTestCount: DEFAULT_MONTHLY_DATA,
+        profileDistribution: DEFAULT_PROFILE_DATA,
+        testTypeData: DEFAULT_TEST_TYPE_DATA,
+        skillAverages: DEFAULT_SKILL_DATA
+      });
       toast({
-        title: "Erro ao carregar resultados",
-        description: "Não foi possível carregar os dados de resultados",
-        variant: "destructive"
+        title: "Informação",
+        description: "Não há dados de resultados disponíveis ainda",
+        variant: "default"
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const renderNoDataMessage = () => {
+    if (!loading && !hasData) {
+      return (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center text-gray-600">
+            <LineChartIcon className="mr-2 h-5 w-5" />
+            <span>Nenhum teste foi realizado ainda. Os gráficos mostrarão dados quando os testes forem completados.</span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <LeaderLayout title="Resultados">
       <div className="container mx-auto">
         <h1 className="text-2xl font-bold mb-6">Visão Geral de Resultados</h1>
+        
+        {renderNoDataMessage()}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <Card>
