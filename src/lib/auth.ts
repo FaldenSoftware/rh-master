@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -99,7 +100,7 @@ export const registerUser = async (
       throw new Error("Nome é obrigatório");
     }
     
-    // Validate company field for mentors at application level
+    // Validate company field for mentors
     if (role === "mentor") {
       if (!company) {
         throw new Error("Empresa é obrigatória para mentores");
@@ -114,12 +115,15 @@ export const registerUser = async (
       company = companyTrimmed;
     }
     
-    // Prepare user metadata
-    const userMetadata = {
+    // Prepare user metadata - make sure company is only included if it has a value
+    const userMetadata: Record<string, any> = {
       name: name.trim(),
-      role,
-      company
+      role
     };
+    
+    if (company && company.trim() !== '') {
+      userMetadata.company = company.trim();
+    }
     
     console.log("Registrando usuário com metadados:", userMetadata);
     
@@ -176,19 +180,20 @@ export const registerUser = async (
     if (!profileCreated) {
       console.log("Profile not created automatically, creating profile manually");
       
-      // Validate company field for mentors again
-      if (role === "mentor" && (!company || company.trim() === '')) {
-        throw new Error("Empresa é obrigatória para mentores");
+      // Manual profile creation for mentors must include company
+      const profileData: any = {
+        id: data.user.id,
+        name: name.trim(),
+        role
+      };
+      
+      if (company && company.trim() !== '') {
+        profileData.company = company.trim();
       }
       
       const { error: insertError } = await supabase
         .from('profiles')
-        .insert({
-          id: data.user.id,
-          name: name.trim(),
-          role,
-          company
-        });
+        .insert(profileData);
       
       if (insertError) {
         console.error("Error creating profile manually:", insertError);
@@ -206,12 +211,7 @@ export const registerUser = async (
             // Try to create profile again after login
             const { error: retryError } = await supabase
               .from('profiles')
-              .insert({
-                id: data.user.id,
-                name: name.trim(),
-                role,
-                company
-              });
+              .insert(profileData);
             
             if (retryError) {
               console.error("Error creating profile after login:", retryError);
