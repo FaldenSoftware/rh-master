@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +12,7 @@ import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { verifyInvitationCode, isValidCodeFormat } from "@/lib/invitationCode";
+import { InvitationCode } from "@/types/models";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -38,7 +38,7 @@ export default function ClientRegister() {
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isCodeValid, setIsCodeValid] = useState<boolean | null>(null);
-  const [inviteData, setInviteData] = useState<any>(null);
+  const [inviteData, setInviteData] = useState<InvitationCode | null>(null);
   const { register } = useAuth();
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,7 +64,7 @@ export default function ClientRegister() {
         
         setIsCodeValid(result.valid);
         if (result.valid && result.data) {
-          setInviteData(result.data);
+          setInviteData(result.data as InvitationCode);
           // Pre-fill email if available from invitation
           if (result.data.email && !form.getValues("email")) {
             form.setValue("email", result.data.email);
@@ -101,16 +101,21 @@ export default function ClientRegister() {
       
       // Register the new client
       const mentorId = inviteData?.mentor_id;
+      if (!mentorId) {
+        throw new Error("Mentor ID não encontrado no código de convite");
+      }
+      
       const result = await register(values.email, values.password, values.name, "client", undefined);
       
       // If registration was successful, update the invitation code to mark as used
       if (result) {
+        // Using the raw query method to avoid type issues
         const { error } = await supabase
           .from('invitation_codes')
           .update({ 
             is_used: true,
             used_by: result.id
-          })
+          } as any)
           .eq('code', values.inviteCode);
         
         if (error) {
@@ -120,7 +125,7 @@ export default function ClientRegister() {
         // Update the client profile to link to the mentor
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ mentor_id: mentorId })
+          .update({ mentor_id: mentorId } as any)
           .eq('id', result.id);
           
         if (profileError) {

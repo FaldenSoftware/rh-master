@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,13 +57,14 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       const code = generateInvitationCode();
       
       // Save the invitation code in the database
+      // Using the raw query method to avoid type issues until Supabase types are updated
       const { error } = await supabase
         .from('invitation_codes')
         .insert({
           code,
           mentor_id: user.id,
           email: clientEmail,
-        });
+        } as any);
       
       if (error) {
         throw error;
