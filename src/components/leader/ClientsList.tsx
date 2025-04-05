@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 interface Client {
   id: string;
@@ -30,7 +31,8 @@ interface Profile {
   company?: string;
   created_at: string;
   updated_at: string;
-  email?: string; // Adicionado o campo email opcional ao tipo Profile
+  mentor_id?: string;
+  email?: string;
 }
 
 interface ClientsListProps {
@@ -43,29 +45,60 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchClientsData();
-  }, []);
+    if (user && user.id) {
+      fetchClientsData();
+    }
+  }, [user]);
 
-  // Function to fetch clients
+  // Function to fetch clients using the security definer function
   const fetchClients = async () => {
     try {
-      // Fetch profiles with role=client
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Buscando clientes onde o mentor_id é igual ao ID do usuário autenticado
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'client');
+        .rpc('get_mentor_clients', { mentor_id: user.id })
+        .select('*');
       
       if (error) {
+        console.error("Erro na chamada RPC:", error);
         throw error;
       }
       
-      // Map the data to the Client interface format
+      // Se não temos dados da função RPC, tente um fallback direto na tabela
+      if (!data || data.length === 0) {
+        // Fallback: busca direta com select 
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('mentor_id', user.id)
+          .eq('role', 'client');
+        
+        if (fallbackError) {
+          console.error("Erro no fallback:", fallbackError);
+          throw fallbackError;
+        }
+        
+        const formattedClients = (fallbackData || []).map((profile: Profile) => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email || 'Email não disponível',
+          company: profile.company
+        }));
+
+        return formattedClients;
+      }
+      
+      // Formatar os dados da chamada RPC
       const formattedClients = (data || []).map((profile: Profile) => ({
         id: profile.id,
         name: profile.name,
-        email: profile.email || 'Email não disponível', // Usa o email do perfil se disponível
+        email: profile.email || 'Email não disponível',
         company: profile.company
       }));
       

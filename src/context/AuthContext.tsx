@@ -49,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Auth state changed:", event);
         
         if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          // Use setTimeout para evitar recursão em callbacks
           setTimeout(async () => {
             try {
               const user = await getCurrentUser();

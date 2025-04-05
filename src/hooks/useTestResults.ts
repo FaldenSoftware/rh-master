@@ -27,18 +27,16 @@ export const useTestResults = (userId?: string) => {
 
   const fetchTestResults = async (): Promise<TestResult[]> => {
     if (!userId) {
-      return [];
+      return getDefaultTestResults();
     }
 
     try {
-      // Buscar testes do cliente usando a função com security definer
-      // para evitar a recursão infinita nas policies
+      // Buscar testes do cliente usando a função RPC segura
       const { data: clientTests, error: testsError } = await supabase
-        .from('client_tests')
-        .select('*')
-        .eq('client_id', userId);
+        .rpc('get_client_tests_for_user', { user_id: userId });
 
       if (testsError) {
+        console.error("Erro ao buscar testes:", testsError);
         throw new Error(`Erro ao buscar testes: ${testsError.message}`);
       }
 
@@ -50,13 +48,12 @@ export const useTestResults = (userId?: string) => {
       // Buscar informações dos testes
       const testIds = clientTests.map(test => test.test_id);
       
-      // Usar uma função rpc ou consulta direta sem recursão
+      // Usar função RPC para evitar recursão
       const { data: testInfo, error: testInfoError } = await supabase
-        .from('tests')
-        .select('*')
-        .in('id', testIds);
+        .rpc('get_test_info_batch', { test_ids: testIds });
       
       if (testInfoError) {
+        console.error("Erro ao buscar informações dos testes:", testInfoError);
         throw new Error(`Erro ao buscar informações dos testes: ${testInfoError.message}`);
       }
       
@@ -70,11 +67,10 @@ export const useTestResults = (userId?: string) => {
 
       // Buscar resultados dos testes
       const { data: testResults, error: resultsError } = await supabase
-        .from('test_results')
-        .select('*')
-        .in('client_test_id', clientTests.map(test => test.id));
+        .rpc('get_test_results_batch', { client_test_ids: clientTests.map(test => test.id) });
       
       if (resultsError) {
+        console.error("Erro ao buscar resultados dos testes:", resultsError);
         throw new Error(`Erro ao buscar resultados dos testes: ${resultsError.message}`);
       }
       
