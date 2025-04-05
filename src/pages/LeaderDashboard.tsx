@@ -1,391 +1,287 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import LeaderLayout from "@/components/leader/LeaderLayout";
-import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from "recharts";
-import { ArrowUp, ArrowDown, Users, FileText, Clock, BarChart as BarChartIcon, Activity, Award, Calendar, Percent, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserPlus, Users, BookOpen, Award, Clock, ChevronRight } from "lucide-react";
+import LeaderLayout from "@/components/leader/LeaderLayout";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { getMentorClients } from "@/lib/batchQueries";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+const defaultActivityData = [
+  { name: "Seg", tests: 0 },
+  { name: "Ter", tests: 0 },
+  { name: "Qua", tests: 0 },
+  { name: "Qui", tests: 0 },
+  { name: "Sex", tests: 0 },
+  { name: "Sáb", tests: 0 },
+  { name: "Dom", tests: 0 },
+];
 
-// Helper function to format percentage change with proper sign
-const formatPercentChange = (value: number) => {
-  return `${value > 0 ? '+' : ''}${value}%`;
-};
+const defaultCompletionData = [
+  { name: "Comportamental", completed: 0, incomplete: 0 },
+  { name: "Habilidades", completed: 0, incomplete: 0 },
+  { name: "Conhecimento", completed: 0, incomplete: 0 },
+];
 
-// Helper function to get class based on trend direction
-const getTrendClass = (value: number) => {
-  return value >= 0 ? "text-green-600" : "text-red-600";
-};
+interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  company?: string;
+  created_at: string;
+}
 
 const LeaderDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [recentClients, setRecentClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [activityData, setActivityData] = useState(defaultActivityData);
+  const [completionData, setCompletionData] = useState(defaultCompletionData);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Performance data
-  const [performanceData, setPerformanceData] = useState([
-    { month: 'Jan', value: 65 },
-    { month: 'Fev', value: 68 },
-    { month: 'Mar', value: 72 },
-    { month: 'Abr', value: 75 },
-    { month: 'Mai', value: 78 },
-    { month: 'Jun', value: 82 }
-  ]);
-  
-  const fetchRecentClients = async () => {
-    if (!user?.id) return;
-    
+  const [statistics, setStatistics] = useState({
+    totalClients: 0,
+    activeTests: 0,
+    completedTests: 0,
+    avgScore: 0
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       
-      const clients = await getMentorClients(user.id);
-      
-      // Processar apenas se há clientes
-      if (clients && clients.length > 0) {
-        // Pegar os 3 mais recentes
-        const recent = clients
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 3)
-          .map(client => ({
-            id: client.id,
-            name: client.name,
-            company: client.company || 'Empresa não especificada',
-            date: new Date(client.created_at).toLocaleDateString('pt-BR')
-          }));
-          
-        setRecentClients(recent);
-      } else {
-        // Se não há clientes, definir como array vazio
-        setRecentClients([]);
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
       }
       
-    } catch (err: any) {
-      console.error("Erro ao carregar clientes recentes:", err);
-      setError(err.message || "Erro ao carregar clientes recentes");
+      // Fetch clients
+      const clientsData = await getMentorClients(user.id);
+
+      if (Array.isArray(clientsData)) {
+        // Sort by creation date (newest first)
+        const sortedClients = [...clientsData].sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        ).slice(0, 5);
+        
+        setClients(sortedClients);
+        
+        // Update statistics
+        setStatistics(prev => ({
+          ...prev,
+          totalClients: clientsData.length
+        }));
+      }
+
+      // Fetch tests data
+      // This is a simplified version without real test data
+      // You would need to implement the actual data fetching based on your database structure
+      const mockActivityData = [
+        { name: "Seg", tests: Math.floor(Math.random() * 5) },
+        { name: "Ter", tests: Math.floor(Math.random() * 8) }, 
+        { name: "Qua", tests: Math.floor(Math.random() * 10) },
+        { name: "Qui", tests: Math.floor(Math.random() * 7) },
+        { name: "Sex", tests: Math.floor(Math.random() * 6) },
+        { name: "Sáb", tests: Math.floor(Math.random() * 3) },
+        { name: "Dom", tests: Math.floor(Math.random() * 2) },
+      ];
+      setActivityData(mockActivityData);
+
+      const mockCompletionData = [
+        { name: "Comportamental", completed: Math.floor(Math.random() * 10), incomplete: Math.floor(Math.random() * 5) },
+        { name: "Habilidades", completed: Math.floor(Math.random() * 8), incomplete: Math.floor(Math.random() * 4) },
+        { name: "Conhecimento", completed: Math.floor(Math.random() * 6), incomplete: Math.floor(Math.random() * 6) },
+      ];
+      setCompletionData(mockCompletionData);
+
+      // Update other statistics
+      setStatistics(prev => ({
+        ...prev,
+        activeTests: Math.floor(Math.random() * 10),
+        completedTests: Math.floor(Math.random() * 30),
+        avgScore: Math.floor(Math.random() * 40) + 60
+      }));
+      
+    } catch (error) {
+      console.error("Erro ao carregar dados do dashboard:", error);
       toast({
         title: "Erro ao carregar dados",
-        description: err.message || "Ocorreu um erro ao carregar os clientes recentes",
+        description: error instanceof Error ? error.message : "Não foi possível carregar os dados do dashboard",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    fetchRecentClients();
-    // Simular carregamento de dados de desempenho (em uma implementação real, isso viria do backend)
-    const generateRandomPerformanceData = () => {
-      const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
-      let baseValue = 60 + Math.floor(Math.random() * 20);
-      
-      return months.map(month => {
-        baseValue = baseValue + Math.floor(Math.random() * 5) - 1;
-        return {
-          month: month,
-          value: Math.min(100, Math.max(60, baseValue))
-        };
-      });
-    };
-    
-    setPerformanceData(generateRandomPerformanceData());
-  }, [user?.id]);
-  
-  // Dados de estatísticas
-  const stats = [
-    { 
-      title: "Total de Clientes", 
-      value: isLoading ? "-" : recentClients.length || 0, 
-      change: "+12%", 
-      trend: "up",
-      icon: <Users className="h-5 w-5 text-blue-600" />
-    },
-    { 
-      title: "Testes Realizados", 
-      value: "23", 
-      change: "+18%", 
-      trend: "up",
-      icon: <FileText className="h-5 w-5 text-purple-600" />
-    },
-    { 
-      title: "Tempo Médio por Teste", 
-      value: "18min", 
-      change: "-5%", 
-      trend: "down",
-      icon: <Clock className="h-5 w-5 text-amber-600" />
-    },
-    { 
-      title: "Score Médio", 
-      value: "74/100", 
-      change: "+3%", 
-      trend: "up",
-      icon: <BarChartIcon className="h-5 w-5 text-green-600" />
-    }
-  ];
-  
+
   return (
     <LeaderLayout title="Dashboard">
-      <div className="grid gap-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat, index) => (
-            <Card key={index} className="shadow-sm">
-              <CardContent className="pt-5">
-                <div className="flex items-center justify-between">
-                  <div className="bg-slate-100 p-2 rounded-full">
-                    {stat.icon}
-                  </div>
-                  <div className={`flex items-center ${getTrendClass(stat.trend === 'up' ? 1 : -1)}`}>
-                    {stat.trend === 'up' ? 
-                      <ArrowUp className="h-4 w-4 mr-1" /> : 
-                      <ArrowDown className="h-4 w-4 mr-1" />
-                    }
-                    <span className="text-sm font-medium">{stat.change}</span>
-                  </div>
-                </div>
-                <h3 className="mt-3 font-semibold text-lg md:text-xl">{stat.value}</h3>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Performance Trends */}
-          <Card className="lg:col-span-2 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center">
-                <Activity className="mr-2 h-5 w-5 text-blue-500" />
-                Tendências de Desempenho
-              </CardTitle>
-              <CardDescription>
-                Progresso médio dos clientes nos últimos 6 meses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] lg:h-[270px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis domain={[40, 100]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#8884d8"
-                      name="Performance"
-                      strokeWidth={2}
-                      dot={{ strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Clients */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center">
-                <Users className="mr-2 h-5 w-5 text-purple-500" />
-                Clientes Recentes
-              </CardTitle>
-              <CardDescription>
-                Últimos clientes adicionados
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-2">
-              {isLoading ? (
-                <div className="flex justify-center py-6">
-                  <div className="animate-spin h-6 w-6 border-2 border-purple-500 rounded-full border-t-transparent"></div>
-                </div>
-              ) : error ? (
-                <div className="text-center py-6">
-                  <p className="text-red-500 mb-2">{error}</p>
-                  <button 
-                    onClick={fetchRecentClients}
-                    className="text-sm text-blue-500 hover:underline"
-                  >
-                    Tentar novamente
-                  </button>
-                </div>
-              ) : recentClients.length === 0 ? (
-                <div className="text-center py-6 px-4">
-                  <User className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                  <p className="text-gray-500">Nenhum cliente registrado ainda</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentClients.map((client, index) => (
-                    <div key={client.id || index} className="flex items-center p-3 border rounded-lg">
-                      <div className="bg-purple-100 p-2 rounded-full">
-                        <User className="h-4 w-4 text-purple-600" />
-                      </div>
-                      <div className="ml-3 flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{client.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{client.company}</p>
-                      </div>
-                      <div className="flex items-center text-xs text-gray-500">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {client.date}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Distribution by Profile */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center">
-                <Percent className="mr-2 h-5 w-5 text-amber-500" />
-                Distribuição por Perfil
-              </CardTitle>
-              <CardDescription>
-                Perfis comportamentais predominantes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Analítico', value: 35 },
-                        { name: 'Comunicador', value: 25 },
-                        { name: 'Executor', value: 20 },
-                        { name: 'Planejador', value: 20 }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1, 2, 3].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skills Analysis */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center">
-                <Award className="mr-2 h-5 w-5 text-green-500" />
-                Análise de Competências
-              </CardTitle>
-              <CardDescription>
-                Nível médio de habilidades
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { name: 'Comunicação', value: 75 },
-                      { name: 'Liderança', value: 65 },
-                      { name: 'Trabalho em Equipe', value: 78 },
-                      { name: 'Proatividade', value: 72 },
-                      { name: 'Resiliência', value: 68 }
-                    ]}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" domain={[0, 100]} />
-                    <YAxis type="category" dataKey="name" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" name="Pontuação" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Ongoing Tests */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <FileText className="mr-2 h-5 w-5 text-blue-500" />
-              Testes em Andamento
-            </CardTitle>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total de Clientes</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.totalClients}</div>
+            <p className="text-xs text-muted-foreground">
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `+${Math.floor(Math.random() * 5)} novos este mês`}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Testes Ativos</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.activeTests}</div>
+            <p className="text-xs text-muted-foreground">
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `${Math.floor(Math.random() * 3)} aguardando conclusão`}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Testes Concluídos</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.completedTests}</div>
+            <p className="text-xs text-muted-foreground">
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `+${Math.floor(Math.random() * 8)} na última semana`}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pontuação Média</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : `${statistics.avgScore}%`}</div>
+            <p className="text-xs text-muted-foreground">
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `${Math.floor(Math.random() * 10) - 5}% em relação ao mês anterior`}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
+        <Card className="lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Atividade Semanal</CardTitle>
             <CardDescription>
-              Status atual dos testes dos clientes
+              Testes concluídos por dia na última semana
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={activityData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="tests" stroke="#8884d8" activeDot={{ r: 8 }} name="Testes" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Conclusão por Tipo</CardTitle>
+            <CardDescription>
+              Status dos testes por categoria
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={completionData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="completed" stackId="a" fill="#8884d8" name="Concluídos" />
+                  <Bar dataKey="incomplete" stackId="a" fill="#82ca9d" name="Pendentes" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <Card className="mt-4">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Clientes Recentes</CardTitle>
+            <CardDescription>Últimos clientes adicionados à plataforma</CardDescription>
+          </div>
+          <Link to="/leader/clients" className="flex items-center text-sm text-blue-600 hover:text-blue-800">
+            Ver todos <ChevronRight className="ml-1 h-4 w-4" />
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
             <div className="space-y-4">
-              {[
-                {
-                  client: "Maria Silva",
-                  test: "Perfil de Liderança",
-                  progress: 75,
-                  deadline: "12/04/2023"
-                },
-                {
-                  client: "João Pereira",
-                  test: "Avaliação de Competências",
-                  progress: 30,
-                  deadline: "15/04/2023"
-                },
-                {
-                  client: "Ana Costa",
-                  test: "Análise Comportamental",
-                  progress: 90,
-                  deadline: "10/04/2023"
-                }
-              ].map((item, index) => (
-                <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium">{item.client}</h4>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      Prazo: {item.deadline}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{item.test}</p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <Progress value={item.progress} className="h-2" />
-                    </div>
-                    <span className="text-xs font-medium">{item.progress}%</span>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-          <CardFooter className="pt-0">
-            <p className="text-xs text-gray-500">Atualizados em tempo real</p>
-          </CardFooter>
-        </Card>
-      </div>
+          ) : clients.length === 0 ? (
+            <div className="text-center py-6 border border-dashed border-gray-300 rounded-lg">
+              <UserPlus className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">Sem clientes</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Você ainda não tem clientes registrados. Convide novos clientes para começar.
+              </p>
+              <div className="mt-6">
+                <Link to="/leader/clients" className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Adicionar cliente
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clients.map((client) => (
+                <div key={client.id} className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted/50">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{client.name}</p>
+                    <p className="text-sm text-gray-500 truncate">{client.email || "Email não disponível"}</p>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </LeaderLayout>
   );
 };

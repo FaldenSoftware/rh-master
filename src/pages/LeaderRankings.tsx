@@ -1,380 +1,278 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { Award, User, Users, BarChart2, ArrowUp, ArrowDown, Clock, X } from "lucide-react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Download, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { getMentorClients } from "@/lib/batchQueries";
 
-interface Client {
+interface RankingClient {
   id: string;
   name: string;
+  email?: string;
   company?: string;
   score: number;
-  trend: "up" | "down" | "neutral";
-  change: string;
-  skills: { name: string; score: number }[];
+  testsCompleted: number;
+  lastActivity: string;
 }
 
 const LeaderRankings = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [clients, setClients] = useState<Client[]>([]);
+  const { user } = useAuth();
+  const [clients, setClients] = useState<RankingClient[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchClients();
+    if (user && user.id) {
+      fetchRankingData();
     }
-  }, [user?.id]);
-  
-  const fetchClients = async () => {
+  }, [user]);
+
+  const fetchRankingData = async () => {
     try {
       setIsLoading(true);
-      setError(null);
       
-      // Buscar clientes
-      const data = await getMentorClients(user!.id);
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Fetch clients
+      const clientsData = await getMentorClients(user.id);
       
-      // Se não há clientes, definir como array vazio
-      if (!data || data.length === 0) {
+      if (!Array.isArray(clientsData) || clientsData.length === 0) {
         setClients([]);
         return;
       }
-      
-      // Para cada cliente, vamos simular dados de scores
-      // Em uma implementação real, estes dados viriam dos resultados de testes
-      const clientsWithScores = data.map(client => {
-        // Gerar score aleatório entre 60 e 95
-        const score = Math.floor(Math.random() * 36) + 60;
+
+      // Process clients data to add ranking metrics
+      // In a real app, you would fetch actual test results and calculate real scores
+      const rankingClients: RankingClient[] = clientsData.map(client => {
+        // Generate random scores and activity for demo purposes
+        const randomScore = Math.floor(Math.random() * 100);
+        const testsCompleted = Math.floor(Math.random() * 10);
         
-        // Gerar tendência aleatória
-        const trendOptions: ("up" | "down" | "neutral")[] = ["up", "down", "neutral"];
-        const trend = trendOptions[Math.floor(Math.random() * 3)];
+        // Generate a random date from the last 30 days
+        const today = new Date();
+        const lastActivityDate = new Date(today.getTime() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
         
-        // Gerar valor de mudança com base na tendência
-        const changeValue = trend === "up" ? 
-          Math.floor(Math.random() * 10) + 1 : 
-          trend === "down" ? 
-            -(Math.floor(Math.random() * 10) + 1) : 
-            0;
-            
-        // Gerar habilidades com pontuações
-        const skills = [
-          { name: "Comunicação", score: Math.floor(Math.random() * 41) + 60 },
-          { name: "Liderança", score: Math.floor(Math.random() * 41) + 60 },
-          { name: "Trabalho em Equipe", score: Math.floor(Math.random() * 41) + 60 },
-          { name: "Proatividade", score: Math.floor(Math.random() * 41) + 60 },
-          { name: "Resiliência", score: Math.floor(Math.random() * 41) + 60 },
-        ];
-          
         return {
           id: client.id,
           name: client.name,
+          email: client.email,
           company: client.company,
-          score: score,
-          trend: trend,
-          change: `${changeValue > 0 ? '+' : ''}${changeValue}%`,
-          skills: skills
+          score: randomScore,
+          testsCompleted: testsCompleted,
+          lastActivity: lastActivityDate.toLocaleDateString('pt-BR')
         };
       });
       
-      // Ordenar por score (do maior para o menor)
-      const sortedClients = clientsWithScores.sort((a, b) => b.score - a.score);
+      // Sort by score in descending order
+      const sortedClients = rankingClients.sort((a, b) => b.score - a.score);
       setClients(sortedClients);
       
-    } catch (error: any) {
-      console.error("Erro ao buscar clientes:", error);
-      setError(error.message || "Ocorreu um erro ao buscar os dados dos clientes");
+    } catch (error) {
+      console.error("Erro ao carregar dados de ranking:", error);
       toast({
-        title: "Erro ao buscar dados",
-        description: error.message || "Ocorreu um erro ao buscar os dados dos clientes",
+        title: "Erro ao carregar ranking",
+        description: error instanceof Error ? error.message : "Não foi possível carregar os dados de ranking",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-  
-  // Função para calcular a cor baseada na pontuação
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-500";
-    if (score >= 70) return "bg-blue-500";
-    if (score >= 60) return "bg-amber-500";
-    return "bg-red-500";
+
+  const handleDownloadRanking = () => {
+    // In a real implementation, this would generate a CSV or PDF with the ranking data
+    toast({
+      title: "Download iniciado",
+      description: "O arquivo de ranking será baixado em breve.",
+    });
   };
-  
-  // Função para obter ícone baseado na tendência
-  const getTrendIcon = (trend: "up" | "down" | "neutral") => {
-    if (trend === "up") return <ArrowUp className="h-4 w-4 text-green-500" />;
-    if (trend === "down") return <ArrowDown className="h-4 w-4 text-red-500" />;
-    return <Clock className="h-4 w-4 text-gray-400" />;
-  };
-  
-  // Função para obter a classe CSS baseada na tendência
-  const getTrendClass = (trend: "up" | "down" | "neutral") => {
-    if (trend === "up") return "text-green-500";
-    if (trend === "down") return "text-red-500";
-    return "text-gray-400";
+
+  const getRankBadgeColor = (index: number) => {
+    if (index === 0) return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    if (index === 1) return "bg-gray-100 text-gray-800 border-gray-300";
+    if (index === 2) return "bg-amber-100 text-amber-800 border-amber-300";
+    return "bg-blue-100 text-blue-800 border-blue-300";
   };
 
   return (
     <LeaderLayout title="Rankings">
-      <Tabs defaultValue="individual" className="w-full">
-        <TabsList>
-          <TabsTrigger value="individual">Individual</TabsTrigger>
-          <TabsTrigger value="skills">Habilidades</TabsTrigger>
-          <TabsTrigger value="company">Por Empresa</TabsTrigger>
-        </TabsList>
-        
-        {/* Individual Rankings */}
-        <TabsContent value="individual">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* Top Performers */}
-            <Card className="lg:col-span-2">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Ranking de Clientes</h1>
+          <Button variant="outline" onClick={handleDownloadRanking}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Ranking
+          </Button>
+        </div>
+
+        <Tabs defaultValue="score" className="w-full">
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+            <TabsTrigger value="score">Por Pontuação</TabsTrigger>
+            <TabsTrigger value="activity">Por Atividade</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="score">
+            <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Award className="mr-2 h-5 w-5 text-amber-500" />
-                  Top Performers
-                </CardTitle>
+                <CardTitle>Ranking por Pontuação</CardTitle>
                 <CardDescription>
-                  Ranking de clientes por pontuação geral
+                  Clientes ordenados por maior pontuação média nos testes
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex justify-center py-6">
-                    <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
-                  </div>
-                ) : error ? (
-                  <div className="flex flex-col items-center py-6">
-                    <X className="h-8 w-8 text-red-500 mb-2" />
-                    <p className="text-center text-red-500 mb-2">{error}</p>
-                    <button 
-                      onClick={fetchClients}
-                      className="text-sm text-blue-500 hover:underline"
-                    >
-                      Tentar novamente
-                    </button>
-                  </div>
-                ) : clients.length === 0 ? (
-                  <div className="flex flex-col items-center py-12">
-                    <Users className="h-10 w-10 text-gray-300 mb-3" />
-                    <p className="text-center text-gray-500">Nenhum cliente cadastrado</p>
-                    <p className="text-center text-gray-400 text-sm mt-1">
-                      Adicione clientes para visualizar o ranking
-                    </p>
-                  </div>
-                ) : (
                   <div className="space-y-4">
-                    {clients.slice(0, 5).map((client, index) => (
-                      <div key={client.id} className="flex items-center p-4 border rounded-lg">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-800 font-semibold mr-4">
-                          {index + 1}
-                        </div>
-                        <div className="mr-4">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                            <User className="h-6 w-6 text-gray-500" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{client.name}</h4>
-                          <p className="text-sm text-gray-500">{client.company || "Empresa não especificada"}</p>
-                        </div>
-                        <div className="flex flex-col items-end">
-                          <Badge className={getScoreColor(client.score)}>
-                            {client.score}/100
-                          </Badge>
-                          <div className={`flex items-center mt-1 text-xs ${getTrendClass(client.trend)}`}>
-                            {getTrendIcon(client.trend)}
-                            <span className="ml-1">{client.change}</span>
-                          </div>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
                         </div>
                       </div>
                     ))}
-                    
-                    {clients.length > 5 && (
-                      <p className="text-center text-sm text-gray-500 pt-2">
-                        Mostrando 5 de {clients.length} clientes
-                      </p>
-                    )}
+                  </div>
+                ) : clients.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
+                    <Users className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Sem dados de ranking</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Ainda não há clientes ou testes suficientes para gerar um ranking.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Posição</TableHead>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead className="text-right">Pontuação</TableHead>
+                          <TableHead className="text-right">Testes Concluídos</TableHead>
+                          <TableHead className="text-right">Última Atividade</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clients.map((client, index) => (
+                          <TableRow key={client.id}>
+                            <TableCell>
+                              <Badge className={`font-bold ${getRankBadgeColor(index)}`}>
+                                {index + 1}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-3">
+                                <Avatar>
+                                  <AvatarImage src={`https://avatar.vercel.sh/${client.name}.png`} />
+                                  <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium">{client.name}</div>
+                                  <div className="text-sm text-muted-foreground">{client.company || "Sem empresa"}</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">{client.score}/100</TableCell>
+                            <TableCell className="text-right">{client.testsCompleted}</TableCell>
+                            <TableCell className="text-right">{client.lastActivity}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </CardContent>
             </Card>
-            
-            {/* Top Skills */}
+          </TabsContent>
+          
+          <TabsContent value="activity">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart2 className="mr-2 h-5 w-5 text-blue-500" />
-                  Top Habilidades
-                </CardTitle>
+                <CardTitle>Ranking por Atividade</CardTitle>
                 <CardDescription>
-                  Média de pontuação por habilidade
+                  Clientes ordenados por maior número de testes concluídos
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
+                  <div className="space-y-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[250px]" />
+                          <Skeleton className="h-4 w-[200px]" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ) : error || clients.length === 0 ? (
-                  <div className="flex flex-col items-center py-12">
-                    <BarChart2 className="h-10 w-10 text-gray-300 mb-3" />
-                    <p className="text-center text-gray-500">Dados não disponíveis</p>
-                    <p className="text-center text-gray-400 text-sm mt-1">
-                      {error || "Adicione clientes para visualizar estatísticas"}
+                ) : clients.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
+                    <Users className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Sem dados de ranking</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Ainda não há clientes ou testes suficientes para gerar um ranking.
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {/* Calculate average score for each skill across all clients */}
-                    {(() => {
-                      const skillMap = new Map<string, number[]>();
-                      
-                      clients.forEach(client => {
-                        client.skills.forEach(skill => {
-                          if (!skillMap.has(skill.name)) {
-                            skillMap.set(skill.name, []);
-                          }
-                          skillMap.get(skill.name)?.push(skill.score);
-                        });
-                      });
-                      
-                      const averageSkills = Array.from(skillMap.entries()).map(([name, scores]) => {
-                        const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-                        return { name, score: Math.round(average) };
-                      }).sort((a, b) => b.score - a.score);
-                      
-                      return averageSkills.map(skill => (
-                        <div key={skill.name}>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium">{skill.name}</span>
-                            <span className="text-sm text-gray-600">{skill.score}/100</span>
-                          </div>
-                          <Progress value={skill.score} className="h-2" />
-                        </div>
-                      ));
-                    })()}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">Posição</TableHead>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead className="text-right">Testes Concluídos</TableHead>
+                          <TableHead className="text-right">Pontuação</TableHead>
+                          <TableHead className="text-right">Última Atividade</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...clients]
+                          .sort((a, b) => b.testsCompleted - a.testsCompleted)
+                          .map((client, index) => (
+                            <TableRow key={client.id}>
+                              <TableCell>
+                                <Badge className={`font-bold ${getRankBadgeColor(index)}`}>
+                                  {index + 1}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-3">
+                                  <Avatar>
+                                    <AvatarImage src={`https://avatar.vercel.sh/${client.name}.png`} />
+                                    <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{client.name}</div>
+                                    <div className="text-sm text-muted-foreground">{client.company || "Sem empresa"}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium">{client.testsCompleted}</TableCell>
+                              <TableCell className="text-right">{client.score}/100</TableCell>
+                              <TableCell className="text-right">{client.lastActivity}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
-          
-          {/* Performance Chart */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <BarChart2 className="mr-2 h-5 w-5 text-purple-500" />
-                Comparativo de Desempenho
-              </CardTitle>
-              <CardDescription>
-                Visualização das pontuações gerais
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin h-6 w-6 border-2 border-primary rounded-full border-t-transparent"></div>
-                </div>
-              ) : error || clients.length === 0 ? (
-                <div className="flex flex-col items-center py-12">
-                  <BarChart2 className="h-10 w-10 text-gray-300 mb-3" />
-                  <p className="text-center text-gray-500">Dados não disponíveis</p>
-                  <p className="text-center text-gray-400 text-sm mt-1">
-                    {error || "Adicione clientes para visualizar estatísticas"}
-                  </p>
-                </div>
-              ) : (
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={clients.map(client => ({
-                        name: client.name.length > 15 ? 
-                          `${client.name.substring(0, 12)}...` : 
-                          client.name,
-                        score: client.score
-                      }))}
-                      margin={{
-                        top: 5,
-                        right: 30,
-                        left: 20,
-                        bottom: 60,
-                      }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis 
-                        dataKey="name" 
-                        angle={-45} 
-                        textAnchor="end" 
-                        height={70} 
-                        tick={{fontSize: 12}}
-                      />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="score" fill="#8884d8" name="Pontuação" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Skills Ranking */}
-        <TabsContent value="skills">
-          {/* Em uma implementação real, aqui seria adicionado o conteúdo da aba de Habilidades */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ranking por Habilidades</CardTitle>
-              <CardDescription>
-                Estatísticas detalhadas por cada habilidade
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center py-8">
-                <BarChart2 className="h-12 w-12 text-gray-300 mb-3" />
-                <p className="text-center text-gray-500">Em desenvolvimento</p>
-                <p className="text-center text-gray-400 text-sm mt-1">
-                  Esta funcionalidade estará disponível em breve
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Company Ranking */}
-        <TabsContent value="company">
-          {/* Em uma implementação real, aqui seria adicionado o conteúdo da aba de Empresas */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ranking por Empresa</CardTitle>
-              <CardDescription>
-                Comparativo de desempenho entre empresas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center py-8">
-                <Users className="h-12 w-12 text-gray-300 mb-3" />
-                <p className="text-center text-gray-500">Em desenvolvimento</p>
-                <p className="text-center text-gray-400 text-sm mt-1">
-                  Esta funcionalidade estará disponível em breve
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </div>
     </LeaderLayout>
   );
 };
