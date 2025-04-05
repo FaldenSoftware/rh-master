@@ -76,6 +76,11 @@ export const registerUser = async (
   company?: string
 ): Promise<AuthUser | null> => {
   try {
+    // Validate company field for mentors at the application level
+    if (role === "mentor" && (!company || company.trim() === '')) {
+      throw new Error("Empresa é obrigatória para mentores");
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

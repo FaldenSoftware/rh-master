@@ -50,9 +50,12 @@ const Register = () => {
     try {
       // Sempre registra como mentor
       await register(email, password, name, "mentor", company);
-    } catch (error) {
-      // Erro já é tratado no contexto de autenticação
-      console.error("Erro no registro:", error);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro no registro",
+        description: error.message || "Ocorreu um erro ao registrar sua conta",
+      });
     }
   };
 
