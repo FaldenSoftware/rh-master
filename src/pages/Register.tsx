@@ -19,6 +19,7 @@ const Register = () => {
   const [company, setCompany] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const { register, isLoading, error } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -89,7 +90,7 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setGeneralError(null);
     setIsSubmitting(true);
     
     try {
@@ -127,28 +128,30 @@ const Register = () => {
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
       
-      // Specific error handling
+      // Display the error
       if (error instanceof Error) {
+        setGeneralError(error.message);
+        
         // Check for company-related errors
         if (error.message.toLowerCase().includes("empresa é obrigatória") || 
             error.message.toLowerCase().includes("company is required")) {
           setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
-          
-          toast({
-            variant: "destructive",
-            title: "Campo inválido",
-            description: "Empresa é obrigatória para mentores",
-          });
-        } else {
-          // For other errors, display the full message
-          toast({
-            variant: "destructive",
-            title: "Erro ao registrar",
-            description: error.message,
-          });
         }
+        
+        toast({
+          variant: "destructive",
+          title: "Erro ao registrar",
+          description: error.message,
+        });
+      } else {
+        setGeneralError("Ocorreu um erro desconhecido ao registrar. Por favor, tente novamente.");
+        toast({
+          variant: "destructive",
+          title: "Erro ao registrar",
+          description: "Ocorreu um erro desconhecido. Por favor, tente novamente.",
+        });
       }
-      
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -167,10 +170,10 @@ const Register = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
+          {generalError && (
             <Alert variant="destructive" className="mb-4">
               <ExclamationTriangleIcon className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{generalError}</AlertDescription>
             </Alert>
           )}
 

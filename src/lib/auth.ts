@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,6 +8,9 @@ export interface AuthUser {
   role: string;
   company?: string;
   mentor_id?: string;
+  phone?: string | null;
+  position?: string | null;
+  bio?: string | null;
 }
 
 export interface AuthState {
@@ -52,7 +54,10 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
         name: profileResult.data.name || 'Usuário',
         role: profileResult.data.role || 'client',
         company: profileResult.data.company,
-        mentor_id: profileResult.data.mentor_id
+        mentor_id: profileResult.data.mentor_id,
+        phone: profileResult.data.phone,
+        position: profileResult.data.position,
+        bio: profileResult.data.bio
       };
     }
     
@@ -69,7 +74,10 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       name: data[0].name || 'Usuário',
       role: data[0].role || 'client',
       company: data[0].company,
-      mentor_id: data[0].mentor_id
+      mentor_id: data[0].mentor_id,
+      phone: data[0].phone,
+      position: data[0].position,
+      bio: data[0].bio
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
@@ -151,95 +159,32 @@ export const registerUser = async (
       throw new Error("Falha ao criar usuário");
     }
     
-    // Step 2: Check if profile was created by trigger
-    // Wait up to 3 seconds to ensure profile was created
-    let profileCreated = false;
-    let attempts = 0;
-    const maxAttempts = 3;
+    // Wait a bit to ensure the trigger has time to execute
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    while (!profileCreated && attempts < maxAttempts) {
-      attempts++;
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      
-      // Check profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-      
-      if (!profileError && profileData) {
-        profileCreated = true;
-        console.log("Profile verified after registration:", profileData);
-      } else {
-        console.log(`Attempt ${attempts}: Profile not found yet`);
-      }
-    }
-    
-    // If profile wasn't created automatically, try to create it manually
-    if (!profileCreated) {
-      console.log("Profile not created automatically, creating profile manually");
-      
-      // Manual profile creation for mentors must include company
-      const profileData: any = {
-        id: data.user.id,
-        name: name.trim(),
-        role
-      };
-      
-      if (company && company.trim() !== '') {
-        profileData.company = company.trim();
-      }
-      
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert(profileData);
-      
-      if (insertError) {
-        console.error("Error creating profile manually:", insertError);
-        
-        if (insertError.message.includes('violates row-level security policy')) {
-          console.warn("RLS error when creating profile. Trying again with login.");
-          
-          // Try to login and then create profile
-          const { error: loginError } = await supabase.auth.signInWithPassword({
-            email, 
-            password
-          });
-          
-          if (!loginError) {
-            // Try to create profile again after login
-            const { error: retryError } = await supabase
-              .from('profiles')
-              .insert(profileData);
-            
-            if (retryError) {
-              console.error("Error creating profile after login:", retryError);
-              throw new Error(`Error creating profile: ${retryError.message}`);
-            }
-          }
-        } else if (!insertError.message.includes('duplicate key value')) {
-          // Ignore duplicate key error (means profile was already created by trigger)
-          throw new Error(`Error creating profile: ${insertError.message}`);
-        }
-      }
-    }
-    
-    // Confirm profile was created
-    const { data: confirmedProfile } = await supabase
+    // Verify profile was created
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', data.user.id)
       .single();
     
-    console.log("Final profile status:", confirmedProfile);
+    if (profileError || !profileData) {
+      console.error("Erro ao verificar perfil:", profileError);
+      throw new Error("Erro ao criar perfil de usuário. Por favor, tente novamente.");
+    }
+    
+    console.log("Perfil criado com sucesso:", profileData);
     
     return {
       id: data.user.id,
       email: data.user.email || '',
       name: name.trim(),
       role,
-      company
+      company,
+      phone: null,
+      position: null,
+      bio: null
     };
   } catch (error) {
     console.error('Error registering user:', error);

@@ -22,13 +22,19 @@ BEGIN
     id, 
     name, 
     role,
-    company
+    company,
+    phone,
+    position,
+    bio
   )
   VALUES (
     NEW.id, 
     COALESCE(NEW.raw_user_meta_data->>'name', 'Usuário'),
     COALESCE(role_value, 'client'),
-    company_value
+    company_value,
+    NULL,
+    NULL,
+    NULL
   );
   RETURN NEW;
 END;
