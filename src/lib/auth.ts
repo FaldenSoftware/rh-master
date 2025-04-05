@@ -20,14 +20,14 @@ export interface AuthState {
 export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
   try {
     console.log("Buscando perfil para usuário:", user.id);
-    // Primeiro tenta buscar o perfil do usuário usando a função SECURITY DEFINER
+    // First try to get user profile using SECURITY DEFINER function
     const { data, error } = await supabase
       .rpc('get_profile_by_id', { user_id: user.id });
     
     if (error) {
       console.error('Erro ao buscar perfil:', error);
       
-      // Fallback: tenta buscar diretamente da tabela profiles
+      // Fallback: try to fetch directly from profiles table
       const profileResult = await supabase
         .from('profiles')
         .select('*')
@@ -86,7 +86,7 @@ export const registerUser = async (
   try {
     console.log("Iniciando registro de usuário:", { email, name, role, company });
     
-    // Validar entradas com mais rigor
+    // Validate inputs rigorously
     if (!email || !email.includes('@') || !email.includes('.')) {
       throw new Error("Email inválido");
     }
@@ -99,7 +99,7 @@ export const registerUser = async (
       throw new Error("Nome é obrigatório");
     }
     
-    // Validar campo empresa para mentores em nível de aplicação
+    // Validate company field for mentors at application level
     if (role === "mentor") {
       if (!company) {
         throw new Error("Empresa é obrigatória para mentores");
@@ -110,11 +110,11 @@ export const registerUser = async (
         throw new Error("Empresa é obrigatória para mentores");
       }
       
-      // Usar o valor da empresa sem espaços
+      // Use trimmed company value
       company = companyTrimmed;
     }
     
-    // Preparar os metadados de usuário
+    // Prepare user metadata
     const userMetadata = {
       name: name.trim(),
       role,
@@ -123,7 +123,7 @@ export const registerUser = async (
     
     console.log("Registrando usuário com metadados:", userMetadata);
     
-    // Passo 1: Registrar o usuário no serviço de autenticação
+    // Step 1: Register user in auth service
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -147,17 +147,17 @@ export const registerUser = async (
       throw new Error("Falha ao criar usuário");
     }
     
-    // Passo 2: Verificar se o perfil foi criado pelo trigger
-    // Aguardar até 3 segundos para garantir que o perfil foi criado
+    // Step 2: Check if profile was created by trigger
+    // Wait up to 3 seconds to ensure profile was created
     let profileCreated = false;
     let attempts = 0;
     const maxAttempts = 3;
     
     while (!profileCreated && attempts < maxAttempts) {
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
       
-      // Verificar perfil
+      // Check profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -166,17 +166,17 @@ export const registerUser = async (
       
       if (!profileError && profileData) {
         profileCreated = true;
-        console.log("Perfil verificado após registro:", profileData);
+        console.log("Profile verified after registration:", profileData);
       } else {
-        console.log(`Tentativa ${attempts}: Perfil ainda não encontrado`);
+        console.log(`Attempt ${attempts}: Profile not found yet`);
       }
     }
     
-    // Se o perfil não foi criado automaticamente, tentar criá-lo manualmente
+    // If profile wasn't created automatically, try to create it manually
     if (!profileCreated) {
-      console.log("Perfil não criado automaticamente, criando perfil manualmente");
+      console.log("Profile not created automatically, creating profile manually");
       
-      // Validar novamente o campo empresa para mentores
+      // Validate company field for mentors again
       if (role === "mentor" && (!company || company.trim() === '')) {
         throw new Error("Empresa é obrigatória para mentores");
       }
@@ -191,19 +191,19 @@ export const registerUser = async (
         });
       
       if (insertError) {
-        console.error("Erro ao criar perfil manualmente:", insertError);
+        console.error("Error creating profile manually:", insertError);
         
         if (insertError.message.includes('violates row-level security policy')) {
-          console.warn("Erro de RLS ao criar perfil. Tentando novamente com login.");
+          console.warn("RLS error when creating profile. Trying again with login.");
           
-          // Tentar fazer login e depois criar o perfil
+          // Try to login and then create profile
           const { error: loginError } = await supabase.auth.signInWithPassword({
             email, 
             password
           });
           
           if (!loginError) {
-            // Tentar criar o perfil novamente após login
+            // Try to create profile again after login
             const { error: retryError } = await supabase
               .from('profiles')
               .insert({
@@ -214,25 +214,25 @@ export const registerUser = async (
               });
             
             if (retryError) {
-              console.error("Erro ao criar perfil após login:", retryError);
-              throw new Error(`Erro ao criar perfil: ${retryError.message}`);
+              console.error("Error creating profile after login:", retryError);
+              throw new Error(`Error creating profile: ${retryError.message}`);
             }
           }
         } else if (!insertError.message.includes('duplicate key value')) {
-          // Ignorar erro de chave duplicada (significa que o perfil já foi criado pelo trigger)
-          throw new Error(`Erro ao criar perfil: ${insertError.message}`);
+          // Ignore duplicate key error (means profile was already created by trigger)
+          throw new Error(`Error creating profile: ${insertError.message}`);
         }
       }
     }
     
-    // Confirmar que o perfil foi criado
+    // Confirm profile was created
     const { data: confirmedProfile } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', data.user.id)
       .single();
     
-    console.log("Status final do perfil:", confirmedProfile);
+    console.log("Final profile status:", confirmedProfile);
     
     return {
       id: data.user.id,
@@ -242,7 +242,7 @@ export const registerUser = async (
       company
     };
   } catch (error) {
-    console.error('Erro ao registrar usuário:', error);
+    console.error('Error registering user:', error);
     throw error;
   }
 };

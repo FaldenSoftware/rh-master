@@ -23,7 +23,7 @@ const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Limpa os erros específicos do campo quando o usuário começa a digitar
+  // Clear specific field errors when the user starts typing
   useEffect(() => {
     if (formErrors.email) setFormErrors(prev => ({ ...prev, email: "" }));
   }, [email]);
@@ -77,7 +77,7 @@ const Register = () => {
       isValid = false;
     }
 
-    // Validação de empresa para mentores (sempre verificamos, já que essa é uma página de registro de mentor)
+    // Company validation for mentors (this is a mentor registration page)
     if (!company || company.trim() === '') {
       errors.company = "Empresa é obrigatória para mentores";
       isValid = false;
@@ -90,11 +90,10 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Limpa o estado de submissão
     setIsSubmitting(true);
     
     try {
-      // Validações no lado cliente
+      // Client-side validations
       if (!validateForm()) {
         setIsSubmitting(false);
         toast({
@@ -107,13 +106,16 @@ const Register = () => {
       
       console.log("Registrando mentor com empresa:", company);
       
-      // Tentamos registrar o usuário como mentor com todos os dados necessários
+      // Make sure company is trimmed to avoid whitespace issues
+      const trimmedCompany = company.trim();
+      
+      // Register the user as mentor with all required data
       await register(
         email.trim(), 
         password, 
         name.trim(), 
         "mentor", 
-        company.trim() // Garantindo que a empresa não tenha espaços em branco no início ou fim
+        trimmedCompany
       );
       
       toast({
@@ -121,13 +123,13 @@ const Register = () => {
         description: "Redirecionando para o painel...",
       });
       
-      // O redirecionamento já é tratado no AuthContext
+      // Redirection is handled in AuthContext
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
       
-      // Tratamento específico de erros
+      // Specific error handling
       if (error instanceof Error) {
-        // Verifica se o erro está relacionado à empresa
+        // Check for company-related errors
         if (error.message.toLowerCase().includes("empresa é obrigatória") || 
             error.message.toLowerCase().includes("company is required")) {
           setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
@@ -138,7 +140,7 @@ const Register = () => {
             description: "Empresa é obrigatória para mentores",
           });
         } else {
-          // Para outros erros, exibimos a mensagem completa
+          // For other errors, display the full message
           toast({
             variant: "destructive",
             title: "Erro ao registrar",
