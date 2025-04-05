@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { AuthState, AuthUser, getCurrentUser, loginUser, logoutUser, registerUser } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
@@ -180,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     name: string, 
     role: "mentor" | "client",
     company?: string
-  ) => {
+  ): Promise<AuthUser | null> => {
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
     
     try {
@@ -211,6 +212,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate("/client");
       }
       
+      return user; // Return the user object to match the function signature
+      
     } catch (error) {
       console.error("Erro ao registrar:", error);
       const errorMessage = error instanceof Error 
@@ -228,6 +231,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Erro ao registrar",
         description: errorMessage,
       });
+
+      return null; // Return null on error to match the function signature
     }
   };
 
