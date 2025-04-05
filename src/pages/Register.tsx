@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -20,11 +19,10 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
-  const { register } = useAuth();
+  const { register, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Clear specific field errors when the user starts typing
   useEffect(() => {
     if (formErrors.email) setFormErrors(prev => ({ ...prev, email: "" }));
   }, [email]);
@@ -78,7 +76,6 @@ const Register = () => {
       isValid = false;
     }
 
-    // Company validation for mentors (this is a mentor registration page)
     if (!company || company.trim() === '') {
       errors.company = "Empresa é obrigatória para mentores";
       isValid = false;
@@ -94,7 +91,6 @@ const Register = () => {
     setIsSubmitting(true);
     
     try {
-      // Client-side validations
       if (!validateForm()) {
         setIsSubmitting(false);
         toast({
@@ -107,10 +103,8 @@ const Register = () => {
       
       console.log("Registrando mentor com empresa:", company);
       
-      // Make sure company is trimmed to avoid whitespace issues
       const trimmedCompany = company.trim();
       
-      // Register the user as mentor with all required data
       await register(
         email.trim(), 
         password, 
@@ -124,15 +118,12 @@ const Register = () => {
         description: "Redirecionando para o painel...",
       });
       
-      // Redirection is handled in AuthContext
     } catch (error) {
       console.error("Erro capturado na página de registro:", error);
       
-      // Display the error
       if (error instanceof Error) {
         setGeneralError(error.message);
         
-        // Check for company-related errors
         if (error.message.toLowerCase().includes("empresa é obrigatória") || 
             error.message.toLowerCase().includes("company is required")) {
           setFormErrors(prev => ({ ...prev, company: "Empresa é obrigatória para mentores" }));
