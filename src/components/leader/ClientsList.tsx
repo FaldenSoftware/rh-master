@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { getMentorClients } from "@/lib/batchQueries";
 
 interface Client {
   id: string;
@@ -60,24 +60,15 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
         throw new Error("Usuário não autenticado");
       }
 
-      // Buscar clientes direto da tabela profiles usando a política RLS corrigida
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('mentor_id', user.id)
-        .eq('role', 'client');
+      // Fetch clients using our utility function
+      const data = await getMentorClients(user.id);
       
-      if (error) {
-        console.error("Erro ao buscar clientes:", error);
-        throw error;
-      }
-      
-      // Se não temos dados, retorne um array vazio
+      // If we don't have data, return an empty array
       if (!data || data.length === 0) {
         return [];
       }
       
-      // Formatar os dados
+      // Format the data
       const formattedClients = (data || []).map((profile: Profile) => ({
         id: profile.id,
         name: profile.name,
