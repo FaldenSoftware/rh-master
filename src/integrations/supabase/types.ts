@@ -107,29 +107,38 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           company: string | null
           created_at: string
           id: string
           mentor_id: string | null
           name: string
+          phone: string | null
+          position: string | null
           role: string
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           company?: string | null
           created_at?: string
           id: string
           mentor_id?: string | null
           name: string
+          phone?: string | null
+          position?: string | null
           role: string
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           company?: string | null
           created_at?: string
           id?: string
           mentor_id?: string | null
           name?: string
+          phone?: string | null
+          position?: string | null
           role?: string
           updated_at?: string
         }
@@ -242,11 +251,14 @@ export type Database = {
           user_id: string
         }
         Returns: {
+          bio: string | null
           company: string | null
           created_at: string
           id: string
           mentor_id: string | null
           name: string
+          phone: string | null
+          position: string | null
           role: string
           updated_at: string
         }[]
@@ -281,11 +293,14 @@ export type Database = {
           user_id: string
         }
         Returns: {
+          bio: string | null
           company: string | null
           created_at: string
           id: string
           mentor_id: string | null
           name: string
+          phone: string | null
+          position: string | null
           role: string
           updated_at: string
         }[]
