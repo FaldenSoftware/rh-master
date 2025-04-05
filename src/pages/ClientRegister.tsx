@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { verifyInvitationCode, isValidCodeFormat } from "@/lib/invitationCode";
 import { InvitationCode } from "@/types/models";
+import { AuthUser } from "@/lib/auth";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -53,7 +54,6 @@ export default function ClientRegister() {
 
   const watchInviteCode = form.watch("inviteCode");
 
-  // Verify invitation code when it changes
   useEffect(() => {
     const verifyCode = async () => {
       if (watchInviteCode && watchInviteCode.length === 12) {
@@ -65,7 +65,6 @@ export default function ClientRegister() {
         setIsCodeValid(result.valid);
         if (result.valid && result.data) {
           setInviteData(result.data as InvitationCode);
-          // Pre-fill email if available from invitation
           if (result.data.email && !form.getValues("email")) {
             form.setValue("email", result.data.email);
           }
@@ -80,7 +79,6 @@ export default function ClientRegister() {
       }
     };
     
-    // Debounce the verification to avoid too many API calls
     const timeoutId = setTimeout(verifyCode, 500);
     return () => clearTimeout(timeoutId);
   }, [watchInviteCode, form]);
@@ -99,17 +97,14 @@ export default function ClientRegister() {
         return;
       }
       
-      // Register the new client
       const mentorId = inviteData?.mentor_id;
       if (!mentorId) {
         throw new Error("Mentor ID não encontrado no código de convite");
       }
       
-      const result = await register(values.email, values.password, values.name, "client", undefined);
+      const result: AuthUser | null = await register(values.email, values.password, values.name, "client", undefined);
       
-      // If registration was successful, update the invitation code to mark as used
-      if (result) {
-        // Using the raw query method to avoid type issues
+      if (result !== null) {
         const { error } = await supabase
           .from('invitation_codes')
           .update({ 
@@ -122,7 +117,6 @@ export default function ClientRegister() {
           console.error("Erro ao atualizar código de convite:", error);
         }
         
-        // Update the client profile to link to the mentor
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ mentor_id: mentorId } as any)
