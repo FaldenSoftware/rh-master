@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,13 +10,11 @@ import { Download, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { getMentorClients } from "@/lib/batchQueries";
 
 interface RankingClient {
   id: string;
   name: string;
-  email?: string;
   company?: string;
   score: number;
   testsCompleted: number;
@@ -47,7 +44,7 @@ const LeaderRankings = () => {
       // Fetch clients
       const clientsData = await getMentorClients(user.id);
       
-      if (!Array.isArray(clientsData) || clientsData.length === 0) {
+      if (!clientsData || clientsData.length === 0) {
         setClients([]);
         return;
       }
@@ -66,7 +63,6 @@ const LeaderRankings = () => {
         return {
           id: client.id,
           name: client.name,
-          email: client.email,
           company: client.company,
           score: randomScore,
           testsCompleted: testsCompleted,
