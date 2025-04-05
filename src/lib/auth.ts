@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -93,7 +94,7 @@ export const registerUser = async (
   company?: string
 ): Promise<AuthUser | null> => {
   try {
-    console.log("Iniciando registro de usuário:", { email, name, role, company });
+    console.log("Iniciando registro de novo usuário:", { email, name, role, company });
     
     // Validate inputs rigorously
     if (!email || !email.includes('@') || !email.includes('.')) {
@@ -108,28 +109,23 @@ export const registerUser = async (
       throw new Error("Nome é obrigatório");
     }
     
-    // Validate company field for mentors
-    if (role === "mentor") {
-      if (!company) {
-        throw new Error("Empresa é obrigatória para mentores");
-      }
-      
-      const companyTrimmed = company.trim();
-      if (companyTrimmed === '') {
-        throw new Error("Empresa é obrigatória para mentores");
-      }
-      
-      // Use trimmed company value
-      company = companyTrimmed;
-    }
-    
-    // Prepare user metadata - make sure company is only included if it has a value
+    // Prepare user metadata - with minimal required fields
     const userMetadata: Record<string, any> = {
       name: name.trim(),
       role
     };
     
-    if (company && company.trim() !== '') {
+    // Add company to metadata ONLY if it's provided AND is required
+    if (role === "mentor") {
+      // Validate company field for mentors
+      if (!company || company.trim() === '') {
+        throw new Error("Empresa é obrigatória para mentores");
+      }
+      
+      // Only add company if it has an actual value
+      userMetadata.company = company.trim();
+    } else if (company && company.trim() !== '') {
+      // For clients, add company only if provided (optional)
       userMetadata.company = company.trim();
     }
     
@@ -152,15 +148,15 @@ export const registerUser = async (
       throw new Error(`Erro ao registrar: ${error.message}`);
     }
     
-    console.log("Usuário registrado no auth:", data);
-    
     if (!data.user) {
       console.error("Nenhum usuário retornado do signUp");
       throw new Error("Falha ao criar usuário");
     }
     
+    console.log("Usuário registrado no auth:", data);
+    
     // Wait a bit to ensure the trigger has time to execute
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Verify profile was created
     const { data: profileData, error: profileError } = await supabase
@@ -169,19 +165,35 @@ export const registerUser = async (
       .eq('id', data.user.id)
       .single();
     
-    if (profileError || !profileData) {
+    if (profileError) {
       console.error("Erro ao verificar perfil:", profileError);
-      throw new Error("Erro ao criar perfil de usuário. Por favor, tente novamente.");
+      
+      // Tente uma abordagem mais direta para criar o perfil
+      const directInsert = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          name: name.trim(),
+          role: role,
+          company: role === "mentor" ? company : null
+        });
+      
+      if (directInsert.error) {
+        console.error("Erro ao inserir perfil diretamente:", directInsert.error);
+        throw new Error("Erro ao criar perfil de usuário. Por favor, tente novamente.");
+      }
+      
+      console.log("Perfil criado diretamente após falha do trigger");
+    } else {
+      console.log("Perfil criado com sucesso pelo trigger:", profileData);
     }
-    
-    console.log("Perfil criado com sucesso:", profileData);
     
     return {
       id: data.user.id,
       email: data.user.email || '',
       name: name.trim(),
       role,
-      company,
+      company: role === "mentor" ? company : undefined,
       phone: null,
       position: null,
       bio: null
