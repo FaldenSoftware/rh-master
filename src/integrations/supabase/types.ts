@@ -276,6 +276,33 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_profile: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          company: string | null
+          created_at: string
+          id: string
+          mentor_id: string | null
+          name: string
+          role: string
+          updated_at: string
+        }[]
+      }
+      is_client_of_mentor: {
+        Args: {
+          client_id: string
+          mentor_id: string
+        }
+        Returns: boolean
+      }
+      is_user_mentor: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       mentor_owns_test: {
         Args: {
           mentor_id: string

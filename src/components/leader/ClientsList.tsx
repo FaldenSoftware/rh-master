@@ -53,48 +53,31 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
     }
   }, [user]);
 
-  // Function to fetch clients using the security definer function
+  // Function to fetch clients using our new security definer functions
   const fetchClients = async () => {
     try {
       if (!user || !user.id) {
         throw new Error("Usuário não autenticado");
       }
 
-      // Buscando clientes onde o mentor_id é igual ao ID do usuário autenticado
+      // Buscar clientes direto da tabela profiles usando a política RLS corrigida
       const { data, error } = await supabase
-        .rpc('get_mentor_clients', { mentor_id: user.id })
-        .select('*');
+        .from('profiles')
+        .select('*')
+        .eq('mentor_id', user.id)
+        .eq('role', 'client');
       
       if (error) {
-        console.error("Erro na chamada RPC:", error);
+        console.error("Erro ao buscar clientes:", error);
         throw error;
       }
       
-      // Se não temos dados da função RPC, tente um fallback direto na tabela
+      // Se não temos dados, retorne um array vazio
       if (!data || data.length === 0) {
-        // Fallback: busca direta com select 
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('mentor_id', user.id)
-          .eq('role', 'client');
-        
-        if (fallbackError) {
-          console.error("Erro no fallback:", fallbackError);
-          throw fallbackError;
-        }
-        
-        const formattedClients = (fallbackData || []).map((profile: Profile) => ({
-          id: profile.id,
-          name: profile.name,
-          email: profile.email || 'Email não disponível',
-          company: profile.company
-        }));
-
-        return formattedClients;
+        return [];
       }
       
-      // Formatar os dados da chamada RPC
+      // Formatar os dados
       const formattedClients = (data || []).map((profile: Profile) => ({
         id: profile.id,
         name: profile.name,

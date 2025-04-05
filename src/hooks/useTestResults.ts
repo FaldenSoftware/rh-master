@@ -1,7 +1,7 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { getClientTestsForUser, getTestInfoBatch, getTestResultsBatch } from "@/lib/batchQueries";
 
 export interface TestResult {
   id: string;
@@ -31,14 +31,8 @@ export const useTestResults = (userId?: string) => {
     }
 
     try {
-      // Buscar testes do cliente usando a função RPC segura
-      const { data: clientTests, error: testsError } = await supabase
-        .rpc('get_client_tests_for_user', { user_id: userId });
-
-      if (testsError) {
-        console.error("Erro ao buscar testes:", testsError);
-        throw new Error(`Erro ao buscar testes: ${testsError.message}`);
-      }
+      // Buscar testes do cliente usando a função segura
+      const clientTests = await getClientTestsForUser(userId);
 
       // Retorna array vazio se não houver testes
       if (!clientTests || clientTests.length === 0) {
@@ -47,36 +41,23 @@ export const useTestResults = (userId?: string) => {
 
       // Buscar informações dos testes
       const testIds = clientTests.map(test => test.test_id);
-      
-      // Usar função RPC para evitar recursão
-      const { data: testInfo, error: testInfoError } = await supabase
-        .rpc('get_test_info_batch', { test_ids: testIds });
-      
-      if (testInfoError) {
-        console.error("Erro ao buscar informações dos testes:", testInfoError);
-        throw new Error(`Erro ao buscar informações dos testes: ${testInfoError.message}`);
-      }
+      const testInfo = await getTestInfoBatch(testIds);
       
       // Criar mapeamento de IDs para dados de teste
       const testsMap = new Map();
-      if (testInfo) {
+      if (testInfo && testInfo.length > 0) {
         testInfo.forEach(test => {
           testsMap.set(test.id, test);
         });
       }
 
       // Buscar resultados dos testes
-      const { data: testResults, error: resultsError } = await supabase
-        .rpc('get_test_results_batch', { client_test_ids: clientTests.map(test => test.id) });
-      
-      if (resultsError) {
-        console.error("Erro ao buscar resultados dos testes:", resultsError);
-        throw new Error(`Erro ao buscar resultados dos testes: ${resultsError.message}`);
-      }
+      const clientTestIds = clientTests.map(test => test.id);
+      const testResults = await getTestResultsBatch(clientTestIds);
       
       // Mapear resultados para os testes
       const resultsMap = new Map();
-      if (testResults) {
+      if (testResults && testResults.length > 0) {
         testResults.forEach(result => {
           resultsMap.set(result.client_test_id, result);
         });
@@ -150,7 +131,6 @@ export const useTestResults = (userId?: string) => {
   });
 };
 
-// Funções auxiliares para gerar dados padrão quando não há resultados reais
 const getDefaultSkillScores = () => [
   { skill: "Comunicação", value: 0 },
   { skill: "Proatividade", value: 0 },
