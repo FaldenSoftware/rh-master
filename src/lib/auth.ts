@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -90,6 +89,19 @@ export const registerUser = async (
   try {
     console.log("Iniciando registro de usuário:", { email, name, role, company });
     
+    // Validate inputs more strictly
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      throw new Error("Email inválido");
+    }
+    
+    if (!password || password.length < 6) {
+      throw new Error("Senha deve ter pelo menos 6 caracteres");
+    }
+    
+    if (!name || name.trim() === '') {
+      throw new Error("Nome é obrigatório");
+    }
+    
     // Validate company field for mentors at the application level
     if (role === "mentor" && (!company || company.trim() === '')) {
       throw new Error("Empresa é obrigatória para mentores");
@@ -97,13 +109,14 @@ export const registerUser = async (
     
     // Certifique-se de que company esteja definida como string vazia se for undefined
     const userMetadata = {
-      name,
+      name: name.trim(),
       role,
-      company: company || ''
+      company: company ? company.trim() : ''
     };
     
     console.log("Registrando usuário com metadados:", userMetadata);
     
+    // Step 1: Registrar o usuário no authentication service
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -114,7 +127,10 @@ export const registerUser = async (
     
     if (error) {
       console.error("Erro no signUp:", error);
-      throw error;
+      if (error.message.includes('User already registered')) {
+        throw new Error("Email já registrado. Por favor, faça login ou use outro email.");
+      }
+      throw new Error(`Erro ao registrar: ${error.message}`);
     }
     
     console.log("Usuário registrado no auth:", data);
@@ -124,6 +140,7 @@ export const registerUser = async (
       throw new Error("Falha ao criar usuário");
     }
     
+    // Step 2: Garantir que o perfil exista
     // Aguardar um momento para garantir que o perfil foi criado pelo trigger
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -145,28 +162,50 @@ export const registerUser = async (
           .from('profiles')
           .insert({
             id: data.user.id,
-            name,
+            name: name.trim(),
             role,
-            company: company || ''
+            company: company ? company.trim() : ''
           });
         
         if (insertError) {
           console.error("Erro ao criar perfil manualmente:", insertError);
-          throw insertError;
+          if (insertError.message.includes('duplicate key value violates unique constraint')) {
+            console.log("Perfil já existe, ignorando erro de duplicação");
+          } else if (insertError.message.includes('violates row-level security policy')) {
+            throw new Error("Erro de segurança ao criar perfil. Verifique as políticas RLS.");
+          } else {
+            throw new Error(`Erro ao criar perfil: ${insertError.message}`);
+          }
         }
       }
+      
+      // Busca o perfil novamente para confirmar
+      const { data: confirmedProfile, error: confirmedError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (confirmedError || !confirmedProfile) {
+        throw new Error("Não foi possível confirmar a criação do perfil");
+      }
+      
+      console.log("Perfil confirmado após registro:", confirmedProfile);
+      
+      return {
+        id: data.user.id,
+        email: data.user.email || '',
+        name: name.trim(),
+        role,
+        company: company ? company.trim() : ''
+      };
     } catch (profileError) {
       console.error("Erro ao verificar/criar perfil:", profileError);
-      // Não falhar o registro se o perfil não puder ser verificado/criado
+      if (profileError instanceof Error) {
+        throw profileError;
+      }
+      throw new Error("Erro ao finalizar registro do usuário");
     }
-    
-    return {
-      id: data.user.id,
-      email: data.user.email || '',
-      name,
-      role,
-      company: company || ''
-    };
     
   } catch (error) {
     console.error('Erro ao registrar usuário:', error);

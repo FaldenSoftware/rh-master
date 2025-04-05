@@ -8,11 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const { login, isLoading, error, isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -29,17 +31,47 @@ const ClientLogin = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // Limpa os erros específicos do campo quando o usuário começa a digitar
+  useEffect(() => {
+    if (formErrors.email) setFormErrors(prev => ({ ...prev, email: "" }));
+  }, [email]);
+
+  useEffect(() => {
+    if (formErrors.password) setFormErrors(prev => ({ ...prev, password: "" }));
+  }, [password]);
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    let isValid = true;
+
+    if (!email) {
+      errors.email = "Email é obrigatório";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = "Email inválido";
+      isValid = false;
+    }
+
+    if (!password) {
+      errors.password = "Senha é obrigatória";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!email || !password) {
+    if (!validateForm()) {
+      setIsSubmitting(false);
       toast({
         variant: "destructive",
-        title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos",
+        title: "Campos inválidos",
+        description: "Por favor, corrija os erros no formulário",
       });
-      setIsSubmitting(false);
       return;
     }
     
@@ -54,6 +86,10 @@ const ClientLogin = () => {
     }
   };
 
+  const getFieldErrorClass = (field: string) => {
+    return formErrors[field] ? "border-red-500" : "";
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-full max-w-md">
@@ -64,6 +100,13 @@ const ClientLogin = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <ExclamationTriangleIcon className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -74,7 +117,11 @@ const ClientLogin = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Digite seu email"
+                className={getFieldErrorClass("email")}
               />
+              {formErrors.email && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -86,14 +133,12 @@ const ClientLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Digite sua senha"
+                className={getFieldErrorClass("password")}
               />
+              {formErrors.password && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>
+              )}
             </div>
-            
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
             
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
               {isLoading || isSubmitting ? "Entrando..." : "Entrar"}

@@ -198,9 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      console.log("Registering user:", { email, name, role, company });
+      console.log("Registrando usuário:", { email, name, role, company });
       
-      // Validação adicional para campos obrigatórios
       if (!email || !password || !name) {
         throw new Error("Preencha todos os campos obrigatórios");
       }
@@ -209,14 +208,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Empresa é obrigatória para mentores");
       }
       
+      // Tentar registrar o usuário
       const user = await registerUser(email, password, name, role, company);
       
       if (!user) {
-        console.error("Registration successful but user not found");
+        console.error("Registro bem-sucedido mas usuário não encontrado");
         throw new Error("Falha no registro. Tente novamente.");
       }
       
-      console.log("Registration successful for user:", user);
+      console.log("Registro bem-sucedido para o usuário:", user);
+      
+      // Atualizar o estado de autenticação
       setAuthState({
         user,
         isAuthenticated: true,
@@ -229,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Bem-vindo, ${user.name}!`,
       });
       
+      // Redirecionar com base no papel do usuário
       if (user.role === "mentor") {
         navigate("/leader");
       } else {
@@ -250,6 +253,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           errorMessage = "Empresa é obrigatória para mentores.";
         } else if (error.message.includes("Database error saving new user")) {
           errorMessage = "Erro ao salvar usuário. Verifique se todos os campos estão preenchidos corretamente.";
+        } else if (error.message.includes("violates row-level security policy")) {
+          errorMessage = "Erro de segurança ao criar perfil. Tente novamente ou entre em contato com o suporte.";
         } else {
           errorMessage = error.message;
         }
