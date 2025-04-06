@@ -1,6 +1,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AuthState, AuthUser, getCurrentUser, loginUser, logoutUser, registerUser } from "@/lib/auth";
+import { 
+  AuthState, 
+  AuthUser, 
+  getCurrentUser, 
+  loginUser, 
+  logoutUser, 
+  registerUser 
+} from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
