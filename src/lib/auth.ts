@@ -20,9 +20,9 @@ export const hasAccess = (user: AuthUser | null, requiredRole: "mentor" | "clien
 };
 
 // Re-export everything needed from the auth module
+// Use 'export type' for type exports when isolatedModules is enabled
+export type { AuthUser, AuthState };
 export {
-  AuthUser,
-  AuthState,
   getUserProfile,
   registerUser,
   loginUser,
