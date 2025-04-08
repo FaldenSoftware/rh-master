@@ -134,28 +134,28 @@ const AnimalProfileResults = () => {
   }
 
   // Parse the animal predominante (handling ties)
-  const animals = result.animalPredominante.split('-');
+  const animals = result.animal_predominante.split('-');
   
   // Prepare data for charts
   const scoreData = [
-    { name: "Tubarão (Executor)", value: result.scoreTubarao, color: "#F59E0B" },
-    { name: "Gato (Comunicador)", value: result.scoreGato, color: "#10B981" },
-    { name: "Lobo (Organizador)", value: result.scoreLobo, color: "#3B82F6" },
-    { name: "Águia (Idealizador)", value: result.scoreAguia, color: "#8B5CF6" }
+    { name: "Tubarão (Executor)", value: result.score_tubarao, color: "#F59E0B" },
+    { name: "Gato (Comunicador)", value: result.score_gato, color: "#10B981" },
+    { name: "Lobo (Organizador)", value: result.score_lobo, color: "#3B82F6" },
+    { name: "Águia (Idealizador)", value: result.score_aguia, color: "#8B5CF6" }
   ];
   
   const barChartData = [
-    { name: "Tubarão", pontuação: result.scoreTubarao, fill: "#F59E0B" },
-    { name: "Gato", pontuação: result.scoreGato, fill: "#10B981" },
-    { name: "Lobo", pontuação: result.scoreLobo, fill: "#3B82F6" },
-    { name: "Águia", pontuação: result.scoreAguia, fill: "#8B5CF6" }
+    { name: "Tubarão", pontuação: result.score_tubarao, fill: "#F59E0B" },
+    { name: "Gato", pontuação: result.score_gato, fill: "#10B981" },
+    { name: "Lobo", pontuação: result.score_lobo, fill: "#3B82F6" },
+    { name: "Águia", pontuação: result.score_aguia, fill: "#8B5CF6" }
   ];
   
   const radarChartData = [
-    { subject: "Executor", A: result.scoreTubarao, fullMark: 10 },
-    { subject: "Comunicador", A: result.scoreGato, fullMark: 10 },
-    { subject: "Organizador", A: result.scoreLobo, fullMark: 10 },
-    { subject: "Idealizador", A: result.scoreAguia, fullMark: 10 }
+    { subject: "Executor", A: result.score_tubarao, fullMark: 10 },
+    { subject: "Comunicador", A: result.score_gato, fullMark: 10 },
+    { subject: "Organizador", A: result.score_lobo, fullMark: 10 },
+    { subject: "Idealizador", A: result.score_aguia, fullMark: 10 }
   ];
   
   // Get data for the predominant animal(s)
@@ -173,7 +173,7 @@ const AnimalProfileResults = () => {
               Resultado
             </Badge>
             <div className="text-sm">
-              Concluído em: {new Date(result.completedAt).toLocaleDateString('pt-BR')}
+              Concluído em: {new Date(result.completed_at).toLocaleDateString('pt-BR')}
             </div>
           </div>
           

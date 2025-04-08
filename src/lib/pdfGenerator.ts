@@ -56,7 +56,7 @@ export const generateAnimalProfilePDF = async (
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8);
     pdf.text(
-      `Gerado em ${currentDate} | Avaliação de Perfil Comportamental Animal | Página ${pdf.internal.getCurrentPageInfo().pageNumber}`,
+      `Gerado em ${currentDate} | Avaliação de Perfil Comportamental Animal | Página ${pdf.internal.pages.length}`,
       pageWidth / 2,
       pageHeight - 7,
       { align: "center" }
@@ -290,7 +290,7 @@ export const generateAnimalProfilePDF = async (
   });
   
   // Add footer to the last page
-  const lastPage = pdf.internal.pages.length; // Fixed: use pages.length instead of getNumberOfPages()
+  const lastPage = pdf.internal.pages.length;
   pdf.setPage(lastPage);
   pdf.setFontSize(10);
   pdf.setTextColor(150, 150, 150);
