@@ -116,7 +116,8 @@ const handleRegistrationError = (error: any): never => {
 };
 
 /**
- * Ensures a profile exists for the user, creating one if needed
+ * Checks if a profile exists for the user after registration.
+ * Relies on the handle_new_user trigger for profile creation.
  */
 const ensureProfileExists = async (
   user: any,
@@ -124,45 +125,53 @@ const ensureProfileExists = async (
   role: "mentor" | "client",
   company?: string
 ): Promise<AuthUser> => {
-  // Check if profile was created by trigger
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  
-  // If profile not found, create manually
-  if (profileError || !profileData) {
-    console.log("Perfil não encontrado após registro, criando manualmente");
-    
-    const profileInsert = await supabase
+  console.log(`Verificando perfil para o usuário ${user.id} após registro.`);
+
+  // Give the trigger some time to execute
+  await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced delay slightly
+
+  // Check if profile was created by trigger using the authenticated client
+  // Note: This still might run into auth timing issues immediately after signup
+  // but we are NOT attempting manual insert anymore.
+  let profileData: any = null;
+  let profileError: any = null;
+
+  try {
+    const { data, error } = await supabase
       .from('profiles')
-      .insert({
-        id: user.id,
-        name: name.trim(),
-        role: role,
-        company: role === "mentor" ? company?.trim() : null
-      });
-    
-    if (profileInsert.error) {
-      console.error("Erro ao inserir perfil manualmente:", profileInsert.error);
-      throw new Error("Não foi possível criar seu perfil. Por favor, tente novamente.");
-    }
-    
-    console.log("Perfil criado manualmente com sucesso");
-  } else {
-    console.log("Perfil já criado pelo trigger:", profileData);
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    profileData = data;
+    profileError = error;
+  } catch (err) {
+      console.error("Erro inesperado ao buscar perfil:", err);
+      profileError = err; // Catch potential exceptions during the query
   }
-  
+
+
+  // If profile not found after the delay, something went wrong (likely the trigger)
+  if (profileError || !profileData) {
+    console.error("Perfil não encontrado ou erro ao buscar após registro. Erro:", profileError);
+    // Log the specific error if available
+    const errorMessage = profileError?.message || "Perfil não encontrado após o tempo esperado.";
+    // Throw a specific error indicating profile creation failed, likely due to the trigger
+    throw new Error(`Não foi possível criar seu perfil. Verifique os logs do banco de dados. Detalhe: ${errorMessage}`);
+  }
+
+  console.log("Perfil encontrado (provavelmente criado pelo trigger):", profileData);
+
+  // Return the AuthUser structure based on the found profile or initial data
+  // It's safer to use data from the profile table if found
   return {
     id: user.id,
     email: user.email || '',
-    name: name.trim(),
-    role,
-    company: role === "mentor" ? company : undefined,
-    phone: null,
-    position: null,
-    bio: null
+    name: profileData.name || name.trim(), // Prefer profile name
+    role: profileData.role || role,         // Prefer profile role
+    company: profileData.company,           // Get company from profile
+    phone: profileData.phone,               // Get phone from profile
+    position: profileData.position,         // Get position from profile
+    bio: profileData.bio                    // Get bio from profile
   };
 };
 
