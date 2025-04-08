@@ -1,24 +1,13 @@
-
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Clock, CheckCircle, Brain, Loader2 } from "lucide-react";
-
-interface Test {
-  id: string;
-  client_id: string;
-  test_id: string;
-  is_completed: boolean;
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { ClientTest } from "@/types/models";
 
 interface AnimalProfileTestCardProps {
-  test: Test;
+  test: ClientTest;
   isStarting: boolean;
   onStartTest: (testId: string) => void;
 }

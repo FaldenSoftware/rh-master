@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AnimalProfileQuestion {
@@ -312,14 +311,14 @@ export const getAnimalProfileResult = async (resultId: string): Promise<AnimalPr
   }
 };
 
-// Get user's latest result
+// Fetch user's latest animal profile result
 export const getUserLatestAnimalProfileResult = async (userId: string): Promise<AnimalProfileResult | null> => {
   try {
     const { data, error } = await supabase
       .from('animal_profile_results')
       .select('*')
       .eq('user_id', userId)
-      .is('animal_predominante', 'not.null')
+      .is('animal_predominante', 'not.null' as any)
       .order('completed_at', { ascending: false })
       .limit(1)
       .maybeSingle();

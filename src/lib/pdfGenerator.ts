@@ -145,7 +145,7 @@ export const generateAnimalProfilePDF = async (result: AnimalProfileResult, user
   }
   
   // Add footer
-  const lastPage = pdf.internal.getNumberOfPages();
+  const lastPage = pdf.internal.pages.length; // Fixed: use pages.length instead of getNumberOfPages()
   pdf.setPage(lastPage);
   pdf.setFontSize(10);
   pdf.setTextColor(150, 150, 150);

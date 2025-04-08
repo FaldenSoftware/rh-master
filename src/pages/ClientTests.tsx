@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -210,7 +209,7 @@ const ClientTests = () => {
                     id: animalTest.client_test_id,
                     client_id: '',
                     test_id: animalTest.id,
-                    is_completed: animalTest.status === "concluído" ? true : false,
+                    is_completed: false,
                     started_at: animalTest.startedAt,
                     completed_at: animalTest.completedAt,
                     created_at: new Date().toISOString(),
