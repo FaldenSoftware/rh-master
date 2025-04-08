@@ -26,11 +26,11 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
         email: user.email || '',
         name: profileData.name || 'Usuário',
         role: profileData.role || 'client',
-        company: profileData.company,
-        mentor_id: profileData.mentor_id,
-        phone: profileData.phone,
-        position: profileData.position,
-        bio: profileData.bio
+        company: profileData.company || '',
+        mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
+        phone: profileData.phone || '',
+        position: profileData.position || '',
+        bio: profileData.bio || ''
       };
     }
     
@@ -43,10 +43,11 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company,
-      phone: userMetadata.phone,
-      position: userMetadata.position,
-      bio: userMetadata.bio
+      company: userMetadata.company || '',
+      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
+      phone: userMetadata.phone || '',
+      position: userMetadata.position || '',
+      bio: userMetadata.bio || ''
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
@@ -58,10 +59,11 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company,
-      phone: userMetadata.phone,
-      position: userMetadata.position,
-      bio: userMetadata.bio
+      company: userMetadata.company || '',
+      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
+      phone: userMetadata.phone || '',
+      position: userMetadata.position || '',
+      bio: userMetadata.bio || ''
     };
   }
 };
@@ -75,10 +77,10 @@ const mapProfileToAuthUser = (profileData: any, user: User): AuthUser => {
     email: user.email || '',
     name: profileData.name || 'Usuário',
     role: profileData.role || 'client',
-    company: profileData.company,
-    mentor_id: profileData.mentor_id,
-    phone: profileData.phone,
-    position: profileData.position,
-    bio: profileData.bio
+    company: profileData.company || '',
+    mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
+    phone: profileData.phone || '',
+    position: profileData.position || '',
+    bio: profileData.bio || ''
   };
 };

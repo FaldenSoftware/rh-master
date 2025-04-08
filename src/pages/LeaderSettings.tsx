@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,6 +52,29 @@ const LeaderSettings = () => {
       
       if (profileError) {
         console.error("Error fetching profile data:", profileError);
+        
+        // Fallback to user object from context if profile query fails
+        if (user) {
+          console.log("Using user data from auth context:", user);
+          
+          // Split name into first and last name
+          const nameParts = user.name ? user.name.split(' ') : ['', ''];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          setProfile({
+            firstName,
+            lastName,
+            email: user.email || '',
+            phone: user.phone || '',
+            position: user.position || '',
+            bio: user.bio || '',
+            company: user.company || ''
+          });
+          setProfileLoading(false);
+          return;
+        }
+        
         toast.error("Erro ao carregar dados do perfil");
         return;
       }

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
 import { getUserProfile } from "./userProfile";
@@ -155,9 +154,9 @@ export const registerUser = async (
       role: role,
       company: company?.trim(),
       mentor_id: role === "mentor" ? data.user.id : null,
-      phone: phone?.trim(),
-      position: position?.trim(),
-      bio: bio?.trim()
+      phone: phone?.trim() || '',
+      position: position?.trim() || '',
+      bio: bio?.trim() || ''
     };
     
     console.log("Retornando usuário completo após registro:", authUser);
@@ -373,11 +372,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
           email: data.session.user.email || '',
           name: profileData.name || 'Usuário',
           role: profileData.role || 'client',
-          company: profileData.company,
-          mentor_id: profileData.mentor_id,
-          phone: profileData.phone,
-          position: profileData.position,
-          bio: profileData.bio
+          company: profileData.company || '',
+          mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? data.session.user.id : null),
+          phone: profileData.phone || '',
+          position: profileData.position || '',
+          bio: profileData.bio || ''
         };
       }
       
@@ -390,10 +389,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         email: data.session.user.email || '',
         name: userMetadata.name || 'Usuário',
         role: userMetadata.role || 'client',
-        company: userMetadata.company,
-        phone: userMetadata.phone,
-        position: userMetadata.position,
-        bio: userMetadata.bio
+        company: userMetadata.company || '',
+        mentor_id: userMetadata.role === 'mentor' ? data.session.user.id : userMetadata.mentor_id,
+        phone: userMetadata.phone || '',
+        position: userMetadata.position || '',
+        bio: userMetadata.bio || ''
       };
     } catch (profileError) {
       console.error('Erro ao buscar perfil do usuário atual:', profileError);
@@ -404,10 +404,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         email: data.session.user.email || '',
         name: userMetadata.name || 'Usuário',
         role: userMetadata.role || 'client',
-        company: userMetadata.company,
-        phone: userMetadata.phone,
-        position: userMetadata.position,
-        bio: userMetadata.bio
+        company: userMetadata.company || '',
+        mentor_id: userMetadata.role === 'mentor' ? data.session.user.id : userMetadata.mentor_id,
+        phone: userMetadata.phone || '',
+        position: userMetadata.position || '',
+        bio: userMetadata.bio || ''
       };
     }
   } catch (error) {
