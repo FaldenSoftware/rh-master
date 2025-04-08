@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
 import { getUserProfile } from "./userProfile";
@@ -56,11 +55,22 @@ export const registerUser = async (
     
     console.log("Usuário registrado no auth:", data);
     
-    // Wait for the trigger to create the profile
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Wait longer for the trigger to create the profile
+    // This helps avoid race conditions with RLS policies
+    await new Promise(resolve => setTimeout(resolve, 5000));
     
-    // Validate and handle profile creation
-    return await ensureProfileExists(data.user, name, role, company);
+    // Directly initialize a basic user object instead of querying the database immediately
+    // This avoids potential RLS recursion during the initial registration flow
+    const basicUser: AuthUser = {
+      id: data.user.id,
+      email: data.user.email || '',
+      name: userMetadata.name,
+      role: userMetadata.role,
+      company: userMetadata.company
+    };
+    
+    console.log("Retornando usuário básico após registro:", basicUser);
+    return basicUser;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
@@ -138,7 +148,7 @@ const handleRegistrationError = (error: any): never => {
 
 /**
  * Checks if a profile exists for the user after registration.
- * Relies on the handle_new_user trigger for profile creation.
+ * Now simplified to avoid potential RLS issues during registration.
  */
 const ensureProfileExists = async (
   user: any,
@@ -148,51 +158,14 @@ const ensureProfileExists = async (
 ): Promise<AuthUser> => {
   console.log(`Verificando perfil para o usuário ${user.id} após registro.`);
 
-  // Give the trigger some time to execute
-  await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced delay slightly
-
-  // Check if profile was created by trigger using the authenticated client
-  // Note: This still might run into auth timing issues immediately after signup
-  // but we are NOT attempting manual insert anymore.
-  let profileData: any = null;
-  let profileError: any = null;
-
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    profileData = data;
-    profileError = error;
-  } catch (err) {
-      console.error("Erro inesperado ao buscar perfil:", err);
-      profileError = err; // Catch potential exceptions during the query
-  }
-
-
-  // If profile not found after the delay, something went wrong (likely the trigger)
-  if (profileError || !profileData) {
-    console.error("Perfil não encontrado ou erro ao buscar após registro. Erro:", profileError);
-    // Log the specific error if available
-    const errorMessage = profileError?.message || "Perfil não encontrado após o tempo esperado.";
-    // Throw a specific error indicating profile creation failed, likely due to the trigger
-    throw new Error(`Não foi possível criar seu perfil. Verifique os logs do banco de dados. Detalhe: ${errorMessage}`);
-  }
-
-  console.log("Perfil encontrado (provavelmente criado pelo trigger):", profileData);
-
-  // Return the AuthUser structure based on the found profile or initial data
-  // It's safer to use data from the profile table if found
+  // Return a basic user object without querying the database
+  // This avoids potential RLS recursion during registration
   return {
     id: user.id,
     email: user.email || '',
-    name: profileData.name || name.trim(), // Prefer profile name
-    role: profileData.role || role,         // Prefer profile role
-    company: profileData.company,           // Get company from profile
-    phone: profileData.phone,               // Get phone from profile
-    position: profileData.position,         // Get position from profile
-    bio: profileData.bio                    // Get bio from profile
+    name: name.trim(),
+    role: role,
+    company: company
   };
 };
 
@@ -235,6 +208,11 @@ export const loginUser = async (
 const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> => {
   try {
     console.log("Buscando perfil após login");
+    
+    // Give the system some time before querying the profile
+    // This helps prevent RLS recursion issues
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     const profile = await getUserProfile(user);
     
     if (profile) {
