@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ClipboardCheck, Clock, CheckCircle, AlertCircle, Brain, Heart, Users, Loader2 } from "lucide-react";
+import { ClipboardCheck, Clock, CheckCircle, Brain, Heart, Users, Loader2 } from "lucide-react";
 import ClientLayout from "@/components/client/ClientLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AnimalProfileTestCard from "@/components/tests/AnimalProfileTestCard";
+import { ClientTest } from "@/types/models";
 
 interface TestData {
   id: string;
@@ -208,9 +210,11 @@ const ClientTests = () => {
                     id: animalTest.client_test_id,
                     client_id: '',
                     test_id: animalTest.id,
-                    is_completed: animalTest.status === "concluído",
+                    is_completed: animalTest.status === "concluído" ? true : false,
                     started_at: animalTest.startedAt,
-                    completed_at: animalTest.completedAt
+                    completed_at: animalTest.completedAt,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                   }}
                   isStarting={isStartingTest === animalTest.client_test_id}
                   onStartTest={handleStartAnimalTest}
@@ -308,7 +312,9 @@ const ClientTests = () => {
                     test_id: animalTest.id,
                     is_completed: true,
                     started_at: animalTest.startedAt,
-                    completed_at: animalTest.completedAt
+                    completed_at: animalTest.completedAt,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
                   }}
                   isStarting={false}
                   onStartTest={handleStartAnimalTest}

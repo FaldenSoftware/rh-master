@@ -4,11 +4,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Clock, CheckCircle, AlertCircle, Brain, Loader2 } from "lucide-react";
-import { ClientTest } from "@/types/models";
+import { Clock, CheckCircle, Brain, Loader2 } from "lucide-react";
+
+interface Test {
+  id: string;
+  client_id: string;
+  test_id: string;
+  is_completed: boolean;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 interface AnimalProfileTestCardProps {
-  test: ClientTest;
+  test: Test;
   isStarting: boolean;
   onStartTest: (testId: string) => void;
 }

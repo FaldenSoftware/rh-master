@@ -159,7 +159,18 @@ export const fetchAnimalProfileQuestions = async (): Promise<AnimalProfileQuesti
       .order('id');
       
     if (error) throw error;
-    return data || [];
+    
+    // Explicitly map raw data to the AnimalProfileQuestion type
+    const questions: AnimalProfileQuestion[] = data?.map(question => ({
+      id: question.id,
+      pergunta: question.pergunta,
+      animal_tubarao: question.animal_tubarao,
+      animal_gato: question.animal_gato,
+      animal_lobo: question.animal_lobo,
+      animal_aguia: question.animal_aguia
+    })) || [];
+    
+    return questions;
   } catch (error) {
     console.error('Error fetching animal profile questions:', error);
     throw error;
@@ -171,9 +182,9 @@ export const createAnimalProfileResult = async (userId: string): Promise<string>
   try {
     const { data, error } = await supabase
       .from('animal_profile_results')
-      .insert([
-        { user_id: userId }
-      ])
+      .insert({
+        user_id: userId
+      })
       .select('id')
       .single();
       
@@ -194,13 +205,11 @@ export const saveAnimalProfileAnswer = async (
   try {
     const { error } = await supabase
       .from('animal_profile_answers')
-      .insert([
-        { 
-          result_id: resultId, 
-          question_id: questionId, 
-          animal_chosen: animalChosen 
-        }
-      ]);
+      .insert({
+        result_id: resultId, 
+        question_id: questionId, 
+        animal_chosen: animalChosen
+      });
       
     if (error) throw error;
   } catch (error) {
@@ -251,11 +260,12 @@ export const finalizeAnimalProfileResult = async (
         completed_at: new Date().toISOString()
       })
       .eq('id', resultId)
-      .select('*')
+      .select()
       .single();
       
     if (error) throw error;
     
+    // Map database fields to interface fields
     return {
       id: data.id,
       userId: data.user_id,
@@ -279,15 +289,13 @@ export const getAnimalProfileResult = async (resultId: string): Promise<AnimalPr
       .from('animal_profile_results')
       .select('*')
       .eq('id', resultId)
-      .single();
+      .maybeSingle();
       
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
-    }
+    if (error) throw error;
     
     if (!data) return null;
     
+    // Map database fields to interface fields
     return {
       id: data.id,
       userId: data.user_id,
@@ -311,18 +319,16 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
       .from('animal_profile_results')
       .select('*')
       .eq('user_id', userId)
-      .eq('animal_predominante', 'is not', null)
+      .is('animal_predominante', 'not.null')
       .order('completed_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
       
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
-    }
+    if (error) throw error;
     
     if (!data) return null;
     
+    // Map database fields to interface fields
     return {
       id: data.id,
       userId: data.user_id,
@@ -347,7 +353,7 @@ export const markClientTestCompleted = async (clientId: string): Promise<void> =
       .from('tests')
       .select('id')
       .eq('title', 'Teste de Perfil - Animais')
-      .single();
+      .maybeSingle();
       
     if (testError) throw testError;
     
