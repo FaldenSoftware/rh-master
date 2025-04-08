@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,8 +10,8 @@ import ClientLayout from "@/components/client/ClientLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import AnimalProfileTestCard from "@/components/tests/AnimalProfileTestCard";
 
-// Interface para os dados dos testes
 interface TestData {
   id: string;
   client_test_id: string;
@@ -28,7 +27,6 @@ interface TestData {
   completedAt?: string | null;
 }
 
-// Mapeamento de ícones
 const iconMap: Record<string, any> = {
   "brain": Brain,
   "heart": Heart,
@@ -41,17 +39,14 @@ const ClientTests = () => {
   const navigate = useNavigate();
   const [isStartingTest, setIsStartingTest] = useState<string | null>(null);
 
-  // Função para buscar os testes do usuário atual
   const fetchUserTests = async () => {
     try {
-      // Primeiro, obter o usuário atual
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session?.user) {
         throw new Error("Usuário não autenticado");
       }
       
-      // Buscar todos os testes associados ao usuário (cliente)
       const { data: clientTests, error: clientTestsError } = await supabase
         .from('client_tests')
         .select('*')
@@ -62,11 +57,9 @@ const ClientTests = () => {
       }
       
       if (!clientTests || clientTests.length === 0) {
-        // Retornar um array vazio se não houver testes
         return [];
       }
       
-      // Buscar informações dos testes
       const { data: testsInfo, error: testsInfoError } = await supabase
         .from('tests')
         .select('*')
@@ -76,14 +69,12 @@ const ClientTests = () => {
         throw new Error(`Erro ao buscar informações dos testes: ${testsInfoError.message}`);
       }
       
-      // Transformar os dados para o formato esperado pelo componente
       const formattedTests: TestData[] = [];
       
       clientTests.forEach(test => {
         const testInfo = testsInfo?.find(t => t.id === test.test_id);
         
         if (testInfo) {
-          // Definir valores padrão para categorias e ícones
           const category = "comportamental"; 
           const iconKey = category === "comportamental" ? "brain" : "clipboard";
           
@@ -112,14 +103,12 @@ const ClientTests = () => {
     }
   };
 
-  // Usar React Query para gerenciar o estado da busca
   const { data: testData = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['clientTests'],
     queryFn: fetchUserTests,
     retry: 1,
   });
 
-  // Mostrar um erro se ocorrer algum problema
   useEffect(() => {
     if (isError && error) {
       toast({
@@ -130,12 +119,15 @@ const ClientTests = () => {
     }
   }, [isError, error, toast]);
 
-  // Função para iniciar um teste
   const handleStartTest = async (test: TestData) => {
     setIsStartingTest(test.client_test_id);
     
     try {
-      // Atualizar o status do teste para iniciado
+      if (test.title === "Teste de Perfil - Animais") {
+        navigate('/client/tests/animal-profile');
+        return;
+      }
+      
       const { error } = await supabase
         .from('client_tests')
         .update({
@@ -152,12 +144,9 @@ const ClientTests = () => {
         description: "Você será redirecionado para o teste em breve.",
       });
       
-      // Refetch dados para atualizar a interface
       refetch();
       
-      // Aqui você redirecionaria para a página do teste específico
       setTimeout(() => {
-        // navigate(`/client/test/${test.id}`);
         toast({
           title: "Página em desenvolvimento",
           description: "A página do teste ainda está sendo implementada.",
@@ -175,7 +164,11 @@ const ClientTests = () => {
     }
   };
 
-  // Função para ver os resultados de um teste
+  const handleStartAnimalTest = (testId: string) => {
+    setIsStartingTest(testId);
+    navigate('/client/tests/animal-profile');
+  };
+
   const handleViewResults = (testId: string) => {
     console.log(`Visualizando resultados do teste ${testId}`);
     toast({
@@ -185,7 +178,6 @@ const ClientTests = () => {
     navigate(`/client/profile`);
   };
 
-  // Renderizar estados de carregamento ou erro
   if (isLoading) {
     return (
       <ClientLayout title="Meus Testes">
@@ -196,6 +188,8 @@ const ClientTests = () => {
       </ClientLayout>
     );
   }
+
+  const animalTest = testData.find(test => test.title === "Teste de Perfil - Animais");
 
   return (
     <ClientLayout title="Meus Testes">
@@ -208,69 +202,86 @@ const ClientTests = () => {
         <TabsContent value="pending">
           {testData.filter(test => test.status === "pendente").length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2">
-              {testData.filter(test => test.status === "pendente").map((test) => (
-                <Card key={test.client_test_id} className="overflow-hidden">
-                  <CardHeader className="bg-gray-50 pb-4">
-                    <div className="flex justify-between items-start">
-                      <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
-                        Pendente
-                      </Badge>
-                      <div className="flex items-center text-amber-600">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Prazo: {test.dueDate}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 mt-3">
-                      <div className="bg-purple-100 p-2 rounded-md">
-                        <test.icon className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{test.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {test.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-muted-foreground">Progresso</span>
-                          <span className="font-medium">
-                            {test.startedAt ? "Iniciado" : "0%"}
-                          </span>
-                        </div>
-                        <Progress value={test.startedAt ? 30 : 0} className="h-2" />
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center text-muted-foreground">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span>Tempo estimado: {test.timeEstimate}</span>
-                        </div>
-                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
-                          {test.category}
+              {animalTest && animalTest.status === "pendente" && (
+                <AnimalProfileTestCard
+                  test={{
+                    id: animalTest.client_test_id,
+                    client_id: '',
+                    test_id: animalTest.id,
+                    is_completed: animalTest.status === "concluído",
+                    started_at: animalTest.startedAt,
+                    completed_at: animalTest.completedAt
+                  }}
+                  isStarting={isStartingTest === animalTest.client_test_id}
+                  onStartTest={handleStartAnimalTest}
+                />
+              )}
+              
+              {testData
+                .filter(test => test.status === "pendente" && test.title !== "Teste de Perfil - Animais")
+                .map((test) => (
+                  <Card key={test.client_test_id} className="overflow-hidden">
+                    <CardHeader className="bg-gray-50 pb-4">
+                      <div className="flex justify-between items-start">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
+                          Pendente
                         </Badge>
+                        <div className="flex items-center text-amber-600">
+                          <Clock className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Prazo: {test.dueDate}</span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t bg-gray-50 py-3">
-                    <Button 
-                      className="w-full" 
-                      onClick={() => handleStartTest(test)}
-                      disabled={isStartingTest === test.client_test_id}
-                    >
-                      {isStartingTest === test.client_test_id ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Iniciando...
-                        </>
-                      ) : test.startedAt ? "Continuar Teste" : "Iniciar Teste"}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                      <div className="flex items-start gap-3 mt-3">
+                        <div className="bg-purple-100 p-2 rounded-md">
+                          <test.icon className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{test.title}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {test.description}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">Progresso</span>
+                            <span className="font-medium">
+                              {test.startedAt ? "Iniciado" : "0%"}
+                            </span>
+                          </div>
+                          <Progress value={test.startedAt ? 30 : 0} className="h-2" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-1" />
+                            <span>Tempo estimado: {test.timeEstimate}</span>
+                          </div>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                            {test.category}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t bg-gray-50 py-3">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => handleStartTest(test)}
+                        disabled={isStartingTest === test.client_test_id}
+                      >
+                        {isStartingTest === test.client_test_id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Iniciando...
+                          </>
+                        ) : test.startedAt ? "Continuar Teste" : "Iniciar Teste"}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -289,58 +300,75 @@ const ClientTests = () => {
         <TabsContent value="completed">
           {testData.filter(test => test.status === "concluído").length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2">
-              {testData.filter(test => test.status === "concluído").map((test) => (
-                <Card key={test.client_test_id} className="overflow-hidden">
-                  <CardHeader className="bg-gray-50 pb-4">
-                    <div className="flex justify-between items-start">
-                      <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                        Concluído
-                      </Badge>
-                      <div className="flex items-center text-green-600">
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        <span className="text-xs">Realizado: {test.completedDate}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3 mt-3">
-                      <div className="bg-purple-100 p-2 rounded-md">
-                        <test.icon className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{test.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {test.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-muted-foreground">Progresso</span>
-                          <span className="font-medium">100%</span>
-                        </div>
-                        <Progress value={100} className="h-2" />
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center text-muted-foreground">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span>Tempo estimado: {test.timeEstimate}</span>
-                        </div>
-                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
-                          {test.category}
+              {animalTest && animalTest.status === "concluído" && (
+                <AnimalProfileTestCard
+                  test={{
+                    id: animalTest.client_test_id,
+                    client_id: '',
+                    test_id: animalTest.id,
+                    is_completed: true,
+                    started_at: animalTest.startedAt,
+                    completed_at: animalTest.completedAt
+                  }}
+                  isStarting={false}
+                  onStartTest={handleStartAnimalTest}
+                />
+              )}
+              
+              {testData
+                .filter(test => test.status === "concluído" && test.title !== "Teste de Perfil - Animais")
+                .map((test) => (
+                  <Card key={test.client_test_id} className="overflow-hidden">
+                    <CardHeader className="bg-gray-50 pb-4">
+                      <div className="flex justify-between items-start">
+                        <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                          Concluído
                         </Badge>
+                        <div className="flex items-center text-green-600">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Realizado: {test.completedDate}</span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t bg-gray-50 py-3">
-                    <Button variant="outline" className="w-full" onClick={() => handleViewResults(test.id)}>
-                      Ver Resultados
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                      <div className="flex items-start gap-3 mt-3">
+                        <div className="bg-purple-100 p-2 rounded-md">
+                          <test.icon className="h-6 w-6 text-purple-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{test.title}</CardTitle>
+                          <CardDescription className="mt-1">
+                            {test.description}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-muted-foreground">Progresso</span>
+                            <span className="font-medium">100%</span>
+                          </div>
+                          <Progress value={100} className="h-2" />
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center text-muted-foreground">
+                            <Clock className="h-4 w-4 mr-1" />
+                            <span>Tempo estimado: {test.timeEstimate}</span>
+                          </div>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                            {test.category}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="border-t bg-gray-50 py-3">
+                      <Button variant="outline" className="w-full" onClick={() => handleViewResults(test.id)}>
+                        Ver Resultados
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
             </div>
           ) : (
             <div className="text-center py-8">

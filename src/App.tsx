@@ -23,8 +23,10 @@ import ClientResults from "./pages/ClientResults";
 import ClientProfile from "./pages/ClientProfile";
 import ClientAccount from "./pages/ClientAccount";
 import ClientLogin from "./pages/ClientLogin";
-import ClientRegister from "./pages/ClientRegister"; // Nova página
+import ClientRegister from "./pages/ClientRegister"; 
 import Register from "./pages/Register";
+import AnimalProfileTestPage from "./pages/AnimalProfileTestPage";
+import AnimalProfileResultsPage from "./pages/AnimalProfileResultsPage";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +117,22 @@ const App = () => {
                   element={
                     <ProtectedRoute requiredRole="client">
                       <ClientTests />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/tests/animal-profile" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <AnimalProfileTestPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/tests/animal-profile/results/:resultId" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <AnimalProfileResultsPage />
                     </ProtectedRoute>
                   } 
                 />

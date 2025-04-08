@@ -9,6 +9,117 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      animal_profile_answers: {
+        Row: {
+          animal_chosen: string
+          created_at: string
+          id: string
+          question_id: string
+          result_id: string
+        }
+        Insert: {
+          animal_chosen: string
+          created_at?: string
+          id?: string
+          question_id: string
+          result_id: string
+        }
+        Update: {
+          animal_chosen?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          result_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "animal_profile_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "animal_profile_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "animal_profile_answers_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "animal_profile_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      animal_profile_questions: {
+        Row: {
+          animal_aguia: string
+          animal_gato: string
+          animal_lobo: string
+          animal_tubarao: string
+          created_at: string
+          id: string
+          pergunta: string
+          updated_at: string
+        }
+        Insert: {
+          animal_aguia: string
+          animal_gato: string
+          animal_lobo: string
+          animal_tubarao: string
+          created_at?: string
+          id?: string
+          pergunta: string
+          updated_at?: string
+        }
+        Update: {
+          animal_aguia?: string
+          animal_gato?: string
+          animal_lobo?: string
+          animal_tubarao?: string
+          created_at?: string
+          id?: string
+          pergunta?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      animal_profile_results: {
+        Row: {
+          animal_predominante: string | null
+          completed_at: string
+          created_at: string
+          id: string
+          score_aguia: number
+          score_gato: number
+          score_lobo: number
+          score_tubarao: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animal_predominante?: string | null
+          completed_at?: string
+          created_at?: string
+          id?: string
+          score_aguia?: number
+          score_gato?: number
+          score_lobo?: number
+          score_tubarao?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animal_predominante?: string | null
+          completed_at?: string
+          created_at?: string
+          id?: string
+          score_aguia?: number
+          score_gato?: number
+          score_lobo?: number
+          score_tubarao?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_tests: {
         Row: {
           client_id: string
