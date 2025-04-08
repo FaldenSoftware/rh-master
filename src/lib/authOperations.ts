@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
 import { getUserProfile } from "./userProfile";
@@ -14,10 +15,13 @@ export const registerUser = async (
   password: string,
   name: string, 
   role: "mentor" | "client", 
-  company?: string
+  company?: string,
+  phone?: string,
+  position?: string,
+  bio?: string
 ): Promise<AuthUser | null> => {
   try {
-    console.log("Iniciando registro de novo usuário:", { email, name, role, company });
+    console.log("Iniciando registro de novo usuário:", { email, name, role, company, phone, position, bio });
     
     // Check if we're attempting to register too quickly
     const now = Date.now();
@@ -31,9 +35,9 @@ export const registerUser = async (
     
     validateRegistrationData(email, password, name, role, company);
     
-    // Prepare user metadata
-    const userMetadata = prepareUserMetadata(name, role, company);
-    console.log("Metadados para registro:", userMetadata);
+    // Prepare user metadata with ALL fields
+    const userMetadata = prepareUserMetadata(name, role, company, phone, position, bio);
+    console.log("Metadados completos para registro:", userMetadata);
     
     // Register the user
     const { data, error } = await supabase.auth.signUp({
@@ -66,7 +70,10 @@ export const registerUser = async (
       email: data.user.email || '',
       name: userMetadata.name,
       role: userMetadata.role,
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone,
+      position: userMetadata.position,
+      bio: userMetadata.bio
     };
     
     console.log("Retornando usuário básico após registro:", basicUser);
@@ -110,17 +117,31 @@ const validateRegistrationData = (
 const prepareUserMetadata = (
   name: string,
   role: "mentor" | "client",
-  company?: string
+  company?: string,
+  phone?: string,
+  position?: string,
+  bio?: string
 ): Record<string, any> => {
   const metadata: Record<string, any> = {
     name: name.trim(),
     role
   };
   
-  if (role === "mentor") {
-    metadata.company = company?.trim();
-  } else if (company && company.trim() !== '') {
+  // Add all additional fields to metadata
+  if (company && company.trim() !== '') {
     metadata.company = company.trim();
+  }
+  
+  if (phone && phone.trim() !== '') {
+    metadata.phone = phone.trim();
+  }
+  
+  if (position && position.trim() !== '') {
+    metadata.position = position.trim();
+  }
+  
+  if (bio && bio.trim() !== '') {
+    metadata.bio = bio.trim();
   }
   
   return metadata;
@@ -229,7 +250,10 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone,
+      position: userMetadata.position,
+      bio: userMetadata.bio
     };
   } catch (error) {
     console.error('Erro ao buscar perfil após login:', error);
@@ -241,7 +265,10 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone,
+      position: userMetadata.position,
+      bio: userMetadata.bio
     };
   }
 };
@@ -296,7 +323,10 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         email: data.session.user.email || '',
         name: userMetadata.name || 'Usuário',
         role: userMetadata.role || 'client',
-        company: userMetadata.company
+        company: userMetadata.company,
+        phone: userMetadata.phone,
+        position: userMetadata.position,
+        bio: userMetadata.bio
       };
     }
   } catch (error) {

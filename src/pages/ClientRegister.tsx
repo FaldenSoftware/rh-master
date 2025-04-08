@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +7,8 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +27,9 @@ const formSchema = z.object({
   password: z.string().min(6, {
     message: "Senha deve ter pelo menos 6 caracteres.",
   }),
+  phone: z.string().optional(),
+  position: z.string().optional(),
+  bio: z.string().optional(),
   inviteCode: z.string().min(12, {
     message: "Código de convite é obrigatório e deve ter 12 caracteres.",
   }).refine(isValidCodeFormat, {
@@ -48,6 +53,9 @@ export default function ClientRegister() {
       name: "",
       email: searchParams.get("email") || "",
       password: "",
+      phone: "",
+      position: "",
+      bio: "",
       inviteCode: searchParams.get("code") || "",
     },
   });
@@ -102,7 +110,16 @@ export default function ClientRegister() {
         throw new Error("Mentor ID não encontrado no código de convite");
       }
       
-      const result: AuthUser | null = await register(values.email, values.password, values.name, "client", undefined);
+      const result: AuthUser | null = await register(
+        values.email, 
+        values.password, 
+        values.name, 
+        "client",
+        undefined,
+        values.phone,
+        values.position,
+        values.bio
+      );
       
       if (result !== null) {
         const { error } = await supabase
@@ -234,6 +251,51 @@ export default function ClientRegister() {
                         <Input type="password" placeholder="******" {...field} />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(XX) XXXXX-XXXX" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      <FormDescription>Opcional</FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cargo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Seu cargo atual" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                      <FormDescription>Opcional</FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Biografia</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Conte um pouco sobre você" {...field} rows={3} />
+                      </FormControl>
+                      <FormMessage />
+                      <FormDescription>Opcional</FormDescription>
                     </FormItem>
                   )}
                 />

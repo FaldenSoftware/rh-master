@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,6 +18,9 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
+  const [phone, setPhone] = useState("");
+  const [position, setPosition] = useState("");
+  const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -44,6 +48,14 @@ const Register = () => {
   useEffect(() => {
     if (formErrors.company) setFormErrors(prev => ({ ...prev, company: "" }));
   }, [company]);
+
+  useEffect(() => {
+    if (formErrors.phone) setFormErrors(prev => ({ ...prev, phone: "" }));
+  }, [phone]);
+
+  useEffect(() => {
+    if (formErrors.position) setFormErrors(prev => ({ ...prev, position: "" }));
+  }, [position]);
 
   // Reset rate limiting after timeout
   useEffect(() => {
@@ -130,16 +142,17 @@ const Register = () => {
         return;
       }
       
-      console.log("Registrando mentor com empresa:", company);
-      
-      const trimmedCompany = company.trim();
+      console.log("Registrando mentor com todos os campos:", { company, phone, position, bio });
       
       const user = await register(
         email.trim(), 
         password, 
         name.trim(), 
         "mentor", 
-        trimmedCompany
+        company.trim(),
+        phone.trim(),
+        position.trim(),
+        bio.trim()
       );
       
       if (user) {
@@ -290,6 +303,51 @@ const Register = () => {
                 <p className="text-xs text-red-500 mt-1">{formErrors.company}</p>
               )}
               <p className="text-xs text-gray-500">Campo obrigatório para mentores</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Digite seu telefone"
+                className={getFieldErrorClass("phone")}
+              />
+              {formErrors.phone && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="position">Cargo</Label>
+              <Input
+                id="position"
+                type="text"
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                placeholder="Digite seu cargo"
+                className={getFieldErrorClass("position")}
+              />
+              {formErrors.position && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.position}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="bio">Biografia</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Conte um pouco sobre você e sua experiência"
+                className={getFieldErrorClass("bio")}
+                rows={3}
+              />
+              {formErrors.bio && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.bio}</p>
+              )}
             </div>
                         
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
