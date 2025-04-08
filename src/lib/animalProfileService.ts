@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AnimalProfileQuestion {
@@ -7,247 +8,256 @@ export interface AnimalProfileQuestion {
   animal_gato: string;
   animal_lobo: string;
   animal_aguia: string;
-}
-
-export interface AnimalProfileAnswer {
-  questionId: string;
-  animalChosen: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AnimalProfileResult {
   id: string;
-  userId: string;
-  scoreTubarao: number;
-  scoreGato: number;
-  scoreLobo: number;
-  scoreAguia: number;
-  animalPredominante: string;
-  completedAt: string;
+  user_id: string;
+  score_tubarao: number;
+  score_gato: number;
+  score_lobo: number;
+  score_aguia: number;
+  animal_predominante: string;
+  completed_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Animal characteristics for results display
+export interface AnimalProfileAnswer {
+  id?: string;
+  result_id: string;
+  question_id: string;
+  animal_chosen: string;
+  created_at?: string;
+}
+
+// Animal profile information for display
 export const animalProfiles = {
   tubarao: {
     name: "Tubarão",
     title: "Executor",
-    description: "Você é orientado a resultados, decidido e direto. Prefere ação rápida e eficiência em tudo o que faz.",
+    emoji: "🦈",
+    description: "Você é determinado, orientado a resultados e tem uma forte inclinação para a ação rápida. Suas decisões são práticas e baseadas na eficiência.",
     characteristics: [
-      "Foco em resultados e metas",
-      "Tomada de decisão rápida e assertiva",
-      "Preferência por eficiência e objetividade",
-      "Determinação e persistência"
+      "Focado em resultados",
+      "Direto e objetivo",
+      "Decisivo e rápido",
+      "Prático e eficiente",
+      "Orientado a metas"
     ],
     strengths: [
-      "Capacidade de liderar em momentos decisivos",
-      "Foco no que realmente importa",
+      "Capacidade de tomar decisões difíceis",
       "Eficiência na execução de tarefas",
-      "Coragem para enfrentar desafios difíceis"
+      "Determinação para alcançar objetivos",
+      "Abordagem pragmática para resolver problemas",
+      "Alto nível de produtividade"
     ],
     challenges: [
-      "Pode parecer impaciente ou autoritário",
+      "Pode ser visto como impaciente",
       "Às vezes ignora detalhes importantes",
-      "Pode não considerar o impacto emocional de suas decisões",
-      "Tende a assumir controle mesmo quando não é necessário"
+      "Pode ter dificuldade em considerar o impacto emocional das decisões",
+      "Tendência a dominar conversas e reuniões",
+      "Pode priorizar velocidade em detrimento da qualidade"
     ],
     recommendations: [
-      "Pratique a escuta ativa",
-      "Dedique tempo para considerar diferentes perspectivas",
-      "Desenvolva paciência para processos mais detalhados",
-      "Busque feedback sobre como suas ações afetam os outros"
-    ],
-    emoji: "🦈"
+      "Dedique tempo para ouvir outras perspectivas antes de tomar decisões",
+      "Pratique a empatia ao se comunicar com pessoas de perfis diferentes",
+      "Aprenda a equilibrar velocidade com atenção aos detalhes",
+      "Desenvolva habilidades de comunicação mais inclusivas",
+      "Cultive a paciência em processos que exigem análise mais profunda"
+    ]
   },
   gato: {
     name: "Gato",
     title: "Comunicador",
-    description: "Você é sociável, empático e excelente em construir relacionamentos. Valoriza a harmonia e a boa comunicação.",
+    emoji: "🐱",
+    description: "Você é sociável, expressivo e tem excelentes habilidades interpessoais. Sua abordagem é colaborativa e você valoriza relacionamentos.",
     characteristics: [
-      "Habilidades sociais e de comunicação excelentes",
-      "Empatia e compreensão das necessidades alheias",
-      "Valorização dos relacionamentos interpessoais",
-      "Capacidade de criar harmonia em grupos"
+      "Comunicativo e eloquente",
+      "Empático e atencioso",
+      "Focado em relacionamentos",
+      "Adaptável a diferentes situações sociais",
+      "Persuasivo e influente"
     ],
     strengths: [
-      "Talento para conectar pessoas diferentes",
-      "Habilidade para resolver conflitos",
-      "Capacidade de criar ambientes positivos",
-      "Sensibilidade às necessidades da equipe"
+      "Excelentes habilidades de comunicação",
+      "Capacidade de construir e manter relacionamentos",
+      "Sensibilidade às necessidades dos outros",
+      "Talento para resolver conflitos interpessoais",
+      "Habilidade para motivar e inspirar equipes"
     ],
     challenges: [
       "Pode evitar confrontos necessários",
-      "Às vezes prioriza harmonia sobre resultados",
+      "Às vezes prioriza harmonia em detrimento de decisões difíceis",
+      "Tendência a se distrair em conversas",
       "Pode ter dificuldade com tarefas solitárias",
-      "Tende a levar críticas de forma muito pessoal"
+      "Sensibilidade excessiva a críticas"
     ],
     recommendations: [
-      "Pratique dar feedback direto quando necessário",
-      "Desenvolva conforto em trabalhar independentemente",
-      "Aprenda a equilibrar relacionamentos com resultados",
-      "Estabeleça limites claros para evitar sobrecarga"
-    ],
-    emoji: "🐱"
+      "Desenvolva habilidades para lidar com conversas difíceis",
+      "Pratique a objetividade em suas comunicações",
+      "Estabeleça momentos de foco sem distrações sociais",
+      "Aprenda a equilibrar empatia com pragmatismo",
+      "Cultive a resiliência emocional diante de feedback crítico"
+    ]
   },
   lobo: {
     name: "Lobo",
     title: "Organizador",
-    description: "Você é metódico, detalhista e extremamente confiável. Valoriza ordem, estrutura e processos bem definidos.",
+    emoji: "🐺",
+    description: "Você é estruturado, metódico e atento aos detalhes. Sua abordagem é sistemática e você valoriza planejamento e ordem.",
     characteristics: [
-      "Atenção excepcional aos detalhes",
-      "Alta capacidade de organização e planejamento",
-      "Valorização da precisão e qualidade",
-      "Confiabilidade e consistência"
+      "Organizado e metódico",
+      "Analítico e detalhista",
+      "Confiável e consistente",
+      "Focado em processos",
+      "Planejador estratégico"
     ],
     strengths: [
-      "Habilidade para criar sistemas eficientes",
-      "Excelência em gerenciar projetos complexos",
-      "Capacidade de antecipar problemas potenciais",
-      "Comprometimento com a qualidade"
+      "Excelente capacidade de planejamento",
+      "Atenção aos detalhes e precisão",
+      "Habilidade para estabelecer sistemas eficientes",
+      "Confiabilidade em cumprir prazos",
+      "Pensamento estruturado e lógico"
     ],
     challenges: [
-      "Pode ter dificuldade com ambiguidade ou mudanças",
-      "Às vezes é percebido como inflexível",
-      "Pode se perder em detalhes e perder a visão geral",
-      "Tendência ao perfeccionismo excessivo"
+      "Pode ser visto como inflexível",
+      "Tendência ao perfeccionismo",
+      "Dificuldade em lidar com mudanças repentinas",
+      "Às vezes foca demais nos detalhes e perde a visão geral",
+      "Pode ter dificuldade em delegar tarefas"
     ],
     recommendations: [
-      "Pratique adaptabilidade em situações de mudança",
-      "Desenvolva conforto com algum grau de ambiguidade",
-      "Busque equilíbrio entre detalhes e visão geral",
-      "Aprenda a priorizar o que realmente importa"
-    ],
-    emoji: "🐺"
+      "Pratique flexibilidade diante de situações imprevistas",
+      "Desenvolva tolerância para imperfeições em situações apropriadas",
+      "Cultive habilidades de adaptação a mudanças",
+      "Exercite a visão estratégica junto com a atenção aos detalhes",
+      "Aprenda técnicas de delegação efetiva"
+    ]
   },
   aguia: {
     name: "Águia",
     title: "Idealizador",
-    description: "Você é visionário, estratégico e inovador. Sempre pensando no futuro e em novas possibilidades.",
+    emoji: "🦅",
+    description: "Você é visionário, criativo e orientado para o futuro. Sua abordagem é inovadora e você valoriza novas ideias e possibilidades.",
     characteristics: [
-      "Pensamento visionário e estratégico",
-      "Criatividade e capacidade de inovação",
-      "Foco no quadro geral e tendências futuras",
-      "Capacidade de inspirar e motivar os outros"
+      "Visionário e criativo",
+      "Pensador estratégico",
+      "Inovador e original",
+      "Orientado para o futuro",
+      "Entusiasta por novas ideias"
     ],
     strengths: [
-      "Habilidade para identificar oportunidades futuras",
-      "Pensamento fora da caixa e solução criativa de problemas",
-      "Capacidade de inspirar equipes com visões ambiciosas",
-      "Talento para conectar ideias aparentemente não relacionadas"
+      "Capacidade de visualizar possibilidades futuras",
+      "Pensamento inovador e fora da caixa",
+      "Habilidade para inspirar outros com visões",
+      "Abordagem criativa para resolver problemas",
+      "Facilidade em adaptar-se a novos conceitos"
     ],
     challenges: [
-      "Pode perder interesse em detalhes da implementação",
-      "Às vezes propõe ideias pouco práticas",
-      "Pode parecer desconectado das necessidades imediatas",
-      "Tendência a iniciar muitos projetos sem terminá-los"
+      "Pode parecer desconectado da realidade atual",
+      "Dificuldade em transformar ideias em planos concretos",
+      "Tendência a iniciar projetos sem concluí-los",
+      "Às vezes subestima detalhes práticos",
+      "Pode se entediar com rotinas e processos"
     ],
     recommendations: [
-      "Desenvolva habilidades de implementação prática",
-      "Aprenda a avaliar a viabilidade de suas ideias",
-      "Busque parcerias com pessoas orientadas a detalhes",
-      "Pratique a conclusão de projetos antes de iniciar novos"
-    ],
-    emoji: "🦅"
+      "Desenvolva habilidades de execução e implementação prática",
+      "Aprenda a equilibrar visão com realidade operacional",
+      "Cultive disciplina para concluir projetos iniciados",
+      "Busque parcerias com pessoas de perfil mais estruturado",
+      "Pratique atenção aos detalhes em momentos críticos"
+    ]
   }
 };
 
-// Fetch all questions for the animal profile test
+// Fetch all animal profile questions from the database
 export const fetchAnimalProfileQuestions = async (): Promise<AnimalProfileQuestion[]> => {
   try {
     const { data, error } = await supabase
       .from('animal_profile_questions')
-      .select('*')
-      .order('id');
+      .select('*');
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching questions:", error);
+      throw new Error(error.message);
+    }
     
-    // Explicitly map raw data to the AnimalProfileQuestion type
-    const questions: AnimalProfileQuestion[] = data?.map(question => ({
-      id: question.id,
-      pergunta: question.pergunta,
-      animal_tubarao: question.animal_tubarao,
-      animal_gato: question.animal_gato,
-      animal_lobo: question.animal_lobo,
-      animal_aguia: question.animal_aguia
-    })) || [];
-    
-    return questions;
+    return data as AnimalProfileQuestion[];
   } catch (error) {
-    console.error('Error fetching animal profile questions:', error);
+    console.error("Error in fetchAnimalProfileQuestions:", error);
     throw error;
   }
 };
 
-// Create a new result record at the beginning of the test
+// Create a new animal profile result record
 export const createAnimalProfileResult = async (userId: string): Promise<string> => {
   try {
     const { data, error } = await supabase
       .from('animal_profile_results')
-      .insert({
-        user_id: userId
-      })
+      .insert([{ 
+        user_id: userId 
+      }])
       .select('id')
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating result:", error);
+      throw new Error(error.message);
+    }
+    
     return data.id;
   } catch (error) {
-    console.error('Error creating animal profile result:', error);
+    console.error("Error in createAnimalProfileResult:", error);
     throw error;
   }
 };
 
-// Save a user's answer
+// Save an answer for a specific question
 export const saveAnimalProfileAnswer = async (
-  resultId: string, 
-  questionId: string, 
+  resultId: string,
+  questionId: string,
   animalChosen: string
 ): Promise<void> => {
   try {
     const { error } = await supabase
       .from('animal_profile_answers')
-      .insert({
-        result_id: resultId, 
-        question_id: questionId, 
+      .insert([{
+        result_id: resultId,
+        question_id: questionId,
         animal_chosen: animalChosen
-      });
+      }]);
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error saving answer:", error);
+      throw new Error(error.message);
+    }
   } catch (error) {
-    console.error('Error saving animal profile answer:', error);
+    console.error("Error in saveAnimalProfileAnswer:", error);
     throw error;
   }
 };
 
-// Calculate and update final results
+// Finalize the test result with scores
 export const finalizeAnimalProfileResult = async (
-  resultId: string, 
-  scores: { 
-    tubarao: number; 
-    gato: number; 
-    lobo: number; 
-    aguia: number; 
-  }
+  resultId: string,
+  scores: { tubarao: number, gato: number, lobo: number, aguia: number }
 ): Promise<AnimalProfileResult> => {
   try {
-    // Determine the predominant animal
+    // Determine the predominant animal profile(s)
     const { tubarao, gato, lobo, aguia } = scores;
-    let animalPredominante = '';
-    
     const maxScore = Math.max(tubarao, gato, lobo, aguia);
     
-    // Check if there's a tie
-    const tiedAnimals = [];
-    if (tubarao === maxScore) tiedAnimals.push('tubarao');
-    if (gato === maxScore) tiedAnimals.push('gato');
-    if (lobo === maxScore) tiedAnimals.push('lobo');
-    if (aguia === maxScore) tiedAnimals.push('aguia');
+    let predominante = "";
     
-    if (tiedAnimals.length > 1) {
-      animalPredominante = tiedAnimals.join('-');
-    } else {
-      animalPredominante = tiedAnimals[0];
-    }
+    if (tubarao === maxScore) predominante += "tubarao";
+    if (gato === maxScore) predominante += predominante ? "-gato" : "gato";
+    if (lobo === maxScore) predominante += predominante ? "-lobo" : "lobo";
+    if (aguia === maxScore) predominante += predominante ? "-aguia" : "aguia";
     
-    // Update the result record
+    // Update the result with scores and predominant animal
     const { data, error } = await supabase
       .from('animal_profile_results')
       .update({
@@ -255,58 +265,42 @@ export const finalizeAnimalProfileResult = async (
         score_gato: gato,
         score_lobo: lobo,
         score_aguia: aguia,
-        animal_predominante: animalPredominante,
+        animal_predominante: predominante,
         completed_at: new Date().toISOString()
       })
       .eq('id', resultId)
-      .select()
+      .select('*')
       .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error finalizing result:", error);
+      throw new Error(error.message);
+    }
     
-    // Map database fields to interface fields
-    return {
-      id: data.id,
-      userId: data.user_id,
-      scoreTubarao: data.score_tubarao,
-      scoreGato: data.score_gato,
-      scoreLobo: data.score_lobo,
-      scoreAguia: data.score_aguia,
-      animalPredominante: data.animal_predominante,
-      completedAt: data.completed_at
-    };
+    return data as AnimalProfileResult;
   } catch (error) {
-    console.error('Error finalizing animal profile result:', error);
+    console.error("Error in finalizeAnimalProfileResult:", error);
     throw error;
   }
 };
 
-// Get result by ID
-export const getAnimalProfileResult = async (resultId: string): Promise<AnimalProfileResult | null> => {
+// Get a specific animal profile result
+export const getAnimalProfileResult = async (resultId: string): Promise<AnimalProfileResult> => {
   try {
     const { data, error } = await supabase
       .from('animal_profile_results')
       .select('*')
       .eq('id', resultId)
-      .maybeSingle();
+      .single();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error getting result:", error);
+      throw new Error(error.message);
+    }
     
-    if (!data) return null;
-    
-    // Map database fields to interface fields
-    return {
-      id: data.id,
-      userId: data.user_id,
-      scoreTubarao: data.score_tubarao,
-      scoreGato: data.score_gato,
-      scoreLobo: data.score_lobo,
-      scoreAguia: data.score_aguia,
-      animalPredominante: data.animal_predominante,
-      completedAt: data.completed_at
-    };
+    return data as AnimalProfileResult;
   } catch (error) {
-    console.error('Error getting animal profile result:', error);
+    console.error("Error in getAnimalProfileResult:", error);
     throw error;
   }
 };
@@ -323,59 +317,54 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
       .limit(1)
       .maybeSingle();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error getting latest result:", error);
+      throw new Error(error.message);
+    }
     
-    if (!data) return null;
-    
-    // Map database fields to interface fields
-    return {
-      id: data.id,
-      userId: data.user_id,
-      scoreTubarao: data.score_tubarao,
-      scoreGato: data.score_gato,
-      scoreLobo: data.score_lobo,
-      scoreAguia: data.score_aguia,
-      animalPredominante: data.animal_predominante,
-      completedAt: data.completed_at
-    };
+    return data as AnimalProfileResult;
   } catch (error) {
-    console.error('Error getting user latest animal profile result:', error);
+    console.error("Error in getUserLatestAnimalProfileResult:", error);
     throw error;
   }
 };
 
-// Update the client_test as completed
-export const markClientTestCompleted = async (clientId: string): Promise<void> => {
+// Mark a test as completed in client_tests table
+export const markClientTestCompleted = async (userId: string): Promise<void> => {
   try {
-    // Find the test with the title "Teste de Perfil - Animais"
-    const { data: tests, error: testError } = await supabase
+    // Find the animal profile test
+    const { data: testData, error: testError } = await supabase
       .from('tests')
       .select('id')
-      .eq('title', 'Teste de Perfil - Animais')
-      .maybeSingle();
+      .ilike('title', '%Animal%')
+      .single();
       
-    if (testError) throw testError;
+    if (testError) {
+      console.error("Error finding animal profile test:", testError);
+      throw new Error(testError.message);
+    }
     
-    if (!tests) throw new Error('Teste não encontrado');
-    
-    // Update the client_test record
-    const { error } = await supabase
+    // Update client_tests record to mark it as completed
+    const { error: updateError } = await supabase
       .from('client_tests')
-      .update({
+      .update({ 
         is_completed: true,
         completed_at: new Date().toISOString()
       })
-      .eq('client_id', clientId)
-      .eq('test_id', tests.id);
+      .eq('client_id', userId)
+      .eq('test_id', testData.id);
       
-    if (error) throw error;
+    if (updateError) {
+      console.error("Error marking test as completed:", updateError);
+      throw new Error(updateError.message);
+    }
   } catch (error) {
-    console.error('Error marking client test as completed:', error);
+    console.error("Error in markClientTestCompleted:", error);
     throw error;
   }
 };
 
-// Functions to handle test flow
+// Helper function to shuffle the answer options
 export const shuffleAnswers = (question: AnimalProfileQuestion): Array<{text: string, animal: string}> => {
   const options = [
     { text: question.animal_tubarao, animal: "tubarao" },

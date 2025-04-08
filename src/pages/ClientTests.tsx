@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,31 @@ const ClientTests = () => {
       }
       
       if (!clientTests || clientTests.length === 0) {
+        // If no tests found, let's create a default test for the animal profile
+        const { data: testData, error: testDataError } = await supabase
+          .from('tests')
+          .select('id')
+          .ilike('title', '%Animal%')
+          .maybeSingle();
+          
+        if (!testDataError && testData) {
+          // Create a client test entry for the user
+          const { data: newTest, error: newTestError } = await supabase
+            .from('client_tests')
+            .insert([{
+              client_id: session.user.id,
+              test_id: testData.id,
+              is_completed: false
+            }])
+            .select('*');
+            
+          if (newTestError) {
+            console.error("Error creating default test:", newTestError);
+          } else if (newTest) {
+            // Return with the newly created test
+            return formatTestsData([newTest[0]], [testData]);
+          }
+        }
         return [];
       }
       
@@ -70,38 +96,43 @@ const ClientTests = () => {
         throw new Error(`Erro ao buscar informações dos testes: ${testsInfoError.message}`);
       }
       
-      const formattedTests: TestData[] = [];
-      
-      clientTests.forEach(test => {
-        const testInfo = testsInfo?.find(t => t.id === test.test_id);
-        
-        if (testInfo) {
-          const category = "comportamental"; 
-          const iconKey = category === "comportamental" ? "brain" : "clipboard";
-          
-          formattedTests.push({
-            id: testInfo.id,
-            client_test_id: test.id,
-            title: testInfo.title,
-            description: testInfo.description || "Teste comportamental para avaliar suas habilidades e perfil profissional.",
-            status: test.is_completed ? "concluído" : "pendente",
-            timeEstimate: "20 minutos",
-            icon: iconMap[iconKey],
-            category: category,
-            startedAt: test.started_at,
-            completedAt: test.completed_at,
-            dueDate: test.is_completed ? undefined : "Em aberto",
-            completedDate: test.is_completed ? (test.completed_at ? new Date(test.completed_at).toLocaleDateString('pt-BR') : "Data não registrada") : undefined
-          });
-        }
-      });
-      
-      return formattedTests;
+      return formatTestsData(clientTests, testsInfo || []);
       
     } catch (error) {
       console.error("Erro ao buscar testes:", error);
       throw error;
     }
+  };
+  
+  // Function to format test data
+  const formatTestsData = (clientTests: any[], testsInfo: any[]) => {
+    const formattedTests: TestData[] = [];
+    
+    clientTests.forEach(test => {
+      const testInfo = testsInfo?.find(t => t.id === test.test_id);
+      
+      if (testInfo) {
+        const category = "comportamental"; 
+        const iconKey = category === "comportamental" ? "brain" : "clipboard";
+        
+        formattedTests.push({
+          id: testInfo.id,
+          client_test_id: test.id,
+          title: testInfo.title,
+          description: testInfo.description || "Teste comportamental para avaliar suas habilidades e perfil profissional.",
+          status: test.is_completed ? "concluído" : "pendente",
+          timeEstimate: "20 minutos",
+          icon: iconMap[iconKey],
+          category: category,
+          startedAt: test.started_at,
+          completedAt: test.completed_at,
+          dueDate: test.is_completed ? undefined : "Em aberto",
+          completedDate: test.is_completed ? (test.completed_at ? new Date(test.completed_at).toLocaleDateString('pt-BR') : "Data não registrada") : undefined
+        });
+      }
+    });
+    
+    return formattedTests;
   };
 
   const { data: testData = [], isLoading, isError, error, refetch } = useQuery({
