@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser } from "@/lib/auth";
@@ -37,16 +36,13 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>(initialState);
 
-  // Inicializar o estado com o usuário atual, se existir
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Primeiro configuramos o listener de mudanças de estado
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log("Auth state changed:", event, session?.user?.id);
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            // Usando setTimeout para evitar problemas de recursão
             if (session?.user) {
               setTimeout(async () => {
                 const user = await getCurrentUser();
@@ -65,10 +61,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               isLoading: false,
               error: null,
             });
+            window.location.href = "/";
           }
         });
         
-        // Depois tentamos obter o usuário atual
         const user = await getCurrentUser();
         console.log("Initial auth state:", user);
         
@@ -96,7 +92,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, []);
 
-  // Função de login
   const login = async (email: string, password: string): Promise<AuthUser | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
@@ -116,11 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading: false,
         error: error instanceof Error ? error.message : "Erro ao fazer login",
       });
-      throw error; // Re-throw para que o componente possa lidar com erros específicos
+      throw error;
     }
   };
 
-  // Função de registro
   const register = async (
     email: string, 
     password: string, 
@@ -149,11 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading: false,
         error: error instanceof Error ? error.message : "Erro ao registrar",
       });
-      throw error; // Re-throw para que o componente possa lidar com erros específicos
+      throw error;
     }
   };
 
-  // Função de logout
   const logout = async (): Promise<void> => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {

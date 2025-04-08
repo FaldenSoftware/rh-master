@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -57,7 +56,6 @@ const Register = () => {
     if (formErrors.position) setFormErrors(prev => ({ ...prev, position: "" }));
   }, [position]);
 
-  // Reset rate limiting after timeout
   useEffect(() => {
     let timerId: number | null = null;
     
@@ -119,7 +117,6 @@ const Register = () => {
     e.preventDefault();
     setGeneralError(null);
     
-    // Prevent submission if rate limited
     if (isRateLimited) {
       toast({
         variant: "destructive",
@@ -160,6 +157,10 @@ const Register = () => {
           title: "Registro realizado com sucesso",
           description: "Redirecionando para o painel...",
         });
+        
+        setTimeout(() => {
+          navigate("/leader");
+        }, 1500);
       } else {
         throw new Error("Falha ao registrar usuário. Tente novamente.");
       }
@@ -170,7 +171,6 @@ const Register = () => {
       if (error instanceof Error) {
         setGeneralError(error.message);
         
-        // Check if error is related to rate limiting
         if (error.message.toLowerCase().includes('security purposes') || 
             error.message.toLowerCase().includes('aguarde') ||
             error.message.toLowerCase().includes('segundos')) {

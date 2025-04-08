@@ -72,20 +72,55 @@ export const registerUser = async (
     // This helps avoid race conditions with RLS policies
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    // For mentors, set their own ID as mentor_id (self-reference)
+    if (role === "mentor") {
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ mentor_id: data.user.id })
+          .eq('id', data.user.id);
+          
+        if (updateError) {
+          console.error("Erro ao definir mentor_id:", updateError);
+        } else {
+          console.log("mentor_id definido com sucesso para:", data.user.id);
+        }
+      } catch (mentorUpdateError) {
+        console.error("Exceção ao definir mentor_id:", mentorUpdateError);
+      }
+    }
+    
     // Directly create a profile in the profiles table as a backup
     try {
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const profileData = {
         id: data.user.id,
         name: name.trim(),
         role: role,
         company: company?.trim(),
         phone: phone?.trim(),
         position: position?.trim(),
-        bio: bio?.trim()
-      });
+        bio: bio?.trim(),
+        mentor_id: role === "mentor" ? data.user.id : null
+      };
+      
+      const { error: profileError } = await supabase.from('profiles').insert(profileData);
       
       if (profileError) {
-        console.error("Erro ao criar perfil manualmente:", profileError);
+        // If profile already exists, try to update it instead
+        if (profileError.code === "23505") { // Unique violation error code
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(profileData)
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error("Erro ao atualizar perfil existente:", updateError);
+          } else {
+            console.log("Perfil atualizado com sucesso");
+          }
+        } else {
+          console.error("Erro ao criar perfil manualmente:", profileError);
+        }
       } else {
         console.log("Perfil criado manualmente com sucesso");
       }
@@ -112,20 +147,21 @@ export const registerUser = async (
       console.error("Exceção ao verificar perfil:", profileQueryException);
     }
     
-    // Return a basic user object
-    const basicUser: AuthUser = {
+    // Return a user object with complete data
+    const authUser: AuthUser = {
       id: data.user.id,
       email: data.user.email || '',
       name: name.trim(),
       role: role,
       company: company?.trim(),
+      mentor_id: role === "mentor" ? data.user.id : null,
       phone: phone?.trim(),
       position: position?.trim(),
       bio: bio?.trim()
     };
     
-    console.log("Retornando usuário básico após registro:", basicUser);
-    return basicUser;
+    console.log("Retornando usuário completo após registro:", authUser);
+    return authUser;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
@@ -286,6 +322,13 @@ export const logoutUser = async (): Promise<void> => {
       console.error("Erro ao fazer logout:", error);
       throw error;
     }
+    
+    // Clear any local storage or session storage if needed
+    // localStorage.removeItem('your-auth-key');
+    
+    // Force redirect to home page
+    window.location.href = "/";
+    
     console.log("Logout bem-sucedido");
   } catch (error) {
     console.error('Erro ao fazer logout:', error);

@@ -38,11 +38,15 @@ const LeaderSettings = () => {
     try {
       console.log("Fetching profile data for user:", user?.id);
       
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+      
       // Fetch user profile from Supabase
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
       
       if (profileError) {
@@ -63,8 +67,8 @@ const LeaderSettings = () => {
         lastName,
         email: user?.email || '',
         phone: profileData.phone || '',
-        position: profileData.position || 'Gerente de RH',
-        bio: profileData.bio || 'Profissional de RH com mais de 10 anos de experiência em recrutamento, seleção e desenvolvimento organizacional.',
+        position: profileData.position || '',
+        bio: profileData.bio || '',
         company: profileData.company || ''
       });
     } catch (error) {
