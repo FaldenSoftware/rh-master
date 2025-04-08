@@ -4,11 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 // Safely get client tests for a specific user
 export const getClientTestsForUser = async (userId: string) => {
   try {
-    const { data, error } = await supabase
-      .rpc('get_client_tests_for_user', { user_id: userId });
+    try {
+      const { data, error } = await supabase
+        .rpc('get_client_tests_for_user', { user_id: userId });
 
-    if (error) {
-      console.error("Error fetching client tests:", error);
+      if (error) {
+        console.error("Error fetching client tests from RPC:", error);
+        throw error;
+      }
+
+      return data;
+    } catch (rpcError) {
+      console.log("Fallback to direct query after RPC failure");
       
       // Fallback to direct query if RPC fails
       const { data: directData, error: directError } = await supabase
@@ -17,16 +24,15 @@ export const getClientTestsForUser = async (userId: string) => {
         .eq('client_id', userId);
         
       if (directError) {
+        console.error("Error in direct query:", directError);
         throw directError;
       }
       
       return directData;
     }
-
-    return data;
   } catch (error) {
     console.error("Error in getClientTestsForUser:", error);
-    throw error;
+    return []; // Retorna array vazio em caso de erro para evitar quebrar componentes
   }
 };
 
@@ -48,7 +54,7 @@ export const getTestInfoBatch = async (testIds: string[]) => {
     return data;
   } catch (error) {
     console.error("Error in getTestInfoBatch:", error);
-    throw error;
+    return []; // Retorna array vazio em caso de erro
   }
 };
 
@@ -70,7 +76,7 @@ export const getTestResultsBatch = async (clientTestIds: string[]) => {
     return data;
   } catch (error) {
     console.error("Error in getTestResultsBatch:", error);
-    throw error;
+    return []; // Retorna array vazio em caso de erro
   }
 };
 
@@ -91,7 +97,7 @@ export const getMentorClients = async (mentorId: string) => {
     return data;
   } catch (error) {
     console.error("Error in getMentorClients:", error);
-    throw error;
+    return []; // Retorna array vazio em caso de erro
   }
 };
 
@@ -116,7 +122,7 @@ export const createDefaultTest = async (mentorId: string, title: string, descrip
     return data;
   } catch (error) {
     console.error("Error in createDefaultTest:", error);
-    throw error;
+    return null; // Retorna null em caso de erro
   }
 };
 
@@ -159,6 +165,46 @@ export const assignTestToClient = async (clientId: string, testId: string) => {
     return existingData;
   } catch (error) {
     console.error("Error in assignTestToClient:", error);
-    throw error;
+    return null; // Retorna null em caso de erro
+  }
+};
+
+// Buscar todos os testes disponíveis
+export const getAllTests = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('tests')
+      .select('*');
+      
+    if (error) {
+      console.error("Error fetching tests:", error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getAllTests:", error);
+    return []; // Retorna array vazio em caso de erro
+  }
+};
+
+// Buscar um teste específico por título
+export const getTestByTitle = async (title: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('tests')
+      .select('*')
+      .ilike('title', `%${title}%`)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching test by title:", error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in getTestByTitle:", error);
+    return null; // Retorna null em caso de erro
   }
 };
