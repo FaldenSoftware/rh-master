@@ -32,7 +32,6 @@ export interface AnimalProfileAnswer {
   created_at?: string;
 }
 
-// Animal profile information for display
 export const animalProfiles = {
   tubarao: {
     name: "Tubarão",
@@ -172,18 +171,14 @@ export const animalProfiles = {
   }
 };
 
-// Fetch all animal profile questions from the database
 export const fetchAnimalProfileQuestions = async (): Promise<AnimalProfileQuestion[]> => {
   try {
-    // Primeiro, tente buscar as perguntas diretamente
     const { data, error } = await supabase
       .from('animal_profile_questions')
       .select('*');
       
     if (error) {
       console.error("Error fetching questions:", error);
-      
-      // Se houver erro, use dados mockados para desenvolvimento
       return getMockedQuestions();
     }
     
@@ -195,12 +190,10 @@ export const fetchAnimalProfileQuestions = async (): Promise<AnimalProfileQuesti
     return data as AnimalProfileQuestion[];
   } catch (error) {
     console.error("Error in fetchAnimalProfileQuestions:", error);
-    // Em caso de erro, retorne perguntas mockadas
     return getMockedQuestions();
   }
 };
 
-// Perguntas mockadas para uso em desenvolvimento ou em caso de falhas no banco
 const getMockedQuestions = (): AnimalProfileQuestion[] => {
   return [
     {
@@ -246,7 +239,6 @@ const getMockedQuestions = (): AnimalProfileQuestion[] => {
   ];
 };
 
-// Create a new animal profile result record
 export const createAnimalProfileResult = async (userId: string): Promise<string> => {
   try {
     const { data, error } = await supabase
@@ -259,19 +251,16 @@ export const createAnimalProfileResult = async (userId: string): Promise<string>
       
     if (error) {
       console.error("Error creating result:", error);
-      // Em caso de erro, crie um ID temporário para desenvolvimento
       return "temp-" + Math.random().toString(36).substring(2, 15);
     }
     
     return data.id;
   } catch (error) {
     console.error("Error in createAnimalProfileResult:", error);
-    // Em caso de erro, crie um ID temporário para desenvolvimento
     return "temp-" + Math.random().toString(36).substring(2, 15);
   }
 };
 
-// Save an answer for a specific question
 export const saveAnimalProfileAnswer = async (
   resultId: string,
   questionId: string,
@@ -301,13 +290,11 @@ export const saveAnimalProfileAnswer = async (
   }
 };
 
-// Finalize the test result with scores
 export const finalizeAnimalProfileResult = async (
   resultId: string,
   scores: { tubarao: number, gato: number, lobo: number, aguia: number }
 ): Promise<AnimalProfileResult> => {
   try {
-    // Determine the predominant animal profile(s)
     const { tubarao, gato, lobo, aguia } = scores;
     const maxScore = Math.max(tubarao, gato, lobo, aguia);
     
@@ -318,7 +305,6 @@ export const finalizeAnimalProfileResult = async (
     if (lobo === maxScore) predominante += predominante ? "-lobo" : "lobo";
     if (aguia === maxScore) predominante += predominante ? "-aguia" : "aguia";
     
-    // Se estamos usando um ID temporário, retorne um resultado mockado
     if (resultId.startsWith("temp-")) {
       console.info("Using temporary result ID, returning mocked result");
       return {
@@ -335,7 +321,6 @@ export const finalizeAnimalProfileResult = async (
       };
     }
     
-    // Update the result with scores and predominant animal
     const { data, error } = await supabase
       .from('animal_profile_results')
       .update({
@@ -362,10 +347,8 @@ export const finalizeAnimalProfileResult = async (
   }
 };
 
-// Get a specific animal profile result
 export const getAnimalProfileResult = async (resultId: string): Promise<AnimalProfileResult> => {
   try {
-    // Se for um ID temporário, retorne um resultado mockado
     if (resultId.startsWith("temp-")) {
       return getMockedResult(resultId);
     }
@@ -388,7 +371,6 @@ export const getAnimalProfileResult = async (resultId: string): Promise<AnimalPr
   }
 };
 
-// Função auxiliar para gerar um resultado mockado
 const getMockedResult = (resultId: string): AnimalProfileResult => {
   return {
     id: resultId,
@@ -404,7 +386,6 @@ const getMockedResult = (resultId: string): AnimalProfileResult => {
   };
 };
 
-// Fetch user's latest animal profile result
 export const getUserLatestAnimalProfileResult = async (userId: string): Promise<AnimalProfileResult | null> => {
   try {
     const { data, error } = await supabase
@@ -428,10 +409,8 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
   }
 };
 
-// Mark a test as completed in client_tests table
 export const markClientTestCompleted = async (userId: string): Promise<void> => {
   try {
-    // Find the animal profile test
     const { data: testData, error: testError } = await supabase
       .from('tests')
       .select('id')
@@ -440,10 +419,9 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
       
     if (testError) {
       console.error("Error finding animal profile test:", testError);
-      return; // Continue sem marcar como concluído em caso de erro
+      return;
     }
     
-    // Update client_tests record to mark it as completed
     const { error: updateError } = await supabase
       .from('client_tests')
       .update({ 
@@ -461,10 +439,8 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
   }
 };
 
-// Criar um teste padrão de perfil animal para o usuário se não existir
 export const createDefaultAnimalProfileTest = async (): Promise<string | null> => {
   try {
-    // Verificar se já existe um teste de perfil animal
     const { data: existingTest, error: testError } = await supabase
       .from('tests')
       .select('id')
@@ -476,20 +452,18 @@ export const createDefaultAnimalProfileTest = async (): Promise<string | null> =
       return null;
     }
     
-    // Se já existe, retorne o ID
     if (existingTest) {
       return existingTest.id;
     }
     
-    // Caso contrário, crie um novo teste
-    const { data: session } = await supabase.auth.getSession();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
     
-    if (!session?.user) {
+    if (!session) {
       console.error("User not authenticated");
       return null;
     }
     
-    // Obter o perfil do usuário para verificar se é mentor
     const { data: userData, error: userError } = await supabase
       .from('profiles')
       .select('role')
@@ -501,13 +475,12 @@ export const createDefaultAnimalProfileTest = async (): Promise<string | null> =
       return null;
     }
     
-    // Criar o teste (usando o ID do usuário como mentor_id temporário)
     const { data: newTest, error: createError } = await supabase
       .from('tests')
       .insert({
         title: 'Teste de Perfil - Animais',
         description: 'Descubra seu perfil comportamental através de nossa metáfora de animais.',
-        mentor_id: userData.role === 'mentor' ? session.user.id : session.user.id // Em produção, use um ID de mentor real
+        mentor_id: userData.role === 'mentor' ? session.user.id : session.user.id
       })
       .select('id')
       .single();
@@ -524,10 +497,8 @@ export const createDefaultAnimalProfileTest = async (): Promise<string | null> =
   }
 };
 
-// Assign test to client if not already assigned
 export const assignAnimalProfileTestToClient = async (userId: string): Promise<boolean> => {
   try {
-    // Get or create the animal profile test
     const testId = await createDefaultAnimalProfileTest();
     
     if (!testId) {
@@ -535,7 +506,6 @@ export const assignAnimalProfileTestToClient = async (userId: string): Promise<b
       return false;
     }
     
-    // Check if the user already has this test assigned
     const { data: existingAssignment, error: checkError } = await supabase
       .from('client_tests')
       .select('id')
@@ -548,12 +518,10 @@ export const assignAnimalProfileTestToClient = async (userId: string): Promise<b
       return false;
     }
     
-    // If already assigned, return success
     if (existingAssignment) {
       return true;
     }
     
-    // Otherwise, create the assignment
     const { error: assignError } = await supabase
       .from('client_tests')
       .insert({
@@ -574,7 +542,6 @@ export const assignAnimalProfileTestToClient = async (userId: string): Promise<b
   }
 };
 
-// Helper function to shuffle the answer options
 export const shuffleAnswers = (question: AnimalProfileQuestion): Array<{text: string, animal: string}> => {
   const options = [
     { text: question.animal_tubarao, animal: "tubarao" },
@@ -583,7 +550,6 @@ export const shuffleAnswers = (question: AnimalProfileQuestion): Array<{text: st
     { text: question.animal_aguia, animal: "aguia" }
   ];
   
-  // Fisher-Yates shuffle algorithm
   for (let i = options.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [options[i], options[j]] = [options[j], options[i]];

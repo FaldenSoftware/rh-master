@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ClipboardCheck, Clock, CheckCircle, Brain, Users, Loader2 } from "lucide-react";
+import { ClipboardCheck, Clock, CheckCircle, Brain, Users, Loader2, Heart } from "lucide-react";
 import ClientLayout from "@/components/client/ClientLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
