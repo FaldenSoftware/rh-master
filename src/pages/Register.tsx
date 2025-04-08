@@ -20,6 +20,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [isRateLimited, setIsRateLimited] = useState(false);
   const { register, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -43,6 +44,22 @@ const Register = () => {
   useEffect(() => {
     if (formErrors.company) setFormErrors(prev => ({ ...prev, company: "" }));
   }, [company]);
+
+  // Reset rate limiting after timeout
+  useEffect(() => {
+    let timerId: number | null = null;
+    
+    if (isRateLimited) {
+      timerId = window.setTimeout(() => {
+        setIsRateLimited(false);
+        setGeneralError(null);
+      }, 30000); // 30 seconds timeout
+    }
+    
+    return () => {
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [isRateLimited]);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -89,6 +106,17 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
+    
+    // Prevent submission if rate limited
+    if (isRateLimited) {
+      toast({
+        variant: "destructive",
+        title: "Tentativas limitadas",
+        description: "Aguarde alguns segundos antes de tentar novamente.",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -128,6 +156,13 @@ const Register = () => {
       
       if (error instanceof Error) {
         setGeneralError(error.message);
+        
+        // Check if error is related to rate limiting
+        if (error.message.toLowerCase().includes('security purposes') || 
+            error.message.toLowerCase().includes('aguarde') ||
+            error.message.toLowerCase().includes('segundos')) {
+          setIsRateLimited(true);
+        }
         
         if (error.message.toLowerCase().includes("empresa é obrigatória") || 
             error.message.toLowerCase().includes("company is required")) {

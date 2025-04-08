@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
 import { getUserProfile } from "./userProfile";
 
+// Store the last registration attempt timestamp
+let lastRegistrationAttempt = 0;
+const MIN_REGISTRATION_INTERVAL = 30000; // 30 seconds in milliseconds
+
 /**
  * Handles user registration
  */
@@ -15,6 +19,16 @@ export const registerUser = async (
 ): Promise<AuthUser | null> => {
   try {
     console.log("Iniciando registro de novo usuário:", { email, name, role, company });
+    
+    // Check if we're attempting to register too quickly
+    const now = Date.now();
+    if (now - lastRegistrationAttempt < MIN_REGISTRATION_INTERVAL) {
+      const remainingSeconds = Math.ceil((MIN_REGISTRATION_INTERVAL - (now - lastRegistrationAttempt)) / 1000);
+      throw new Error(`Por razões de segurança, você só pode fazer uma nova tentativa após ${remainingSeconds} segundos.`);
+    }
+    
+    // Update last attempt timestamp
+    lastRegistrationAttempt = now;
     
     validateRegistrationData(email, password, name, role, company);
     
@@ -110,6 +124,13 @@ const handleRegistrationError = (error: any): never => {
   
   if (error.message.includes('User already registered')) {
     throw new Error("Email já registrado. Por favor, faça login ou use outro email.");
+  }
+  
+  // Handle rate limiting errors more explicitly
+  if (error.message.includes('For security purposes') || 
+      error.message.toLowerCase().includes('rate limit') ||
+      error.status === 429) {
+    throw new Error("Por razões de segurança, aguarde alguns segundos antes de tentar novamente.");
   }
   
   throw new Error(`Erro ao registrar: ${error.message}`);
