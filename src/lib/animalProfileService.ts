@@ -400,7 +400,7 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
       .from('animal_profile_results')
       .select('*')
       .eq('user_id', userId)
-      .is('animal_predominante', 'not.null' as any)
+      .not('animal_predominante', 'is', null)
       .order('completed_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -453,7 +453,7 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
         .from('animal_profile_results')
         .select('*')
         .eq('user_id', userId)
-        .is('animal_predominante', 'not.null')
+        .not('animal_predominante', 'is', null)
         .order('completed_at', { ascending: false })
         .limit(1)
         .single();
