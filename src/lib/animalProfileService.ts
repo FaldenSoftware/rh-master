@@ -340,6 +340,11 @@ export const finalizeAnimalProfileResult = async (
       throw new Error(error.message);
     }
     
+    const { data: session } = await supabase.auth.getSession();
+    if (session?.session?.user) {
+      await markClientTestCompleted(session.session.user.id);
+    }
+    
     return data as AnimalProfileResult;
   } catch (error) {
     console.error("Error in finalizeAnimalProfileResult:", error);

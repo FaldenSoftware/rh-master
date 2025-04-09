@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -37,7 +36,6 @@ const AnimalProfileTest = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch questions on component mount
   useEffect(() => {
     const loadQuestions = async () => {
       try {
@@ -48,7 +46,6 @@ const AnimalProfileTest = () => {
         if (questionsData.length > 0) {
           setShuffledOptions(shuffleAnswers(questionsData[0]));
           
-          // Create a new result record
           if (user) {
             const newResultId = await createAnimalProfileResult(user.id);
             setResultId(newResultId);
@@ -71,12 +68,10 @@ const AnimalProfileTest = () => {
     }
   }, [user, toast]);
 
-  // Handle option selection
   const handleOptionChange = (value: string) => {
     setSelectedOption(value);
   };
 
-  // Handle next question button click
   const handleNextQuestion = async () => {
     if (!selectedOption || !resultId || !user) return;
     
@@ -85,27 +80,21 @@ const AnimalProfileTest = () => {
     try {
       const currentQuestion = questions[currentQuestionIndex];
       
-      // Save answer
       await saveAnimalProfileAnswer(resultId, currentQuestion.id, selectedOption);
       
-      // Update scores
       const newScores = { ...scores };
       newScores[selectedOption as keyof typeof scores] += 1;
       setScores(newScores);
       
-      // Move to next question or finish test
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
         setSelectedOption(null);
         setShuffledOptions(shuffleAnswers(questions[currentQuestionIndex + 1]));
       } else {
-        // Final question - calculate results
         const result = await finalizeAnimalProfileResult(resultId, newScores);
         
-        // Mark the test as completed in client_tests
         await markClientTestCompleted(user.id);
         
-        // Navigate to results page
         navigate(`/client/tests/animal-profile/results/${resultId}`);
       }
     } catch (error) {
@@ -120,7 +109,6 @@ const AnimalProfileTest = () => {
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -130,7 +118,6 @@ const AnimalProfileTest = () => {
     );
   }
 
-  // Error state - no questions found
   if (questions.length === 0) {
     return (
       <div className="text-center p-8">

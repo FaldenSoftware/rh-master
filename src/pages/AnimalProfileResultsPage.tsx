@@ -66,7 +66,7 @@ const AnimalProfileResultsPage = () => {
   
   return (
     <ClientLayout title="Resultados do Teste">
-      <AnimalProfileResults />
+      <AnimalProfileResults resultId={resultId !== "latest" ? resultId : latestResultId} />
     </ClientLayout>
   );
 };

@@ -1,4 +1,3 @@
-
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { AnimalProfileResult } from "./animalProfileService";
@@ -290,8 +289,7 @@ export const generateAnimalProfilePDF = async (
   });
   
   // Add footer to the last page
-  const lastPage = pdf.internal.pages.length;
-  pdf.setPage(lastPage);
+  pdf.setPage(pdf.internal.pages.length);
   pdf.setFontSize(10);
   pdf.setTextColor(150, 150, 150);
   pdf.text(`© ${new Date().getFullYear()} - Todos os direitos reservados`, pageWidth / 2, pageHeight - 20, { align: "center" });

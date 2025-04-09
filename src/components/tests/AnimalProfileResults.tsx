@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { 
   Card, 
@@ -37,7 +36,8 @@ import {
   FileText, 
   Loader2,
   AlertCircle,
-  Award
+  Award,
+  FilePdf
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { 
@@ -47,8 +47,11 @@ import {
 } from "@/lib/animalProfileService";
 import { generateAnimalProfilePDF } from "@/lib/pdfGenerator";
 
-const AnimalProfileResults = () => {
-  const { resultId } = useParams();
+interface AnimalProfileResultsProps {
+  resultId?: string | null;
+}
+
+const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -375,7 +378,7 @@ const AnimalProfileResults = () => {
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
+                  <FilePdf className="mr-2 h-4 w-4" />
                   Baixar PDF
                 </>
               )}
