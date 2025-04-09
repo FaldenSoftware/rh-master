@@ -37,7 +37,7 @@ import {
   Loader2,
   AlertCircle,
   Award,
-  FilePdf
+  FileDown
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { 
@@ -109,7 +109,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -119,7 +118,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     );
   }
 
-  // Error state - no result found
   if (!result) {
     return (
       <div className="max-w-3xl mx-auto mt-8">
@@ -136,10 +134,8 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     );
   }
 
-  // Parse the animal predominante (handling ties)
   const animals = result.animal_predominante.split('-');
   
-  // Prepare data for charts
   const scoreData = [
     { name: "Tubarão (Executor)", value: result.score_tubarao, color: "#F59E0B" },
     { name: "Gato (Comunicador)", value: result.score_gato, color: "#10B981" },
@@ -161,7 +157,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     { subject: "Idealizador", A: result.score_aguia, fullMark: 10 }
   ];
   
-  // Get data for the predominant animal(s)
   const mainResults = animals.map(animal => {
     const animalKey = animal as keyof typeof animalProfiles;
     return animalProfiles[animalKey];
@@ -378,7 +373,7 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
                 </>
               ) : (
                 <>
-                  <FilePdf className="mr-2 h-4 w-4" />
+                  <FileDown className="mr-2 h-4 w-4" />
                   Baixar PDF
                 </>
               )}
