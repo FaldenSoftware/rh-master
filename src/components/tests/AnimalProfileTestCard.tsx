@@ -19,7 +19,7 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
   const queryClient = useQueryClient();
   
   const handleViewResults = () => {
-    // Invalidar queries antes de navegar para garantir que os dados estão atualizados
+    // Invalidate queries before navigation to ensure data is up-to-date
     queryClient.invalidateQueries({ queryKey: ['clientTests'] });
     queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     queryClient.invalidateQueries({ queryKey: ['testResults'] });

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AnimalProfileQuestion {
@@ -37,6 +38,7 @@ export const animalProfiles = {
     name: "Tubarão",
     title: "Executor",
     emoji: "🦈",
+    icon: "/lovable-uploads/047ea0ab-847f-4d2a-bf9b-95a9c43dae11.png",
     description: "Você é determinado, orientado a resultados e tem uma forte inclinação para a ação rápida. Suas decisões são práticas e baseadas na eficiência.",
     characteristics: [
       "Focado em resultados",
@@ -71,6 +73,7 @@ export const animalProfiles = {
     name: "Gato",
     title: "Comunicador",
     emoji: "🐱",
+    icon: "/lovable-uploads/047ea0ab-847f-4d2a-bf9b-95a9c43dae11.png",
     description: "Você é sociável, expressivo e tem excelentes habilidades interpessoais. Sua abordagem é colaborativa e você valoriza relacionamentos.",
     characteristics: [
       "Comunicativo e eloquente",
@@ -105,6 +108,7 @@ export const animalProfiles = {
     name: "Lobo",
     title: "Organizador",
     emoji: "🐺",
+    icon: "/lovable-uploads/047ea0ab-847f-4d2a-bf9b-95a9c43dae11.png",
     description: "Você é estruturado, metódico e atento aos detalhes. Sua abordagem é sistemática e você valoriza planejamento e ordem.",
     characteristics: [
       "Organizado e metódico",
@@ -139,6 +143,7 @@ export const animalProfiles = {
     name: "Águia",
     title: "Idealizador",
     emoji: "🦅",
+    icon: "/lovable-uploads/047ea0ab-847f-4d2a-bf9b-95a9c43dae11.png",
     description: "Você é visionário, criativo e orientado para o futuro. Sua abordagem é inovadora e você valoriza novas ideias e possibilidades.",
     characteristics: [
       "Visionário e criativo",
@@ -235,6 +240,46 @@ const getMockedQuestions = (): AnimalProfileQuestion[] => {
       animal_gato: "Incentivo a participação de todos e busco construir consenso no grupo.",
       animal_lobo: "Sigo a agenda estabelecida, tomo notas e garanto que todos os detalhes sejam discutidos.",
       animal_aguia: "Trago novas perspectivas e desafio o grupo a pensar além do convencional."
+    },
+    {
+      id: "6",
+      pergunta: "Ao enfrentar um problema inesperado, você geralmente:",
+      animal_tubarao: "Age rapidamente para resolver o problema antes que se agrave.",
+      animal_gato: "Consulta a equipe para encontrar uma solução que acomode todos.",
+      animal_lobo: "Analisa cuidadosamente todas as opções antes de decidir o melhor caminho.",
+      animal_aguia: "Procura soluções inovadoras e não convencionais."
+    },
+    {
+      id: "7",
+      pergunta: "Em um ambiente de trabalho, o que mais te incomoda?",
+      animal_tubarao: "Processos lentos e falta de decisões objetivas.",
+      animal_gato: "Ambiente hostil e falta de colaboração entre as pessoas.",
+      animal_lobo: "Desorganização e falta de planejamento estruturado.",
+      animal_aguia: "Limitações à criatividade e excesso de regras rígidas."
+    },
+    {
+      id: "8",
+      pergunta: "Qual abordagem você prefere para aprender algo novo?",
+      animal_tubarao: "Aprender fazendo, com foco nos aspectos práticos e resultados imediatos.",
+      animal_gato: "Aprender em grupo, compartilhando ideias e experiências com outros.",
+      animal_lobo: "Seguir um roteiro estruturado, dominando cada etapa antes de avançar.",
+      animal_aguia: "Explorar livremente diferentes conceitos e fazer conexões inovadoras."
+    },
+    {
+      id: "9",
+      pergunta: "Como você prefere receber feedback?",
+      animal_tubarao: "Direto e objetivo, focado em como melhorar o desempenho.",
+      animal_gato: "De forma construtiva e empática, considerando o impacto emocional.",
+      animal_lobo: "Detalhado e estruturado, com exemplos específicos e plano de ação.",
+      animal_aguia: "Que explore possibilidades de crescimento e novas direções."
+    },
+    {
+      id: "10",
+      pergunta: "O que você mais valorizaria em uma promoção?",
+      animal_tubarao: "Maior autoridade para tomar decisões e implementar mudanças.",
+      animal_gato: "Oportunidade de liderar e desenvolver uma equipe unida.",
+      animal_lobo: "Responsabilidade para criar sistemas e processos mais eficientes.",
+      animal_aguia: "Liberdade para inovar e implementar uma visão de longo prazo."
     }
   ];
 };
@@ -292,18 +337,32 @@ export const saveAnimalProfileAnswer = async (
 
 export const finalizeAnimalProfileResult = async (
   resultId: string,
-  scores: { tubarao: number, gato: number, lobo: number, aguia: number }
+  scores: { tubarao: number, gato: number, lobo: number, aguia: number },
+  predominantAnimal: string = ''
 ): Promise<AnimalProfileResult> => {
   try {
     const { tubarao, gato, lobo, aguia } = scores;
-    const maxScore = Math.max(tubarao, gato, lobo, aguia);
     
-    let predominante = "";
+    // Use the provided predominant animal or determine one based on priority order if not provided
+    let animalPredominante = predominantAnimal;
     
-    if (tubarao === maxScore) predominante += "tubarao";
-    if (gato === maxScore) predominante += predominante ? "-gato" : "gato";
-    if (lobo === maxScore) predominante += predominante ? "-lobo" : "lobo";
-    if (aguia === maxScore) predominante += predominante ? "-aguia" : "aguia";
+    // If no predominant animal was specified, determine it
+    if (!animalPredominante) {
+      const maxScore = Math.max(tubarao, gato, lobo, aguia);
+      
+      // Priority order in case of ties: tubarao, lobo, aguia, gato
+      if (tubarao === maxScore) {
+        animalPredominante = 'tubarao';
+      } else if (lobo === maxScore) {
+        animalPredominante = 'lobo';
+      } else if (aguia === maxScore) {
+        animalPredominante = 'aguia';
+      } else if (gato === maxScore) {
+        animalPredominante = 'gato';
+      }
+    }
+    
+    console.log("Finalizing result with predominant animal:", animalPredominante);
     
     if (resultId.startsWith("temp-")) {
       console.info("Using temporary result ID, returning mocked result");
@@ -314,7 +373,7 @@ export const finalizeAnimalProfileResult = async (
         score_gato: gato,
         score_lobo: lobo,
         score_aguia: aguia,
-        animal_predominante: predominante,
+        animal_predominante: animalPredominante,
         completed_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -328,7 +387,7 @@ export const finalizeAnimalProfileResult = async (
         score_gato: gato,
         score_lobo: lobo,
         score_aguia: aguia,
-        animal_predominante: predominante,
+        animal_predominante: animalPredominante,
         completed_at: new Date().toISOString()
       })
       .eq('id', resultId)
@@ -338,14 +397,6 @@ export const finalizeAnimalProfileResult = async (
     if (error) {
       console.error("Error finalizing result:", error);
       throw new Error(error.message);
-    }
-
-    const { data: sessionData } = await supabase.auth.getSession();
-    
-    if (sessionData?.session?.user) {
-      await markClientTestCompleted(sessionData.session.user.id);
-    } else {
-      console.error("No active session found when trying to mark test as completed");
     }
     
     return data as AnimalProfileResult;
@@ -387,7 +438,7 @@ const getMockedResult = (resultId: string): AnimalProfileResult => {
     score_gato: 2,
     score_lobo: 2,
     score_aguia: 3,
-    animal_predominante: "tubarao-aguia",
+    animal_predominante: "tubarao",
     completed_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
@@ -417,10 +468,11 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
   }
 };
 
-export const markClientTestCompleted = async (userId: string): Promise<void> => {
+export const markClientTestCompleted = async (userId: string): Promise<boolean> => {
   console.log("[markClientTestCompleted] Attempting to mark test as completed for user:", userId);
   
   try {
+    // Find the animal profile test
     const { data: testData, error: testError } = await supabase
       .from('tests')
       .select('id')
@@ -429,27 +481,31 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
       
     if (testError || !testData) {
       console.error("[markClientTestCompleted] Error finding animal profile test:", testError);
-      return;
+      return false;
     }
     
     console.log("[markClientTestCompleted] Found test with ID:", testData.id);
     
-    const { data: updateData, error: updateError } = await supabase
+    // Update the client test record to mark it as completed
+    const { data: clientTestData, error: updateError } = await supabase
       .from('client_tests')
       .update({ 
         is_completed: true,
         completed_at: new Date().toISOString()
       })
       .eq('client_id', userId)
-      .eq('test_id', testData.id);
+      .eq('test_id', testData.id)
+      .select('id')
+      .single();
       
-    if (updateError) {
+    if (updateError || !clientTestData) {
       console.error("[markClientTestCompleted] Error marking test as completed:", updateError);
-      return;
+      return false;
     }
     
-    console.log("[markClientTestCompleted] Successfully marked test as completed");
+    console.log("[markClientTestCompleted] Successfully marked test as completed, client_test_id:", clientTestData.id);
     
+    // Find the latest test result to save in the test_results table
     try {
       const { data: resultData, error: resultError } = await supabase
         .from('animal_profile_results')
@@ -462,51 +518,48 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
         
       if (resultError || !resultData) {
         console.error("[markClientTestCompleted] Error finding animal profile result:", resultError);
-        return;
+        return false;
       }
       
-      const { data: clientTest, error: clientTestError } = await supabase
-        .from('client_tests')
-        .select('id')
-        .eq('client_id', userId)
-        .eq('test_id', testData.id)
-        .single();
-        
-      if (clientTestError || !clientTest) {
-        console.error("[markClientTestCompleted] Error finding client test:", clientTestError);
-        return;
-      }
+      console.log("[markClientTestCompleted] Found latest result:", resultData);
       
+      // Check if a result already exists for this client test
       const { data: existingResult, error: existingError } = await supabase
         .from('test_results')
         .select('id')
-        .eq('client_test_id', clientTest.id)
+        .eq('client_test_id', clientTestData.id)
         .maybeSingle();
         
       if (existingError) {
         console.error("[markClientTestCompleted] Error checking for existing results:", existingError);
-        return;
       }
 
+      // If no result exists, create one
       if (!existingResult) {
+        const result = {
+          client_test_id: clientTestData.id,
+          data: {
+            score: calculateTotalScore(resultData),
+            profile: [
+              { name: "Tubarão", value: resultData.score_tubarao },
+              { name: "Gato", value: resultData.score_gato },
+              { name: "Lobo", value: resultData.score_lobo },
+              { name: "Águia", value: resultData.score_aguia }
+            ],
+            category: "comportamental",
+            predominant: resultData.animal_predominante
+          }
+        };
+        
+        console.log("[markClientTestCompleted] Creating test result with data:", result);
+        
         const { error: resultInsertError } = await supabase
           .from('test_results')
-          .insert({
-            client_test_id: clientTest.id,
-            data: {
-              score: calculateTotalScore(resultData),
-              profile: [
-                { name: "Tubarão", value: resultData.score_tubarao },
-                { name: "Gato", value: resultData.score_gato },
-                { name: "Lobo", value: resultData.score_lobo },
-                { name: "Águia", value: resultData.score_aguia }
-              ],
-              category: "comportamental"
-            }
-          });
+          .insert(result);
           
         if (resultInsertError) {
           console.error("[markClientTestCompleted] Error creating test result:", resultInsertError);
+          return false;
         } else {
           console.log("[markClientTestCompleted] Successfully created test result for client test");
         }
@@ -515,9 +568,13 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
       }
     } catch (error) {
       console.error("[markClientTestCompleted] Error processing test result:", error);
+      return false;
     }
+    
+    return true;
   } catch (error) {
     console.error("[markClientTestCompleted] General error:", error);
+    return false;
   }
 };
 

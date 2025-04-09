@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +30,7 @@ import {
 } from "recharts";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -134,7 +136,26 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     );
   }
 
-  const animals = result.animal_predominante.split('-');
+  const animalType = result.animal_predominante;
+  const animalProfile = animalProfiles[animalType as keyof typeof animalProfiles];
+  
+  // If we somehow don't have the animal profile (e.g., data integrity issue), provide fallback
+  if (!animalProfile) {
+    console.error("Animal profile not found for:", animalType);
+    return (
+      <div className="max-w-3xl mx-auto mt-8">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Perfil de animal não encontrado. Houve um erro ao processar o resultado.
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => navigate("/client/tests")}>
+          Voltar para meus testes
+        </Button>
+      </div>
+    );
+  }
   
   const scoreData = [
     { name: "Tubarão (Executor)", value: result.score_tubarao, color: "#F59E0B" },
@@ -156,11 +177,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     { subject: "Organizador", A: result.score_lobo, fullMark: 10 },
     { subject: "Idealizador", A: result.score_aguia, fullMark: 10 }
   ];
-  
-  const mainResults = animals.map(animal => {
-    const animalKey = animal as keyof typeof animalProfiles;
-    return animalProfiles[animalKey];
-  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -176,26 +192,19 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
           </div>
           
           <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
-            <div className="flex-shrink-0 flex justify-center items-center bg-white text-6xl rounded-full w-24 h-24">
-              {animals.length === 1 ? (
-                <span>{animalProfiles[animals[0] as keyof typeof animalProfiles].emoji}</span>
-              ) : (
-                <Award className="h-12 w-12 text-purple-600" />
-              )}
-            </div>
+            <Avatar className="h-28 w-28 bg-white p-0 overflow-hidden">
+              <AvatarImage src={animalProfile.icon} alt={animalProfile.name} className="object-contain" />
+              <AvatarFallback className="text-4xl bg-white text-purple-700">
+                {animalProfile.emoji}
+              </AvatarFallback>
+            </Avatar>
             
             <div>
               <CardTitle className="text-2xl md:text-3xl font-bold">
-                {animals.length > 1
-                  ? `Seu perfil é híbrido: ${animals.map(a => animalProfiles[a as keyof typeof animalProfiles].name).join(' e ')}`
-                  : `Seu perfil é: ${animalProfiles[animals[0] as keyof typeof animalProfiles].name}`
-                }
+                Seu perfil é: {animalProfile.name}
               </CardTitle>
               <CardDescription className="text-purple-100 mt-2 text-lg">
-                {animals.length > 1
-                  ? `Uma combinação de ${animals.map(a => animalProfiles[a as keyof typeof animalProfiles].title).join(' e ')}`
-                  : animalProfiles[animals[0] as keyof typeof animalProfiles].title
-                }
+                {animalProfile.title}
               </CardDescription>
             </div>
           </div>
@@ -211,74 +220,49 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
             
             <TabsContent value="overview" className="space-y-4">
               <div className="text-lg">
-                {animals.length > 1 
-                  ? "Por ter pontuações iguais em mais de um perfil, você apresenta uma combinação única dessas características:"
-                  : animalProfiles[animals[0] as keyof typeof animalProfiles].description
-                }
+                {animalProfile.description}
               </div>
               
-              {mainResults.map((profile, index) => (
-                <div key={`profile-${index}`} className="mt-6">
-                  {mainResults.length > 1 && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{profile.emoji}</span>
-                      <h3 className="text-xl font-medium">{profile.name} ({profile.title})</h3>
-                    </div>
-                  )}
-                  
-                  <p className="mb-4">{profile.description}</p>
-                  
-                  <h4 className="font-medium text-lg mt-4">Principais Características:</h4>
-                  <ul className="list-disc pl-6 space-y-1 mt-2">
-                    {profile.characteristics.map((char, i) => (
-                      <li key={`char-${index}-${i}`}>{char}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <div className="mt-6">
+                <h4 className="font-medium text-lg mt-4">Principais Características:</h4>
+                <ul className="list-disc pl-6 space-y-1 mt-2">
+                  {animalProfile.characteristics.map((char, i) => (
+                    <li key={`char-${i}`}>{char}</li>
+                  ))}
+                </ul>
+              </div>
             </TabsContent>
             
             <TabsContent value="details" className="space-y-6">
-              {mainResults.map((profile, index) => (
-                <div key={`details-${index}`} className="space-y-4">
-                  {mainResults.length > 1 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{profile.emoji}</span>
-                      <h3 className="text-xl font-medium">{profile.name} ({profile.title})</h3>
-                    </div>
-                  )}
-                  
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-medium text-purple-700 mb-2">Pontos Fortes</h4>
-                      <ul className="list-disc pl-6 space-y-1">
-                        {profile.strengths.map((strength, i) => (
-                          <li key={`strength-${index}-${i}`}>{strength}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-purple-700 mb-2">Desafios</h4>
-                      <ul className="list-disc pl-6 space-y-1">
-                        {profile.challenges.map((challenge, i) => (
-                          <li key={`challenge-${index}-${i}`}>{challenge}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-purple-700 mb-2">Recomendações para Desenvolvimento</h4>
+                    <h4 className="font-medium text-purple-700 mb-2">Pontos Fortes</h4>
                     <ul className="list-disc pl-6 space-y-1">
-                      {profile.recommendations.map((rec, i) => (
-                        <li key={`rec-${index}-${i}`}>{rec}</li>
+                      {animalProfile.strengths.map((strength, i) => (
+                        <li key={`strength-${i}`}>{strength}</li>
                       ))}
                     </ul>
                   </div>
-                  
-                  {index < mainResults.length - 1 && <Separator className="my-6" />}
+                  <div>
+                    <h4 className="font-medium text-purple-700 mb-2">Desafios</h4>
+                    <ul className="list-disc pl-6 space-y-1">
+                      {animalProfile.challenges.map((challenge, i) => (
+                        <li key={`challenge-${i}`}>{challenge}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              ))}
+                
+                <div>
+                  <h4 className="font-medium text-purple-700 mb-2">Recomendações para Desenvolvimento</h4>
+                  <ul className="list-disc pl-6 space-y-1">
+                    {animalProfile.recommendations.map((rec, i) => (
+                      <li key={`rec-${i}`}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="charts" className="space-y-8">

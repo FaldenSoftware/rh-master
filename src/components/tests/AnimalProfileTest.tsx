@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, ArrowRight, Brain } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AnimalProfileQuestion,
   fetchAnimalProfileQuestions,
@@ -18,7 +19,6 @@ import {
   shuffleAnswers,
   markClientTestCompleted
 } from "@/lib/animalProfileService";
-import { useQueryClient } from "@tanstack/react-query";
 
 const AnimalProfileTest = () => {
   const { user } = useAuth();
@@ -38,41 +38,62 @@ const AnimalProfileTest = () => {
     aguia: 0
   });
   const [submitting, setSubmitting] = useState(false);
+  const [tieBreakQuestions, setTieBreakQuestions] = useState<AnimalProfileQuestion[]>([]);
+  const [isTieBreak, setIsTieBreak] = useState(false);
 
-  useEffect(() => {
-    const loadQuestions = async () => {
-      try {
-        setIsLoading(true);
-        const questionsData = await fetchAnimalProfileQuestions();
-        setQuestions(questionsData);
+  const loadQuestions = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const questionsData = await fetchAnimalProfileQuestions();
+      
+      // Separate standard questions and reserve some for tie-breaking
+      const mainQuestions = questionsData.slice(0, 5);
+      const reservedQuestions = questionsData.slice(5);
+      
+      setQuestions(mainQuestions);
+      setTieBreakQuestions(reservedQuestions);
+      
+      if (mainQuestions.length > 0) {
+        setShuffledOptions(shuffleAnswers(mainQuestions[0]));
         
-        if (questionsData.length > 0) {
-          setShuffledOptions(shuffleAnswers(questionsData[0]));
-          
-          if (user) {
-            const newResultId = await createAnimalProfileResult(user.id);
-            setResultId(newResultId);
-          }
+        if (user) {
+          const newResultId = await createAnimalProfileResult(user.id);
+          setResultId(newResultId);
         }
-      } catch (error) {
-        console.error("Error loading questions:", error);
-        toast({
-          title: "Erro ao carregar perguntas",
-          description: "Ocorreu um erro ao carregar as perguntas do teste.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    if (user) {
-      loadQuestions();
+    } catch (error) {
+      console.error("Error loading questions:", error);
+      toast({
+        title: "Erro ao carregar perguntas",
+        description: "Ocorreu um erro ao carregar as perguntas do teste.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, [user, toast]);
 
+  useEffect(() => {
+    if (user) {
+      loadQuestions();
+    }
+  }, [user, loadQuestions]);
+
   const handleOptionChange = (value: string) => {
     setSelectedOption(value);
+  };
+
+  const checkForTie = () => {
+    const { tubarao, gato, lobo, aguia } = scores;
+    const maxScore = Math.max(tubarao, gato, lobo, aguia);
+    const tieCandidates = [];
+
+    if (tubarao === maxScore) tieCandidates.push('tubarao');
+    if (gato === maxScore) tieCandidates.push('gato');
+    if (lobo === maxScore) tieCandidates.push('lobo');
+    if (aguia === maxScore) tieCandidates.push('aguia');
+
+    return tieCandidates.length > 1 ? tieCandidates : null;
   };
 
   const handleNextQuestion = async () => {
@@ -81,7 +102,8 @@ const AnimalProfileTest = () => {
     setSubmitting(true);
     
     try {
-      const currentQuestion = questions[currentQuestionIndex];
+      const currentQuestions = isTieBreak ? tieBreakQuestions : questions;
+      const currentQuestion = currentQuestions[currentQuestionIndex];
       
       await saveAnimalProfileAnswer(resultId, currentQuestion.id, selectedOption);
       
@@ -89,39 +111,39 @@ const AnimalProfileTest = () => {
       newScores[selectedOption as keyof typeof scores] += 1;
       setScores(newScores);
       
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex(prev => prev + 1);
-        setSelectedOption(null);
-        setShuffledOptions(shuffleAnswers(questions[currentQuestionIndex + 1]));
-      } else {
-        try {
-          // Finalizar o teste e registrar os resultados
-          const result = await finalizeAnimalProfileResult(resultId, newScores);
+      const isLastMainQuestion = !isTieBreak && currentQuestionIndex === questions.length - 1;
+      const isLastTieBreakQuestion = isTieBreak && currentQuestionIndex === tieBreakQuestions.length - 1;
+      
+      // If we've reached the end of the main questions, check for a tie
+      if (isLastMainQuestion) {
+        const tieCandidates = checkForTie();
+        
+        if (tieCandidates && tieBreakQuestions.length > 0) {
+          // Need tie-break questions
+          setIsTieBreak(true);
+          setCurrentQuestionIndex(0);
+          setSelectedOption(null);
+          setShuffledOptions(shuffleAnswers(tieBreakQuestions[0]));
           
-          // Garantir que o teste seja marcado como concluído
-          await markClientTestCompleted(user.id);
-          
-          // Invalidar queries para forçar re-fetch dos dados
-          queryClient.invalidateQueries({ queryKey: ['clientTests'] });
-          queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
-          queryClient.invalidateQueries({ queryKey: ['testResults'] });
-          
-          // Mostrar notificação de sucesso
           toast({
-            title: "Teste concluído com sucesso!",
-            description: "Você será redirecionado para ver seus resultados.",
+            title: "Desempate necessário",
+            description: "Algumas perguntas adicionais ajudarão a definir seu perfil predominante.",
           });
-          
-          // Navegar para a página de resultados
-          navigate(`/client/tests/animal-profile/results/${resultId}`);
-        } catch (finalizationError) {
-          console.error("Error finalizing test:", finalizationError);
-          toast({
-            title: "Erro ao finalizar teste",
-            description: "Ocorreu um erro ao finalizar seu teste, mas suas respostas foram salvas.",
-            variant: "destructive",
-          });
+        } else {
+          // No tie or no tie-break questions available, finalize the test
+          await finalizeTestAndNavigate(newScores);
         }
+      } 
+      // If we're at the end of tie-break questions or still have more questions, handle accordingly
+      else if (isLastTieBreakQuestion) {
+        // End of tie-break questions, finalize the test
+        await finalizeTestAndNavigate(newScores);
+      } else {
+        // More questions available, move to the next one
+        setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+        setSelectedOption(null);
+        const nextQuestions = isTieBreak ? tieBreakQuestions : questions;
+        setShuffledOptions(shuffleAnswers(nextQuestions[currentQuestionIndex + 1]));
       }
     } catch (error) {
       console.error("Error saving answer:", error);
@@ -135,6 +157,76 @@ const AnimalProfileTest = () => {
     }
   };
 
+  const finalizeTestAndNavigate = async (finalScores: typeof scores) => {
+    try {
+      // Determine predominant animal even in case of ties
+      const { tubarao, gato, lobo, aguia } = finalScores;
+      const maxScore = Math.max(tubarao, gato, lobo, aguia);
+      
+      // Priority order in case of ties: tubarao, lobo, aguia, gato
+      let predominantAnimal = '';
+      
+      if (tubarao === maxScore) {
+        predominantAnimal = 'tubarao';
+      } else if (lobo === maxScore) {
+        predominantAnimal = 'lobo';
+      } else if (aguia === maxScore) {
+        predominantAnimal = 'aguia';
+      } else if (gato === maxScore) {
+        predominantAnimal = 'gato';
+      }
+      
+      // If no result ID (unlikely but safer), create one
+      if (!resultId) {
+        toast({
+          title: "Erro ao finalizar teste",
+          description: "Não foi possível identificar o resultado do teste.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Finalizing test with scores:", finalScores, "predominant animal:", predominantAnimal);
+      
+      // Save the final result with the designated predominant animal
+      const result = await finalizeAnimalProfileResult(resultId, finalScores, predominantAnimal);
+      
+      if (!user) {
+        toast({
+          title: "Erro ao finalizar teste",
+          description: "Usuário não identificado.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Mark the client test as completed in the database
+      const testCompleted = await markClientTestCompleted(user.id);
+      console.log("Test marked as completed:", testCompleted);
+      
+      // Invalidate queries to force re-fetch of data
+      queryClient.invalidateQueries({ queryKey: ['clientTests'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      queryClient.invalidateQueries({ queryKey: ['testResults'] });
+      
+      // Show success message
+      toast({
+        title: "Teste concluído com sucesso!",
+        description: "Você será redirecionado para ver seus resultados.",
+      });
+      
+      // Navigate to results page
+      navigate(`/client/tests/animal-profile/results/${resultId}`);
+    } catch (error) {
+      console.error("Error finalizing test:", error);
+      toast({
+        title: "Erro ao finalizar teste",
+        description: "Ocorreu um erro ao finalizar seu teste, mas suas respostas foram salvas.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
@@ -144,7 +236,9 @@ const AnimalProfileTest = () => {
     );
   }
 
-  if (questions.length === 0) {
+  const currentQuestions = isTieBreak ? tieBreakQuestions : questions;
+  
+  if (currentQuestions.length === 0) {
     return (
       <div className="text-center p-8">
         <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -157,8 +251,16 @@ const AnimalProfileTest = () => {
     );
   }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  const currentQuestion = currentQuestions[currentQuestionIndex];
+  
+  // Calculate progress differently for tie-break mode
+  const totalQuestions = isTieBreak ? 
+    questions.length + tieBreakQuestions.length : 
+    questions.length;
+  
+  const progress = isTieBreak ? 
+    ((questions.length + currentQuestionIndex + 1) / totalQuestions) * 100 :
+    ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
   return (
     <Card className="max-w-3xl mx-auto">
@@ -169,7 +271,11 @@ const AnimalProfileTest = () => {
             <span>Teste de Perfil - Animais</span>
           </div>
           <div className="text-sm text-muted-foreground">
-            Pergunta {currentQuestionIndex + 1} de {questions.length}
+            {isTieBreak ? (
+              <span>Pergunta de desempate {currentQuestionIndex + 1}</span>
+            ) : (
+              <span>Pergunta {currentQuestionIndex + 1} de {questions.length}</span>
+            )}
           </div>
         </div>
         <CardTitle className="mt-4 text-lg md:text-xl">
@@ -212,7 +318,7 @@ const AnimalProfileTest = () => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Salvando...
             </>
-          ) : currentQuestionIndex < questions.length - 1 ? (
+          ) : currentQuestionIndex < (isTieBreak ? tieBreakQuestions.length - 1 : questions.length - 1) || isTieBreak ? (
             <>
               Próxima Pergunta
               <ArrowRight className="ml-2 h-4 w-4" />
