@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,7 @@ const ClientTests = () => {
       
       // Buscar os testes do cliente
       try {
+        console.log("Buscando testes para o usuário:", session.user.id);
         const { data: clientTests, error: clientTestsError } = await supabase
           .from('client_tests')
           .select('*')
@@ -64,6 +64,8 @@ const ClientTests = () => {
           console.error("Erro ao buscar testes do cliente:", clientTestsError);
           return getDummyTestData(); // Retornar dados fictícios em caso de erro
         }
+        
+        console.log("Testes encontrados:", clientTests?.length || 0);
         
         if (!clientTests || clientTests.length === 0) {
           console.warn("Nenhum teste encontrado para o usuário");
@@ -81,6 +83,8 @@ const ClientTests = () => {
           return getDummyTestData();
         }
         
+        console.log("Informações de testes encontradas:", testsInfo?.length || 0);
+        
         return formatTestsData(clientTests, testsInfo || []);
       } catch (e) {
         console.error("Erro na consulta:", e);
@@ -91,8 +95,7 @@ const ClientTests = () => {
       return getDummyTestData();
     }
   };
-  
-  // Função para dados fictícios em caso de falha
+
   const getDummyTestData = (): TestData[] => {
     return [
       {
@@ -110,9 +113,9 @@ const ClientTests = () => {
       }
     ];
   };
-  
-  // Function to format test data
+
   const formatTestsData = (clientTests: any[], testsInfo: any[]) => {
+    console.log("Formatando dados de testes:", { clientTests, testsInfo });
     const formattedTests: TestData[] = [];
     
     // Verificar se existe o teste de perfil animal
@@ -120,6 +123,8 @@ const ClientTests = () => {
       const testInfo = testsInfo.find(t => t.id === test.test_id);
       return testInfo && testInfo.title === "Teste de Perfil - Animais";
     });
+    
+    console.log("Tem teste de perfil animal?", hasAnimalTest);
     
     // Se não existir, adicionar manualmente
     if (!hasAnimalTest) {
@@ -142,6 +147,13 @@ const ClientTests = () => {
       const testInfo = testsInfo?.find(t => t.id === test.test_id);
       
       if (testInfo) {
+        console.log("Processando teste:", { 
+          testId: test.id,
+          title: testInfo.title,
+          isCompleted: test.is_completed,
+          completedAt: test.completed_at
+        });
+        
         const category = "comportamental"; 
         const iconKey = category === "comportamental" ? "brain" : "clipboard";
         
@@ -162,6 +174,7 @@ const ClientTests = () => {
       }
     });
     
+    console.log("Testes formatados:", formattedTests);
     return formattedTests;
   };
 
@@ -169,6 +182,8 @@ const ClientTests = () => {
     queryKey: ['clientTests'],
     queryFn: fetchUserTests,
     retry: 1,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -91,11 +92,29 @@ const AnimalProfileTest = () => {
         setSelectedOption(null);
         setShuffledOptions(shuffleAnswers(questions[currentQuestionIndex + 1]));
       } else {
-        const result = await finalizeAnimalProfileResult(resultId, newScores);
-        
-        await markClientTestCompleted(user.id);
-        
-        navigate(`/client/tests/animal-profile/results/${resultId}`);
+        try {
+          // Finalizar o teste e registrar os resultados
+          const result = await finalizeAnimalProfileResult(resultId, newScores);
+          
+          // Garantir que o teste seja marcado como concluído
+          await markClientTestCompleted(user.id);
+          
+          // Mostrar notificação de sucesso
+          toast({
+            title: "Teste concluído com sucesso!",
+            description: "Você será redirecionado para ver seus resultados.",
+          });
+          
+          // Navegar para a página de resultados
+          navigate(`/client/tests/animal-profile/results/${resultId}`);
+        } catch (finalizationError) {
+          console.error("Error finalizing test:", finalizationError);
+          toast({
+            title: "Erro ao finalizar teste",
+            description: "Ocorreu um erro ao finalizar seu teste, mas suas respostas foram salvas.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error saving answer:", error);

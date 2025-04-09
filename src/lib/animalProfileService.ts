@@ -339,10 +339,13 @@ export const finalizeAnimalProfileResult = async (
       console.error("Error finalizing result:", error);
       throw new Error(error.message);
     }
+
+    const { data: sessionData } = await supabase.auth.getSession();
     
-    const { data: session } = await supabase.auth.getSession();
-    if (session?.session?.user) {
-      await markClientTestCompleted(session.session.user.id);
+    if (sessionData?.session?.user) {
+      await markClientTestCompleted(sessionData.session.user.id);
+    } else {
+      console.error("No active session found when trying to mark test as completed");
     }
     
     return data as AnimalProfileResult;
@@ -415,6 +418,8 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
 };
 
 export const markClientTestCompleted = async (userId: string): Promise<void> => {
+  console.log("Attempting to mark test as completed for user:", userId);
+  
   try {
     const { data: testData, error: testError } = await supabase
       .from('tests')
@@ -422,26 +427,87 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
       .ilike('title', '%Animal%')
       .single();
       
-    if (testError) {
+    if (testError || !testData) {
       console.error("Error finding animal profile test:", testError);
       return;
     }
     
-    const { error: updateError } = await supabase
+    console.log("Found test with ID:", testData.id);
+    
+    const { data: updateData, error: updateError } = await supabase
       .from('client_tests')
       .update({ 
         is_completed: true,
         completed_at: new Date().toISOString()
       })
       .eq('client_id', userId)
-      .eq('test_id', testData.id);
+      .eq('test_id', testData.id)
+      .select();
       
     if (updateError) {
       console.error("Error marking test as completed:", updateError);
+    } else {
+      console.log("Successfully marked test as completed:", updateData);
+      
+      const { data: resultData } = await supabase
+        .from('animal_profile_results')
+        .select('*')
+        .eq('user_id', userId)
+        .is('animal_predominante', 'not.null')
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .single();
+        
+      if (resultData) {
+        const { data: clientTest } = await supabase
+          .from('client_tests')
+          .select('id')
+          .eq('client_id', userId)
+          .eq('test_id', testData.id)
+          .single();
+          
+        if (clientTest) {
+          const { data: existingResult } = await supabase
+            .from('test_results')
+            .select('id')
+            .eq('client_test_id', clientTest.id)
+            .maybeSingle();
+            
+          if (!existingResult) {
+            const { error: resultError } = await supabase
+              .from('test_results')
+              .insert({
+                client_test_id: clientTest.id,
+                data: {
+                  score: calculateTotalScore(resultData),
+                  profile: [
+                    { name: "Tubarão", value: resultData.score_tubarao },
+                    { name: "Gato", value: resultData.score_gato },
+                    { name: "Lobo", value: resultData.score_lobo },
+                    { name: "Águia", value: resultData.score_aguia }
+                  ],
+                  category: "comportamental"
+                }
+              });
+              
+            if (resultError) {
+              console.error("Error creating test result:", resultError);
+            } else {
+              console.log("Successfully created test result for client test");
+            }
+          }
+        }
+      }
     }
   } catch (error) {
     console.error("Error in markClientTestCompleted:", error);
   }
+};
+
+const calculateTotalScore = (result: AnimalProfileResult): number => {
+  const total = result.score_tubarao + result.score_gato + result.score_lobo + result.score_aguia;
+  const maxPossible = 10;
+  return Math.round((total / maxPossible) * 100);
 };
 
 export const createDefaultAnimalProfileTest = async (): Promise<string | null> => {
