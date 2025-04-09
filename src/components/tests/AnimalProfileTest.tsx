@@ -18,11 +18,13 @@ import {
   shuffleAnswers,
   markClientTestCompleted
 } from "@/lib/animalProfileService";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AnimalProfileTest = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [questions, setQuestions] = useState<AnimalProfileQuestion[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -98,6 +100,11 @@ const AnimalProfileTest = () => {
           
           // Garantir que o teste seja marcado como concluído
           await markClientTestCompleted(user.id);
+          
+          // Invalidar queries para forçar re-fetch dos dados
+          queryClient.invalidateQueries({ queryKey: ['clientTests'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+          queryClient.invalidateQueries({ queryKey: ['testResults'] });
           
           // Mostrar notificação de sucesso
           toast({

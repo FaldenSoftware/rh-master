@@ -418,7 +418,7 @@ export const getUserLatestAnimalProfileResult = async (userId: string): Promise<
 };
 
 export const markClientTestCompleted = async (userId: string): Promise<void> => {
-  console.log("Attempting to mark test as completed for user:", userId);
+  console.log("[markClientTestCompleted] Attempting to mark test as completed for user:", userId);
   
   try {
     const { data: testData, error: testError } = await supabase
@@ -428,11 +428,11 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
       .single();
       
     if (testError || !testData) {
-      console.error("Error finding animal profile test:", testError);
+      console.error("[markClientTestCompleted] Error finding animal profile test:", testError);
       return;
     }
     
-    console.log("Found test with ID:", testData.id);
+    console.log("[markClientTestCompleted] Found test with ID:", testData.id);
     
     const { data: updateData, error: updateError } = await supabase
       .from('client_tests')
@@ -441,15 +441,17 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
         completed_at: new Date().toISOString()
       })
       .eq('client_id', userId)
-      .eq('test_id', testData.id)
-      .select();
+      .eq('test_id', testData.id);
       
     if (updateError) {
-      console.error("Error marking test as completed:", updateError);
-    } else {
-      console.log("Successfully marked test as completed:", updateData);
-      
-      const { data: resultData } = await supabase
+      console.error("[markClientTestCompleted] Error marking test as completed:", updateError);
+      return;
+    }
+    
+    console.log("[markClientTestCompleted] Successfully marked test as completed");
+    
+    try {
+      const { data: resultData, error: resultError } = await supabase
         .from('animal_profile_results')
         .select('*')
         .eq('user_id', userId)
@@ -458,49 +460,64 @@ export const markClientTestCompleted = async (userId: string): Promise<void> => 
         .limit(1)
         .single();
         
-      if (resultData) {
-        const { data: clientTest } = await supabase
-          .from('client_tests')
-          .select('id')
-          .eq('client_id', userId)
-          .eq('test_id', testData.id)
-          .single();
-          
-        if (clientTest) {
-          const { data: existingResult } = await supabase
-            .from('test_results')
-            .select('id')
-            .eq('client_test_id', clientTest.id)
-            .maybeSingle();
-            
-          if (!existingResult) {
-            const { error: resultError } = await supabase
-              .from('test_results')
-              .insert({
-                client_test_id: clientTest.id,
-                data: {
-                  score: calculateTotalScore(resultData),
-                  profile: [
-                    { name: "Tubarão", value: resultData.score_tubarao },
-                    { name: "Gato", value: resultData.score_gato },
-                    { name: "Lobo", value: resultData.score_lobo },
-                    { name: "Águia", value: resultData.score_aguia }
-                  ],
-                  category: "comportamental"
-                }
-              });
-              
-            if (resultError) {
-              console.error("Error creating test result:", resultError);
-            } else {
-              console.log("Successfully created test result for client test");
-            }
-          }
-        }
+      if (resultError || !resultData) {
+        console.error("[markClientTestCompleted] Error finding animal profile result:", resultError);
+        return;
       }
+      
+      const { data: clientTest, error: clientTestError } = await supabase
+        .from('client_tests')
+        .select('id')
+        .eq('client_id', userId)
+        .eq('test_id', testData.id)
+        .single();
+        
+      if (clientTestError || !clientTest) {
+        console.error("[markClientTestCompleted] Error finding client test:", clientTestError);
+        return;
+      }
+      
+      const { data: existingResult, error: existingError } = await supabase
+        .from('test_results')
+        .select('id')
+        .eq('client_test_id', clientTest.id)
+        .maybeSingle();
+        
+      if (existingError) {
+        console.error("[markClientTestCompleted] Error checking for existing results:", existingError);
+        return;
+      }
+
+      if (!existingResult) {
+        const { error: resultInsertError } = await supabase
+          .from('test_results')
+          .insert({
+            client_test_id: clientTest.id,
+            data: {
+              score: calculateTotalScore(resultData),
+              profile: [
+                { name: "Tubarão", value: resultData.score_tubarao },
+                { name: "Gato", value: resultData.score_gato },
+                { name: "Lobo", value: resultData.score_lobo },
+                { name: "Águia", value: resultData.score_aguia }
+              ],
+              category: "comportamental"
+            }
+          });
+          
+        if (resultInsertError) {
+          console.error("[markClientTestCompleted] Error creating test result:", resultInsertError);
+        } else {
+          console.log("[markClientTestCompleted] Successfully created test result for client test");
+        }
+      } else {
+        console.log("[markClientTestCompleted] Test result already exists, skipping creation");
+      }
+    } catch (error) {
+      console.error("[markClientTestCompleted] Error processing test result:", error);
     }
   } catch (error) {
-    console.error("Error in markClientTestCompleted:", error);
+    console.error("[markClientTestCompleted] General error:", error);
   }
 };
 

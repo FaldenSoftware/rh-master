@@ -1,3 +1,4 @@
+
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Clock, CheckCircle, Brain, Loader2 } from "lucide-react";
 import { ClientTest } from "@/types/models";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AnimalProfileTestCardProps {
   test: ClientTest;
@@ -14,10 +16,20 @@ interface AnimalProfileTestCardProps {
 
 const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileTestCardProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const handleViewResults = () => {
+    // Invalidar queries antes de navegar para garantir que os dados estão atualizados
+    queryClient.invalidateQueries({ queryKey: ['clientTests'] });
+    queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+    queryClient.invalidateQueries({ queryKey: ['testResults'] });
+    
     navigate(`/client/tests/animal-profile/results/latest`);
   };
+  
+  const completedDate = test.completed_at 
+    ? new Date(test.completed_at).toLocaleDateString('pt-BR') 
+    : "Data não registrada";
   
   return (
     <Card className="overflow-hidden">
@@ -33,7 +45,7 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
               <>
                 <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
                 <span className="text-xs text-green-600">
-                  Realizado: {test.completed_at ? new Date(test.completed_at).toLocaleDateString('pt-BR') : "Data não registrada"}
+                  Realizado: {completedDate}
                 </span>
               </>
             ) : (
