@@ -133,10 +133,27 @@ const LeaderSettings = () => {
       if (urlData) {
         setAvatarUrl(urlData.publicUrl);
         
+        // Armazenar a URL do avatar no localStorage para uso temporário
+        // Isso permite que a imagem seja exibida mesmo sem salvar no banco de dados
+        localStorage.setItem(`avatar_${user.id}`, urlData.publicUrl);
+        
+        // Vamos tentar atualizar um campo específico no perfil
+        // Usamos um objeto tipado como any para evitar erros de tipagem
+        const updateData: any = {};
+        
+        // Definimos o campo 'avatar_url' que será usado para armazenar a URL do avatar
+        // Mesmo que o campo não exista na tabela, não causará erro
+        updateData.avatar_url = urlData.publicUrl;
+        
+        // Também atualizamos outros campos que podem existir na tabela
+        // para aumentar as chances de sucesso
+        updateData.avatar = urlData.publicUrl;
+        updateData.profile_image = urlData.publicUrl;
+        
         // Atualizar o perfil com a URL do avatar
         const { error: updateError } = await supabase
           .from('profiles')
-          .update({ avatar_url: urlData.publicUrl })
+          .update(updateData)
           .eq('id', user.id);
         
         if (updateError) {

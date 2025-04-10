@@ -24,9 +24,12 @@ const LeaderSidebar = () => {
     const fetchUserProfile = async () => {
       if (user?.id) {
         try {
+          console.log("Buscando perfil do usuário:", user.id);
+          
+          // Buscar todos os campos do perfil para depuração
           const { data, error } = await supabase
             .from('profiles')
-            .select('company')
+            .select('*')
             .eq('id', user.id)
             .single();
           
@@ -35,8 +38,23 @@ const LeaderSidebar = () => {
             return;
           }
           
+          console.log("Dados do perfil:", data);
+          
+          // Verificar se o campo company existe e tem um valor
           if (data?.company) {
+            console.log("Nome da empresa encontrado:", data.company);
             setCompanyName(data.company);
+          } else {
+            console.log("Campo company não encontrado ou vazio");
+            // Usar tipagem any para acessar campos que podem não estar definidos no tipo
+            const profileData = data as any;
+            
+            // Verificar se há outros campos que possam conter o nome da empresa
+            if (profileData?.company_name) {
+              setCompanyName(profileData.company_name);
+            } else if (profileData?.organization) {
+              setCompanyName(profileData.organization);
+            }
           }
         } catch (error) {
           console.error('Erro ao buscar perfil:', error);
@@ -45,6 +63,12 @@ const LeaderSidebar = () => {
     };
     
     fetchUserProfile();
+    
+    // Configurar um intervalo para verificar periodicamente se o nome da empresa foi atualizado
+    const intervalId = setInterval(fetchUserProfile, 30000); // Verificar a cada 30 segundos
+    
+    // Limpar o intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, [user]);
   
   return (
