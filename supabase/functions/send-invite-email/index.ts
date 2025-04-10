@@ -38,10 +38,15 @@ serve(async (req) => {
     // Obter dados do corpo da requisição
     const data = await req.json() as InviteEmailData;
     
+    // Log all incoming data for debugging
+    console.log("Dados recebidos:", JSON.stringify(data));
+    
     // Validar dados obrigatórios
     if (!data.email || !data.code) {
+      const errorMsg = 'Email e código são obrigatórios';
+      console.error(errorMsg, { email: data.email, code: data.code });
       return new Response(
-        JSON.stringify({ error: 'Email e código são obrigatórios' }),
+        JSON.stringify({ error: errorMsg }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -52,6 +57,8 @@ serve(async (req) => {
       console.error('RESEND_API_KEY não está configurada nas variáveis de ambiente');
       throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
     }
+    
+    console.log("Resend API Key encontrada, comprimento:", resendApiKey.length);
     
     const resend = new Resend(resendApiKey);
     
@@ -90,32 +97,37 @@ serve(async (req) => {
     // Registrar os dados que serão enviados
     console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
     
-    // Enviar e-mail usando Resend
-    const emailResponse = await resend.emails.send({
-      from: 'RH Mentor Mastery <noreply@rhmentormastery.com>',
-      to: [data.email],
-      subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-      html: htmlContent
-    });
-    
-    // Registrar resposta do Resend
-    console.log('Resposta do Resend:', JSON.stringify(emailResponse));
+    try {
+      // Enviar e-mail usando Resend
+      const emailResponse = await resend.emails.send({
+        from: 'RH Mentor Mastery <onboarding@resend.dev>',
+        to: [data.email],
+        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+        html: htmlContent
+      });
+      
+      // Registrar resposta do Resend
+      console.log('Resposta do Resend:', JSON.stringify(emailResponse));
 
-    // Verificar se o e-mail foi enviado com sucesso
-    if (!emailResponse?.id) {
-      console.error('Erro ao enviar e-mail:', emailResponse);
-      throw new Error('Falha ao enviar e-mail através do Resend');
+      // Verificar se o e-mail foi enviado com sucesso
+      if (!emailResponse?.id) {
+        console.error('Erro ao enviar e-mail:', emailResponse);
+        throw new Error('Falha ao enviar e-mail através do Resend');
+      }
+
+      // Retornar sucesso
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'E-mail enviado com sucesso',
+          id: emailResponse.id
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (emailError) {
+      console.error('Erro específico ao enviar email com Resend:', emailError);
+      throw emailError;
     }
-
-    // Retornar sucesso
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'E-mail enviado com sucesso',
-        id: emailResponse.id
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (error) {
     // Tratar erros
     console.error('Erro ao enviar e-mail:', error);

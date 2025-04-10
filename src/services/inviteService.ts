@@ -60,6 +60,15 @@ export const sendInviteEmail = async (
   try {
     console.log(`Enviando e-mail para ${email} com código ${code}`);
     
+    // Log important data for debugging
+    console.log("Dados sendo enviados:", { 
+      email, 
+      code,
+      clientName,
+      mentorName: user?.name || 'Seu mentor',
+      mentorCompany: user?.company || 'RH Mentor Mastery'
+    });
+    
     // Chamar a função Edge do Supabase para enviar o e-mail
     const { data, error } = await supabase.functions.invoke('send-invite-email', {
       body: { 
