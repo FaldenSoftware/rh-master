@@ -2,8 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Mail } from "lucide-react";
+import { Copy, Mail, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface InviteCodeDisplayProps {
   inviteCode: string;
@@ -21,6 +22,11 @@ const InviteCodeDisplay = ({
   onSendEmail
 }: InviteCodeDisplayProps) => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{
+    sent: boolean;
+    message?: string;
+    error?: boolean;
+  } | null>(null);
 
   const copyToClipboard = async () => {
     try {
@@ -34,29 +40,31 @@ const InviteCodeDisplay = ({
 
   const handleSendEmail = async () => {
     setIsSendingEmail(true);
+    setEmailStatus(null);
+    
     try {
       // Chamar a função de envio de e-mail e capturar o resultado
       const success = await onSendEmail(clientEmail, inviteCode);
       
-      // Adicionar feedback visual adicional baseado no resultado
       if (success) {
-        // Mostrar um indicador visual de sucesso
-        const emailStatusElement = document.getElementById('email-status');
-        if (emailStatusElement) {
-          emailStatusElement.className = 'text-sm text-green-600 font-medium';
-          emailStatusElement.textContent = 'Email enviado com sucesso!';
-          
-          // Resetar após 5 segundos
-          setTimeout(() => {
-            if (emailStatusElement) {
-              emailStatusElement.className = 'text-sm text-gray-600';
-              emailStatusElement.textContent = `Instruções enviadas para: ${clientEmail}`;
-            }
-          }, 5000);
-        }
+        setEmailStatus({
+          sent: true,
+          message: "Email enviado com sucesso!"
+        });
+      } else {
+        setEmailStatus({
+          sent: false,
+          message: "Falha ao enviar o email. Por favor, tente novamente ou use o código manualmente.",
+          error: true
+        });
       }
     } catch (error) {
       console.error('Erro ao enviar email:', error);
+      setEmailStatus({
+        sent: false,
+        message: "Ocorreu um erro ao tentar enviar o email.",
+        error: true
+      });
     } finally {
       setIsSendingEmail(false);
     }
@@ -91,9 +99,20 @@ const InviteCodeDisplay = ({
           <Mail className="h-4 w-4 mr-2" />
           Enviar por email
         </h4>
-        <p id="email-status" className="text-sm text-gray-600 mb-3">
+        <p className="text-sm text-gray-600 mb-3">
           Instruções enviadas para: <span className="font-medium">{clientEmail}</span>
         </p>
+        
+        {emailStatus && (
+          <Alert 
+            className={`mb-3 ${emailStatus.error ? 'bg-red-50 text-red-800 border-red-200' : 'bg-green-50 text-green-800 border-green-200'}`}
+          >
+            {emailStatus.error && <AlertCircle className="h-4 w-4 mr-2" />}
+            <AlertTitle>Status do envio</AlertTitle>
+            <AlertDescription>{emailStatus.message}</AlertDescription>
+          </Alert>
+        )}
+        
         <Button 
           type="button" 
           variant="outline" 
@@ -101,7 +120,7 @@ const InviteCodeDisplay = ({
           onClick={handleSendEmail}
           disabled={isSendingEmail}
         >
-          {isSendingEmail ? "Enviando..." : "Reenviar instruções por email"}
+          {isSendingEmail ? "Enviando..." : emailStatus?.sent ? "Reenviar instruções" : "Enviar instruções por email"}
         </Button>
       </div>
       

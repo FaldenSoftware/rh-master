@@ -56,6 +56,7 @@ interface SendEmailResult {
   message?: string;
   error?: string;
   service?: string;
+  details?: any;
 }
 
 export const sendInviteEmail = async (
@@ -85,64 +86,75 @@ export const sendInviteEmail = async (
       mentorCompany: user?.company || 'RH Mentor Mastery'
     });
     
-    // Chamar a função Edge do Supabase para enviar o e-mail
-    const result = await supabase.functions.invoke('send-invite-email', {
-      body: { 
-        email, 
-        code,
-        clientName,
-        mentorName: user?.name || 'Seu mentor',
-        mentorCompany: user?.company || 'RH Mentor Mastery'
-      }
-    }).catch(invokeError => {
-      // Capturar erros de invocação da função
-      console.error("Exceção ao invocar função Edge:", invokeError);
-      
-      // Verificar se é um erro de status code
-      if (invokeError.message && invokeError.message.includes('non-2xx status code')) {
-        return { 
-          error: { 
-            message: 'Erro no servidor de email. Verifique se as chaves de API estão configuradas corretamente.'
+    // Chamar a função Edge do Supabase para enviar o e-mail com retry em caso de falha
+    const maxRetries = 2;
+    let lastError = null;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.log(`Tentativa ${attempt} de enviar e-mail...`);
+          // Espera curta entre tentativas
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+        
+        const response = await supabase.functions.invoke('send-invite-email', {
+          body: { 
+            email, 
+            code,
+            clientName,
+            mentorName: user?.name || 'Seu mentor',
+            mentorCompany: user?.company || 'RH Mentor Mastery'
           }
+        });
+        
+        // Verificar se houve erro na chamada da função
+        if (response.error) {
+          console.error(`Erro na tentativa ${attempt}:`, response.error);
+          lastError = response.error;
+          continue; // Tenta novamente
+        }
+        
+        // Verificar se a resposta contém os dados esperados
+        const responseData = response.data;
+        
+        if (!responseData || typeof responseData !== 'object') {
+          console.error(`Resposta inválida na tentativa ${attempt}:`, responseData);
+          lastError = { message: "Resposta inválida do servidor de email" };
+          continue; // Tenta novamente
+        }
+        
+        if (!responseData.success) {
+          console.error(`Erro reportado pelo servidor na tentativa ${attempt}:`, responseData);
+          lastError = responseData;
+          continue; // Tenta novamente
+        }
+        
+        // Sucesso! Registrar e retornar
+        console.log('Resposta do envio de e-mail:', responseData);
+        
+        return { 
+          success: true, 
+          message: responseData.message || 'Email enviado com sucesso',
+          service: responseData.service
+        };
+      } catch (invokeError) {
+        console.error(`Exceção na tentativa ${attempt}:`, invokeError);
+        
+        lastError = {
+          message: invokeError.message || 'Erro desconhecido ao chamar função Edge',
+          details: invokeError
         };
       }
-      
-      return { 
-        error: { 
-          message: `Falha ao conectar com o servidor de email: ${invokeError.message || 'Erro desconhecido'}`
-        }
-      };
-    });
-    
-    // Verificar se houve erro na chamada da função
-    if (result.error) {
-      console.error("Erro retornado pela função Edge:", result.error);
-      return { 
-        success: false, 
-        error: result.error.message || 'Erro desconhecido ao enviar email'
-      };
     }
     
-    // Verificar se a resposta contém os dados esperados
-    // Verificar se result tem a propriedade data (pode não ter se vier do catch)
-    const responseData = 'data' in result ? result.data : null;
+    // Se chegou aqui, todas as tentativas falharam
+    console.error("Todas as tentativas de envio falharam. Último erro:", lastError);
     
-    if (!responseData || typeof responseData !== 'object') {
-      console.error("Resposta inválida da função Edge:", responseData);
-      return { 
-        success: false, 
-        error: "Resposta inválida do servidor de email" 
-      };
-    }
-    
-    // Registrar sucesso
-    console.log('Resposta do envio de e-mail:', responseData);
-    
-    // Retornar resultado detalhado
     return { 
-      success: true, 
-      message: responseData.message || 'Email enviado com sucesso',
-      service: responseData.service
+      success: false, 
+      error: lastError?.message || 'Falha ao enviar email após várias tentativas',
+      details: lastError
     };
   } catch (error) {
     console.error("Erro ao enviar email:", error);

@@ -42,6 +42,7 @@ serve(async (req) => {
   try {
     // Verificar método
     if (req.method !== 'POST') {
+      console.error(`Método não permitido: ${req.method}`);
       return new Response(
         JSON.stringify({ error: 'Método não permitido' }),
         { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -49,10 +50,17 @@ serve(async (req) => {
     }
 
     // Obter dados do corpo da requisição
-    const data = await req.json() as InviteEmailData;
-    
-    // Log all incoming data for debugging
-    console.log("Dados recebidos:", JSON.stringify(data));
+    let data: InviteEmailData;
+    try {
+      data = await req.json() as InviteEmailData;
+      console.log("Dados recebidos:", JSON.stringify(data));
+    } catch (parseError) {
+      console.error("Erro ao analisar JSON da requisição:", parseError);
+      return new Response(
+        JSON.stringify({ error: 'JSON inválido na requisição' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Validar dados obrigatórios
     if (!data.email || !data.code) {
@@ -68,29 +76,28 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
     
+    console.log("Verificando chaves de API disponíveis...");
+    if (resendApiKey) {
+      console.log("✓ Resend API Key encontrada, comprimento:", resendApiKey.length);
+    } else {
+      console.log("✗ Resend API Key não encontrada");
+    }
+    
+    if (sendgridApiKey) {
+      console.log("✓ SendGrid API Key encontrada, comprimento:", sendgridApiKey.length);
+    } else {
+      console.log("✗ SendGrid API Key não encontrada");
+    }
+    
     if (!resendApiKey && !sendgridApiKey) {
       console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
-      throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
-    }
-    
-    // Log das chaves disponíveis (apenas comprimento para segurança)
-    if (resendApiKey) {
-      console.log("Resend API Key encontrada, comprimento:", resendApiKey.length);
-    }
-    if (sendgridApiKey) {
-      console.log("SendGrid API Key encontrada, comprimento:", sendgridApiKey.length);
-    }
-    
-    // Inicializar cliente Resend se disponível
-    // @ts-ignore: Ignorando erro de tipo do Resend
-    let resend: any = null;
-    if (resendApiKey) {
-      resend = new Resend(resendApiKey);
-    }
-    
-    // Inicializar SendGrid se disponível
-    if (sendgridApiKey) {
-      sgMail.setApiKey(sendgridApiKey);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Configuração de e-mail ausente',
+          details: 'Nenhum serviço de email configurado. Contate o administrador do sistema.' 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     // Montar o corpo do e-mail com formato HTML
@@ -125,112 +132,112 @@ serve(async (req) => {
       </div>
     `;
     
-    // Registrar os dados que serão enviados
     console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
     
-    try {
-      let emailSent = false;
-      let emailId = '';
-      let serviceUsed = '';
-      
-      // Tentar enviar com Resend primeiro (se disponível)
-      if (resend) {
-        try {
-          console.log('Tentando enviar email via Resend...');
-          const emailResponse = await resend.emails.send({
-            from: 'RH Mentor Mastery <onboarding@resend.dev>',
-            to: [data.email],
-            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-            html: htmlContent
-          });
-          
-          // Registrar resposta do Resend
-          console.log('Resposta do Resend:', JSON.stringify(emailResponse));
+    // Tentar enviar o email com cada serviço disponível
+    let emailSent = false;
+    let emailId = '';
+    let serviceUsed = '';
+    let errorDetails = [];
+    
+    // Tentar enviar com Resend primeiro (se disponível)
+    if (resendApiKey) {
+      try {
+        console.log('Tentando enviar email via Resend...');
+        const resend = new Resend(resendApiKey);
+        
+        const emailResponse = await resend.emails.send({
+          from: 'RH Mentor Mastery <onboarding@resend.dev>',
+          to: [data.email],
+          subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+          html: htmlContent
+        });
+        
+        console.log('Resposta do Resend:', JSON.stringify(emailResponse));
 
-          // Verificar se o e-mail foi enviado com sucesso
-          if (emailResponse?.id) {
-            emailSent = true;
-            emailId = emailResponse.id;
-            serviceUsed = 'Resend';
-            console.log('Email enviado com sucesso via Resend');
-          } else {
-            console.error('Erro ao enviar e-mail com Resend:', emailResponse);
-          }
-        } catch (resendError) {
-          console.error('Erro específico ao enviar email com Resend:', resendError);
+        // Verificar se o e-mail foi enviado com sucesso
+        if (emailResponse?.id) {
+          emailSent = true;
+          emailId = emailResponse.id;
+          serviceUsed = 'Resend';
+          console.log('✓ Email enviado com sucesso via Resend');
+        } else {
+          const error = "Erro desconhecido do Resend (sem ID retornado)";
+          console.error(error);
+          errorDetails.push({ service: 'Resend', error });
         }
+      } catch (resendError) {
+        console.error('Erro específico ao enviar email com Resend:', resendError);
+        errorDetails.push({ service: 'Resend', error: resendError.message || "Erro desconhecido" });
       }
-      
-      // Se Resend falhou ou não está disponível, tentar SendGrid
-      if (!emailSent && sendgridApiKey) {
-        try {
-          console.log('Tentando enviar email via SendGrid...');
-          const msg = {
-            to: data.email,
-            from: 'onboarding@rhmentormastery.com.br', // Usar um domínio verificado no SendGrid
-            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-            html: htmlContent,
-          };
-          
-          const sendgridResponse = await sgMail.send(msg);
-          console.log('Resposta do SendGrid:', JSON.stringify(sendgridResponse));
-          
-          if (sendgridResponse && sendgridResponse[0]?.statusCode === 202) {
-            emailSent = true;
-            emailId = 'sg_' + Date.now(); // SendGrid não retorna ID, então criamos um
-            serviceUsed = 'SendGrid';
-            console.log('Email enviado com sucesso via SendGrid');
-          } else {
-            console.error('Erro ao enviar e-mail com SendGrid:', sendgridResponse);
-          }
-        } catch (sendgridError) {
-          console.error('Erro específico ao enviar email com SendGrid:', sendgridError);
+    }
+    
+    // Se Resend falhou ou não está disponível, tentar SendGrid
+    if (!emailSent && sendgridApiKey) {
+      try {
+        console.log('Tentando enviar email via SendGrid...');
+        sgMail.setApiKey(sendgridApiKey);
+        
+        const msg = {
+          to: data.email,
+          from: 'onboarding@rhmentormastery.com.br', // Usar um domínio verificado no SendGrid
+          subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+          html: htmlContent,
+        };
+        
+        const sendgridResponse = await sgMail.send(msg);
+        console.log('Resposta do SendGrid:', JSON.stringify(sendgridResponse));
+        
+        if (sendgridResponse && sendgridResponse[0]?.statusCode === 202) {
+          emailSent = true;
+          emailId = 'sg_' + Date.now(); // SendGrid não retorna ID, então criamos um
+          serviceUsed = 'SendGrid';
+          console.log('✓ Email enviado com sucesso via SendGrid');
+        } else {
+          const error = "Resposta inesperada do SendGrid";
+          console.error(error, sendgridResponse);
+          errorDetails.push({ service: 'SendGrid', error, response: sendgridResponse });
         }
+      } catch (sendgridError) {
+        console.error('Erro específico ao enviar email com SendGrid:', sendgridError);
+        errorDetails.push({ service: 'SendGrid', error: sendgridError.message || "Erro desconhecido" });
       }
+    }
+    
+    // Verificar se algum serviço conseguiu enviar o email
+    if (emailSent) {
+      // Retornar sucesso
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `E-mail enviado com sucesso via ${serviceUsed}`,
+          id: emailId,
+          service: serviceUsed
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // Se nenhum serviço conseguiu enviar, retornar erro detalhado
+      console.error('Todos os serviços de email falharam:', JSON.stringify(errorDetails));
       
-      // Verificar se algum serviço conseguiu enviar o email
-      if (emailSent) {
-        // Retornar sucesso
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: `E-mail enviado com sucesso via ${serviceUsed}`,
-            id: emailId,
-            service: serviceUsed
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      } else {
-        // Se nenhum serviço conseguiu enviar, retornar erro com status 500
-        // Não lançar exception para evitar erro non-2xx
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam.'
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (emailError) {
-      console.error('Erro geral ao tentar enviar email:', emailError);
-      // Retornar erro com status 500 em vez de lançar exception
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Erro ao processar envio de email',
-          details: emailError.message || 'Erro desconhecido'
+          error: 'Falha ao enviar e-mail. Verifique a configuração dos serviços de email.',
+          details: errorDetails
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
-    // Tratar erros
-    console.error('Erro ao enviar e-mail:', error);
+    // Tratar erros gerais
+    console.error('Erro não tratado ao processar solicitação:', error);
     
     return new Response(
       JSON.stringify({ 
-        error: 'Falha ao processar solicitação de envio de e-mail',
-        details: error.message 
+        error: 'Erro interno do servidor',
+        message: error.message || 'Falha ao processar solicitação de envio de e-mail',
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

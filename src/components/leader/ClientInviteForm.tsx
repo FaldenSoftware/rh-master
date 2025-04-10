@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
 import InviteCodeDisplay from "./InviteCodeDisplay";
 import { generateInviteCode, sendInviteEmail } from "@/services/inviteService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -15,10 +17,12 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setInviteError(null);
     
     // Validação
     if (!clientName.trim() || !clientEmail.trim()) {
@@ -39,7 +43,9 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       const result = await generateInviteCode(clientEmail, user);
       
       if (!result.success) {
+        setInviteError(result.error || "Erro ao gerar convite");
         toast.error(result.error || "Erro ao gerar convite");
+        setIsSubmitting(false);
         return;
       }
       
@@ -51,6 +57,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       
     } catch (error) {
       console.error("Erro ao gerar convite:", error);
+      setInviteError("Ocorreu um erro ao gerar o convite. Tente novamente.");
       toast.error("Erro ao gerar convite");
     } finally {
       setIsSubmitting(false);
@@ -78,8 +85,11 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         const errorMessage = result.error || "Falha ao enviar o email de convite. Tente novamente mais tarde.";
         toast.error(errorMessage);
         
-        // Log detalhado do erro para debugging
-        console.error("Detalhes do erro de envio:", result);
+        // Registrar detalhes adicionais no console para debugging
+        if (result.details) {
+          console.error("Detalhes do erro de envio:", result.details);
+        }
+        
         return false;
       }
     } catch (error) {
@@ -97,6 +107,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     setInviteCode("");
     setClientName("");
     setClientEmail("");
+    setInviteError(null);
   };
 
   return (
@@ -104,6 +115,14 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Convidar Novo Cliente</h3>
       </div>
+      
+      {inviteError && (
+        <Alert className="bg-red-50 text-red-800 border-red-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao processar convite</AlertTitle>
+          <AlertDescription>{inviteError}</AlertDescription>
+        </Alert>
+      )}
       
       {!inviteCode ? (
         <InviteFormFields 
