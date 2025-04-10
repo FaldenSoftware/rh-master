@@ -30,7 +30,15 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
         mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
         phone: profileData.phone || '',
         position: profileData.position || '',
-        bio: profileData.bio || ''
+        bio: profileData.bio || '',
+        // Include company-related fields
+        cnpj: profileData.cnpj || '',
+        industry: profileData.industry || '',
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        zipCode: profileData.zipCode || '',
+        website: profileData.website || ''
       };
     }
     
@@ -47,7 +55,15 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
       phone: userMetadata.phone || '',
       position: userMetadata.position || '',
-      bio: userMetadata.bio || ''
+      bio: userMetadata.bio || '',
+      // Include company-related fields in fallback
+      cnpj: userMetadata.cnpj || '',
+      industry: userMetadata.industry || '',
+      address: userMetadata.address || '',
+      city: userMetadata.city || '',
+      state: userMetadata.state || '',
+      zipCode: userMetadata.zipCode || '',
+      website: userMetadata.website || ''
     };
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
@@ -63,7 +79,15 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
       phone: userMetadata.phone || '',
       position: userMetadata.position || '',
-      bio: userMetadata.bio || ''
+      bio: userMetadata.bio || '',
+      // Include company-related fields in ultimate fallback
+      cnpj: userMetadata.cnpj || '',
+      industry: userMetadata.industry || '',
+      address: userMetadata.address || '',
+      city: userMetadata.city || '',
+      state: userMetadata.state || '',
+      zipCode: userMetadata.zipCode || '',
+      website: userMetadata.website || ''
     };
   }
 };
@@ -81,6 +105,14 @@ const mapProfileToAuthUser = (profileData: any, user: User): AuthUser => {
     mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
     phone: profileData.phone || '',
     position: profileData.position || '',
-    bio: profileData.bio || ''
+    bio: profileData.bio || '',
+    // Include company-related fields
+    cnpj: profileData.cnpj || '',
+    industry: profileData.industry || '',
+    address: profileData.address || '',
+    city: profileData.city || '',
+    state: profileData.state || '',
+    zipCode: profileData.zipCode || '',
+    website: profileData.website || ''
   };
 };
