@@ -81,33 +81,22 @@ const LeaderDashboard = () => {
         }));
       }
 
-      // Fetch tests data
-      // This is a simplified version without real test data
-      // You would need to implement the actual data fetching based on your database structure
-      const mockActivityData = [
-        { name: "Seg", tests: Math.floor(Math.random() * 5) },
-        { name: "Ter", tests: Math.floor(Math.random() * 8) }, 
-        { name: "Qua", tests: Math.floor(Math.random() * 10) },
-        { name: "Qui", tests: Math.floor(Math.random() * 7) },
-        { name: "Sex", tests: Math.floor(Math.random() * 6) },
-        { name: "Sáb", tests: Math.floor(Math.random() * 3) },
-        { name: "Dom", tests: Math.floor(Math.random() * 2) },
-      ];
-      setActivityData(mockActivityData);
+      // Fetch real tests data from database
+      // For now, we'll use empty data for new mentors
+      
+      // Use default empty activity data (all zeros)
+      setActivityData(defaultActivityData);
 
-      const mockCompletionData = [
-        { name: "Comportamental", completed: Math.floor(Math.random() * 10), incomplete: Math.floor(Math.random() * 5) },
-        { name: "Habilidades", completed: Math.floor(Math.random() * 8), incomplete: Math.floor(Math.random() * 4) },
-        { name: "Conhecimento", completed: Math.floor(Math.random() * 6), incomplete: Math.floor(Math.random() * 6) },
-      ];
-      setCompletionData(mockCompletionData);
+      // Use default empty completion data (all zeros)
+      setCompletionData(defaultCompletionData);
 
-      // Update other statistics
+      // Set statistics to zero for new mentors
+      // These will be populated with real data when tests are created/completed
       setStatistics(prev => ({
         ...prev,
-        activeTests: Math.floor(Math.random() * 10),
-        completedTests: Math.floor(Math.random() * 30),
-        avgScore: Math.floor(Math.random() * 40) + 60
+        activeTests: 0,
+        completedTests: 0,
+        avgScore: 0
       }));
       
     } catch (error) {
@@ -133,7 +122,7 @@ const LeaderDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.totalClients}</div>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `+${Math.floor(Math.random() * 5)} novos este mês`}
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : statistics.totalClients > 0 ? "Clientes ativos" : "Nenhum cliente ainda"}
             </p>
           </CardContent>
         </Card>
@@ -145,7 +134,7 @@ const LeaderDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.activeTests}</div>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `${Math.floor(Math.random() * 3)} aguardando conclusão`}
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : statistics.activeTests > 0 ? "Testes em andamento" : "Nenhum teste ativo"}
             </p>
           </CardContent>
         </Card>
@@ -157,7 +146,7 @@ const LeaderDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : statistics.completedTests}</div>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `+${Math.floor(Math.random() * 8)} na última semana`}
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : statistics.completedTests > 0 ? "Testes finalizados" : "Nenhum teste concluído"}
             </p>
           </CardContent>
         </Card>
@@ -169,7 +158,7 @@ const LeaderDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{isLoading ? <Skeleton className="h-8 w-20" /> : `${statistics.avgScore}%`}</div>
             <p className="text-xs text-muted-foreground">
-              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : `${Math.floor(Math.random() * 10) - 5}% em relação ao mês anterior`}
+              {isLoading ? <Skeleton className="h-4 w-28 mt-1" /> : statistics.avgScore > 0 ? "Pontuação média atual" : "Sem dados de pontuação"}
             </p>
           </CardContent>
         </Card>

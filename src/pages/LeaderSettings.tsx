@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +23,15 @@ const LeaderSettings = () => {
     phone: "",
     position: "",
     bio: "",
-    company: ""
+    company: "",
+    // Novos campos para dados da empresa
+    cnpj: "",
+    industry: "",
+    address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    website: ""
   });
   const { user } = useAuth();
   
@@ -69,7 +76,15 @@ const LeaderSettings = () => {
             phone: user.phone || '',
             position: user.position || '',
             bio: user.bio || '',
-            company: user.company || ''
+            company: user.company || '',
+            // Campos da empresa vazios se não existirem no contexto
+            cnpj: user.cnpj || '',
+            industry: user.industry || '',
+            address: user.address || '',
+            city: user.city || '',
+            state: user.state || '',
+            zipCode: user.zipCode || '',
+            website: user.website || ''
           });
           setProfileLoading(false);
           return;
@@ -93,7 +108,15 @@ const LeaderSettings = () => {
         phone: profileData.phone || '',
         position: profileData.position || '',
         bio: profileData.bio || '',
-        company: profileData.company || ''
+        company: profileData.company || '',
+        // Recuperar dados da empresa do perfil (se existirem)
+        cnpj: profileData.cnpj || '',
+        industry: profileData.industry || '',
+        address: profileData.address || '',
+        city: profileData.city || '',
+        state: profileData.state || '',
+        zipCode: profileData.zipCode || '',
+        website: profileData.website || ''
       });
     } catch (error) {
       console.error("Error in fetchProfileData:", error);
@@ -125,6 +148,8 @@ const LeaderSettings = () => {
       }
       
       toast.success("Perfil atualizado com sucesso");
+      // Re-fetch profile data after successful update
+      await fetchProfileData();
     } catch (error) {
       console.error("Error in handleSaveProfile:", error);
       toast.error("Erro ao atualizar perfil");
@@ -141,7 +166,15 @@ const LeaderSettings = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          company: profile.company
+          company: profile.company,
+          // Atualizar todos os campos da empresa
+          cnpj: profile.cnpj,
+          industry: profile.industry,
+          address: profile.address,
+          city: profile.city,
+          state: profile.state,
+          zipCode: profile.zipCode,
+          website: profile.website
         })
         .eq('id', user?.id);
       
@@ -152,6 +185,8 @@ const LeaderSettings = () => {
       }
       
       toast.success("Dados da empresa atualizados com sucesso");
+      // Re-fetch profile data after successful update (contains company info)
+      await fetchProfileData();
     } catch (error) {
       console.error("Error in handleSaveCompany:", error);
       toast.error("Erro ao atualizar dados da empresa");
@@ -299,37 +334,72 @@ const LeaderSettings = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="cnpj">CNPJ</Label>
-                        <Input id="cnpj" defaultValue="12.345.678/0001-90" />
+                        <Input 
+                          id="cnpj" 
+                          value={profile.cnpj}
+                          onChange={(e) => setProfile({...profile, cnpj: e.target.value})}
+                          placeholder="00.000.000/0000-00"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="industry">Setor</Label>
-                        <Input id="industry" defaultValue="Tecnologia" />
+                        <Input 
+                          id="industry" 
+                          value={profile.industry}
+                          onChange={(e) => setProfile({...profile, industry: e.target.value})}
+                          placeholder="Ex: Tecnologia, Saúde, Educação"
+                        />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="address">Endereço</Label>
-                      <Input id="address" defaultValue="Av. Paulista, 1000" />
+                      <Input 
+                        id="address" 
+                        value={profile.address}
+                        onChange={(e) => setProfile({...profile, address: e.target.value})}
+                        placeholder="Rua, número, complemento"
+                      />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="city">Cidade</Label>
-                        <Input id="city" defaultValue="São Paulo" />
+                        <Input 
+                          id="city" 
+                          value={profile.city}
+                          onChange={(e) => setProfile({...profile, city: e.target.value})}
+                          placeholder="Nome da cidade"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="state">Estado</Label>
-                        <Input id="state" defaultValue="SP" />
+                        <Input 
+                          id="state" 
+                          value={profile.state}
+                          onChange={(e) => setProfile({...profile, state: e.target.value})}
+                          placeholder="UF"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="zipCode">CEP</Label>
-                        <Input id="zipCode" defaultValue="01310-100" />
+                        <Input 
+                          id="zipCode" 
+                          value={profile.zipCode}
+                          onChange={(e) => setProfile({...profile, zipCode: e.target.value})}
+                          placeholder="00000-000"
+                        />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="website">Website</Label>
-                      <Input id="website" defaultValue="https://www.empresaxyz.com.br" />
+                      <Input 
+                        id="website" 
+                        value={profile.website}
+                        onChange={(e) => setProfile({...profile, website: e.target.value})}
+                        placeholder="https://www.seusite.com.br"
+                      />
                     </div>
                   </div>
                   
