@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface AnimalProfileQuestion {
@@ -222,7 +221,7 @@ const getMockedQuestions = (): AnimalProfileQuestion[] => {
       pergunta: "Como você lida com conflitos?",
       animal_tubarao: "Enfrento-os diretamente e busco uma resolução rápida e objetiva.",
       animal_gato: "Busco entender todos os pontos de vista e encontrar uma solução harmoniosa.",
-      animal_lobo: "Analiso a situação cuidadosamente e sigo os protocolos adequados.",
+      animal_lobo: "Analiso cuidadosamente todas as opções antes de decidir o melhor caminho.",
       animal_aguia: "Vejo o conflito como uma oportunidade para novas ideias e mudanças positivas."
     },
     {
@@ -341,39 +340,18 @@ export const finalizeAnimalProfileResult = async (
   predominantAnimal: string = ''
 ): Promise<AnimalProfileResult> => {
   try {
-    const { tubarao, gato, lobo, aguia } = scores;
-    
-    // Use the provided predominant animal or determine one based on priority order if not provided
-    let animalPredominante = predominantAnimal;
-    
-    // If no predominant animal was specified, determine it
-    if (!animalPredominante) {
-      const maxScore = Math.max(tubarao, gato, lobo, aguia);
-      
-      // Priority order in case of ties: tubarao, lobo, aguia, gato
-      if (tubarao === maxScore) {
-        animalPredominante = 'tubarao';
-      } else if (lobo === maxScore) {
-        animalPredominante = 'lobo';
-      } else if (aguia === maxScore) {
-        animalPredominante = 'aguia';
-      } else if (gato === maxScore) {
-        animalPredominante = 'gato';
-      }
-    }
-    
-    console.log("Finalizing result with predominant animal:", animalPredominante);
+    console.log("Finalizing result with predominant animal:", predominantAnimal);
     
     if (resultId.startsWith("temp-")) {
       console.info("Using temporary result ID, returning mocked result");
       return {
         id: resultId,
         user_id: "temp-user",
-        score_tubarao: tubarao,
-        score_gato: gato,
-        score_lobo: lobo,
-        score_aguia: aguia,
-        animal_predominante: animalPredominante,
+        score_tubarao: scores.tubarao,
+        score_gato: scores.gato,
+        score_lobo: scores.lobo,
+        score_aguia: scores.aguia,
+        animal_predominante: predominantAnimal,
         completed_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -383,11 +361,11 @@ export const finalizeAnimalProfileResult = async (
     const { data, error } = await supabase
       .from('animal_profile_results')
       .update({
-        score_tubarao: tubarao,
-        score_gato: gato,
-        score_lobo: lobo,
-        score_aguia: aguia,
-        animal_predominante: animalPredominante,
+        score_tubarao: scores.tubarao,
+        score_gato: scores.gato,
+        score_lobo: scores.lobo,
+        score_aguia: scores.aguia,
+        animal_predominante: predominantAnimal,
         completed_at: new Date().toISOString()
       })
       .eq('id', resultId)

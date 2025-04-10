@@ -134,10 +134,17 @@ const AnimalProfileTest = () => {
           await finalizeTestAndNavigate(newScores);
         }
       } 
-      // If we're at the end of tie-break questions or still have more questions, handle accordingly
+      // If we're at the end of tie-break questions, check for a tie again
       else if (isLastTieBreakQuestion) {
-        // End of tie-break questions, finalize the test
-        await finalizeTestAndNavigate(newScores);
+        const tieCandidates = checkForTie();
+        
+        if (tieCandidates && tieCandidates.length > 1) {
+          // Still have a tie after all questions, determine a winner by highest score
+          await finalizeTestAndNavigate(newScores);
+        } else {
+          // Tie resolved, finalize test
+          await finalizeTestAndNavigate(newScores);
+        }
       } else {
         // More questions available, move to the next one
         setCurrentQuestionIndex(prevIndex => prevIndex + 1);
@@ -159,24 +166,30 @@ const AnimalProfileTest = () => {
 
   const finalizeTestAndNavigate = async (finalScores: typeof scores) => {
     try {
-      // Determine predominant animal even in case of ties
+      console.log("Finalizing test with scores:", finalScores);
+      
+      // Determine predominant animal by highest score
       const { tubarao, gato, lobo, aguia } = finalScores;
       const maxScore = Math.max(tubarao, gato, lobo, aguia);
       
-      // Priority order in case of ties: tubarao, lobo, aguia, gato
-      let predominantAnimal = '';
+      // Find all animals that have the max score
+      const tiedAnimals = [];
+      if (tubarao === maxScore) tiedAnimals.push('tubarao');
+      if (gato === maxScore) tiedAnimals.push('gato');
+      if (lobo === maxScore) tiedAnimals.push('lobo');
+      if (aguia === maxScore) tiedAnimals.push('aguia');
       
-      if (tubarao === maxScore) {
-        predominantAnimal = 'tubarao';
-      } else if (lobo === maxScore) {
-        predominantAnimal = 'lobo';
-      } else if (aguia === maxScore) {
-        predominantAnimal = 'aguia';
-      } else if (gato === maxScore) {
-        predominantAnimal = 'gato';
+      // If still tied, choose randomly between tied animals
+      let predominantAnimal = '';
+      if (tiedAnimals.length > 1) {
+        // Pick a random animal from the tied ones
+        const randomIndex = Math.floor(Math.random() * tiedAnimals.length);
+        predominantAnimal = tiedAnimals[randomIndex];
+        console.log("Multiple animals tied with max score. Randomly selected:", predominantAnimal);
+      } else {
+        predominantAnimal = tiedAnimals[0];
       }
       
-      // If no result ID (unlikely but safer), create one
       if (!resultId) {
         toast({
           title: "Erro ao finalizar teste",
@@ -185,8 +198,6 @@ const AnimalProfileTest = () => {
         });
         return;
       }
-      
-      console.log("Finalizing test with scores:", finalScores, "predominant animal:", predominantAnimal);
       
       // Save the final result with the designated predominant animal
       const result = await finalizeAnimalProfileResult(resultId, finalScores, predominantAnimal);
@@ -208,6 +219,7 @@ const AnimalProfileTest = () => {
       queryClient.invalidateQueries({ queryKey: ['clientTests'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
       queryClient.invalidateQueries({ queryKey: ['testResults'] });
+      queryClient.invalidateQueries({ queryKey: ['animalProfileResults'] });
       
       // Show success message
       toast({
