@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const { user } = useAuth();
 
@@ -29,46 +31,35 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
   };
 
-  // Função para enviar e-mail de convite
+  // Função para enviar e-mail de convite usando o edge function
   const sendInviteEmail = async (email: string, code: string) => {
     try {
-      // Simular o envio de e-mail diretamente
-      // Em um ambiente de produção, isso seria feito através de uma API real
-      console.log(`Enviando e-mail para ${email} com código ${code}`);
+      setIsSendingEmail(true);
       
-      // Registrar os dados que seriam enviados em um e-mail real
-      const emailData = {
-        to: email,
-        subject: `Convite para RH Mentor Mastery`,
-        body: `
-          Olá ${clientName},
-          
-          Você foi convidado(a) por ${user?.name || 'Seu mentor'} da empresa ${user?.company || 'RH Mentor Mastery'} para participar da plataforma RH Mentor Mastery.
-          
-          Para se registrar, utilize o código: ${code}
-          
-          Ou acesse diretamente: https://rh-mentor-mastery.vercel.app/client/register?code=${code}
-          
-          Este convite é válido por 7 dias.
-          
-          Atenciosamente,
-          Equipe RH Mentor Mastery
-        `
-      };
+      // Use the Supabase edge function to send the email
+      const { data, error } = await supabase.functions.invoke('send-invite-email', {
+        body: { 
+          email, 
+          code,
+          clientName: clientName || undefined,
+          mentorName: user?.name || 'Seu mentor',
+          mentorCompany: user?.company || 'RH Mentor Mastery'
+        }
+      });
       
-      // Registrar no console para fins de demonstração
-      console.log('Dados do e-mail:', emailData);
+      if (error) {
+        throw error;
+      }
       
-      // Simular um tempo de envio
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Simular sucesso
+      console.log("Resultado do envio de email:", data);
       toast.success(`Instruções de registro enviadas para ${email}`);
       return true;
     } catch (error) {
       console.error("Erro ao enviar email:", error);
-      toast.error("Não foi possível enviar o email de convite, mas o código foi gerado com sucesso");
+      toast.error("Não foi possível enviar o email de convite");
       return false;
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -207,8 +198,13 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
               variant="outline" 
               className="w-full"
               onClick={() => sendInviteEmail(clientEmail, inviteCode)}
+              disabled={isSendingEmail}
             >
-              Reenviar instruções por email
+              {isSendingEmail ? (
+                <>Enviando e-mail...</>
+              ) : (
+                <>Reenviar instruções por email</>
+              )}
             </Button>
           </div>
           

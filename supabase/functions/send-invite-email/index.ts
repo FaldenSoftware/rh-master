@@ -1,6 +1,13 @@
+
 // Supabase Edge Function para enviar e-mails de convite
 // @ts-ignore: Ignorando erro de importação do Deno em ambiente de desenvolvimento
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+
+// CORS headers para permitir chamadas do frontend
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Interface para os dados do corpo da requisição
 interface InviteEmailData {
@@ -13,30 +20,46 @@ interface InviteEmailData {
 
 // Função principal que será executada pelo Supabase Edge Functions
 serve(async (req) => {
+  // Lidar com requisições OPTIONS (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { 
+      status: 204, 
+      headers: corsHeaders 
+    });
+  }
+
   try {
     // Verificar método
     if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ error: 'Método não permitido' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
+        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Obter dados do corpo da requisição
     const data = await req.json() as InviteEmailData;
     
+    console.log("Recebida solicitação para enviar e-mail de convite:", {
+      email: data.email,
+      code: data.code,
+      clientName: data.clientName,
+      mentorName: data.mentorName
+    });
+    
     // Validar dados obrigatórios
     if (!data.email || !data.code) {
+      console.error("Dados inválidos: Email ou código ausentes");
       return new Response(
         JSON.stringify({ error: 'Email e código são obrigatórios' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Montar o corpo do e-mail
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
     // @ts-ignore: Ignorando erro de referência ao Deno em ambiente de desenvolvimento
-    const registerUrl = `${'https://rh-mentor-mastery.vercel.app'}/client/register?code=${data.code}`;
+    const registerUrl = `${'https://rh-mentor-mastery.vercel.app'}/client/register?code=${data.code}&email=${encodeURIComponent(data.email)}`;
     
     const emailBody = `
       ${clientNameText}
@@ -55,29 +78,25 @@ serve(async (req) => {
       Equipe RH Mentor Mastery
     `;
 
-    // Configurar o serviço de e-mail (usando um serviço de e-mail externo como SendGrid ou similar)
-    // Aqui estamos simulando o envio de e-mail para fins de demonstração
-    // Em um ambiente de produção, você usaria um serviço real como SendGrid, AWS SES, etc.
+    console.log("Corpo do e-mail preparado:", emailBody);
+
+    // Em um ambiente real, você usaria um serviço real como SendGrid, AWS SES, etc.
+    // Por enquanto, vamos registrar que tentamos enviar o email
     
-    // Simular envio bem-sucedido
-    // Em um ambiente real, você faria algo como:
-    // const apiKey = Deno.env.get('SENDGRID_API_KEY');
-    // const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${apiKey}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     personalizations: [{ to: [{ email: data.email }] }],
-    //     from: { email: 'noreply@rhmentormastery.com', name: 'RH Mentor Mastery' },
-    //     subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-    //     content: [{ type: 'text/html', value: emailBody.replace(/\n/g, '<br>') }]
-    //   })
-    // });
-    
-    // Para fins de demonstração, vamos simular uma resposta bem-sucedida
     console.log(`Simulando envio de e-mail para ${data.email} com código ${data.code}`);
+    
+    // EM PRODUÇÃO: Implemente o envio real aqui, usando um serviço como SendGrid, AWS SES, etc.
+    // Exemplo de como poderia ser implementado com o Resend:
+    //
+    // const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+    // const emailResult = await resend.emails.send({
+    //   from: 'RH Mentor Mastery <no-reply@rhmentormastery.com>',
+    //   to: [data.email],
+    //   subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+    //   html: emailBody.replace(/\n/g, '<br>'),
+    // });
+    //
+    // console.log("Resultado do envio:", emailResult);
     
     // Registrar os dados que seriam enviados em um ambiente real
     console.log({
@@ -87,21 +106,13 @@ serve(async (req) => {
     });
     
     // Simular uma resposta bem-sucedida
-    const response = {
-      ok: true,
-      json: () => Promise.resolve({ message: 'E-mail enviado com sucesso (simulação)' })
-    };
-
-    // Verificar resposta
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Falha ao enviar e-mail: ${JSON.stringify(errorData)}`);
-    }
-
-    // Retornar sucesso
     return new Response(
-      JSON.stringify({ success: true, message: 'E-mail enviado com sucesso' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        message: 'E-mail enviado com sucesso (simulação)',
+        timestamp: new Date().toISOString()
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     // Tratar erros
@@ -112,7 +123,7 @@ serve(async (req) => {
         error: 'Falha ao processar solicitação de envio de e-mail',
         details: error.message 
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
