@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -49,7 +48,6 @@ import {
 } from "@/lib/animalProfileService";
 import { generateAnimalProfilePDF } from "@/lib/pdfGenerator";
 
-// Importar os novos ícones de animais
 import loboIcon from "/public/lovable-uploads/132cbcdf-964e-42ae-9313-be4df791d118.png";
 import tubaraoIcon from "/public/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png";
 import aguiaIcon from "/public/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png";
@@ -59,7 +57,6 @@ interface AnimalProfileResultsProps {
   resultId?: string | null;
 }
 
-// Mapeamento dos ícones dos animais
 const animalIcons = {
   lobo: loboIcon,
   tubarao: tubaraoIcon,
@@ -153,7 +150,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
   const animalType = result.animal_predominante;
   const animalProfile = animalProfiles[animalType as keyof typeof animalProfiles];
   
-  // Se por algum motivo não tivermos o perfil do animal (por exemplo, problema de integridade de dados), fornecemos uma alternativa
   if (!animalProfile) {
     console.error("Animal profile not found for:", animalType);
     return (
@@ -171,7 +167,6 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     );
   }
   
-  // Determinar o ícone do animal
   const animalIconSrc = animalType.includes('-') 
     ? animalIcons[animalType.split('-')[0] as keyof typeof animalIcons]
     : animalIcons[animalType as keyof typeof animalIcons];
@@ -211,11 +206,11 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
           </div>
           
           <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
-            <div className="h-28 w-28 rounded-full bg-white p-1 overflow-hidden border-4 border-white shadow-lg">
+            <div className="h-28 w-28 rounded-full bg-white p-0 overflow-hidden border-4 border-white shadow-lg flex items-center justify-center">
               <img 
                 src={animalIconSrc} 
                 alt={animalProfile.name} 
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-cover"
               />
             </div>
             

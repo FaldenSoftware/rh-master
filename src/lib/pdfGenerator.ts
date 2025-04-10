@@ -1,4 +1,3 @@
-
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { AnimalProfileResult } from "./animalProfileService";
@@ -83,7 +82,6 @@ export const generateAnimalProfilePDF = async (
   let animalImage = null;
   try {
     // Note: In a PDF, we need to use base64 image data
-    // Since we can't dynamically create a canvas here, we'll use a placeholder and rely on the image paths
     const img = new Image();
     img.src = animalImages[animalType as keyof typeof animalImages].replace('/public', '');
     
@@ -119,7 +117,6 @@ export const generateAnimalProfilePDF = async (
   
   // Create a layout with user info on left and animal image on right
   const userInfoWidth = contentWidth * 0.65;
-  const imageWidth = contentWidth * 0.35;
   
   // Add user information on the left side
   pdf.setFont("helvetica", "normal");
@@ -128,11 +125,13 @@ export const generateAnimalProfilePDF = async (
   pdf.text(`Empresa: ${user.company || "Não informada"}`, margin, 70);
   pdf.text(`Data de Avaliação: ${new Date(result.completed_at).toLocaleDateString('pt-BR')}`, margin, 80);
   
-  // Add animal image on the right side
+  // Add animal image on the right side - centered with "Empresa" line
   if (animalImage) {
     try {
       const imageX = margin + userInfoWidth + 20;
-      pdf.addImage(animalImage, 'PNG', imageX, 45, 40, 40);
+      // Position at same height as "Empresa" (line 70) - center image vertically
+      const imageY = 70 - 20; // Position 20mm above centerline to account for image height
+      pdf.addImage(animalImage, 'PNG', imageX, imageY, 40, 40);
     } catch (error) {
       console.error("Error adding image to PDF:", error);
     }
