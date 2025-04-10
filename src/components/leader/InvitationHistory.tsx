@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,6 @@ interface Invitation {
 const InvitationHistory = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -69,15 +67,13 @@ const InvitationHistory = () => {
     }
   };
 
-  const sendInviteEmail = async (invitation: Invitation) => {
+  const sendInviteEmail = async (email: string, code: string) => {
     try {
-      setSendingEmailId(invitation.id);
-      
-      // Use the Supabase edge function to send the email
-      const { data, error } = await supabase.functions.invoke('send-invite-email', {
+      // Aqui implementaremos o envio de email
+      const { error } = await supabase.functions.invoke('send-invite-email', {
         body: { 
-          email: invitation.email, 
-          code: invitation.code,
+          email, 
+          code,
           mentorName: user?.name || 'Seu mentor',
           mentorCompany: user?.company || 'RH Mentor Mastery'
         }
@@ -85,13 +81,10 @@ const InvitationHistory = () => {
       
       if (error) throw error;
       
-      console.log("Resultado do envio de email:", data);
-      toast.success(`Instruções de registro enviadas para ${invitation.email}`);
+      toast.success(`Instruções de registro enviadas para ${email}`);
     } catch (error) {
       console.error("Erro ao enviar email:", error);
       toast.error("Não foi possível enviar o email de convite");
-    } finally {
-      setSendingEmailId(null);
     }
   };
 
@@ -157,15 +150,11 @@ const InvitationHistory = () => {
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => sendInviteEmail(invitation)}
+                      onClick={() => sendInviteEmail(invitation.email, invitation.code)}
                       title="Reenviar email"
-                      disabled={invitation.is_used || sendingEmailId === invitation.id}
+                      disabled={invitation.is_used}
                     >
-                      {sendingEmailId === invitation.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Mail className="h-4 w-4" />
-                      )}
+                      <Mail className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>

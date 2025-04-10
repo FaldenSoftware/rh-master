@@ -29,30 +29,26 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
   };
 
-  // Função para enviar e-mail de convite usando a Edge Function do Supabase
+  // Função para enviar e-mail de convite usando a função Edge do Supabase
   const sendInviteEmail = async (email: string, code: string) => {
     try {
       console.log(`Enviando e-mail para ${email} com código ${code}`);
       
-      // Chamar a Edge Function do Supabase para enviar o e-mail
+      // Chamar a função Edge do Supabase para enviar o e-mail
       const { error } = await supabase.functions.invoke('send-invite-email', {
         body: { 
           email, 
           code,
-          clientName,
+          clientName: clientName,
           mentorName: user?.name || 'Seu mentor',
           mentorCompany: user?.company || 'RH Mentor Mastery'
         }
       });
       
-      if (error) {
-        console.error("Erro na Edge Function:", error);
-        throw new Error(error.message);
-      }
+      if (error) throw error;
       
-      // Registrar sucesso no console
+      // Registrar sucesso
       console.log('E-mail enviado com sucesso para:', email);
-      
       toast.success(`Instruções de registro enviadas para ${email}`);
       return true;
     } catch (error) {

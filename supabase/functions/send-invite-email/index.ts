@@ -56,8 +56,6 @@ serve(async (req) => {
     `;
 
     // Configurar o serviço de e-mail usando SendGrid
-    console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
-    
     // Obter a chave de API do SendGrid das variáveis de ambiente
     const apiKey = Deno.env.get('SENDGRID_API_KEY');
     
@@ -66,10 +64,13 @@ serve(async (req) => {
       throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
     }
     
-    // Preparar o conteúdo do e-mail em formato HTML
+    // Registrar os dados que serão enviados
+    console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
+    
+    // Preparar o corpo do e-mail em formato HTML
     const htmlContent = emailBody.replace(/\n/g, '<br>');
     
-    // Fazer a requisição para a API do SendGrid
+    // Enviar e-mail usando a API do SendGrid
     const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
@@ -84,13 +85,14 @@ serve(async (req) => {
       })
     });
     
-    // Registrar informações sobre a tentativa de envio
-    console.log({
-      to: data.email,
-      subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-      status: response.status,
-      statusText: response.statusText
-    });
+    // Registrar resposta do SendGrid
+    console.log(`Resposta do SendGrid: ${response.status} ${response.statusText}`);
+    
+    // Se a resposta não for bem-sucedida, registrar detalhes do erro
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error('Erro detalhado do SendGrid:', errorDetails);
+    }
 
     // Verificar resposta
     if (!response.ok) {
