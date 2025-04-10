@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -17,6 +17,9 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
+  const [phone, setPhone] = useState("");
+  const [position, setPosition] = useState("");
+  const [bio, setBio] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -133,13 +136,19 @@ const Register = () => {
       console.log("Registrando mentor com empresa:", company);
       
       const trimmedCompany = company.trim();
+      const trimmedPhone = phone.trim() || undefined;
+      const trimmedPosition = position.trim() || undefined;
+      const trimmedBio = bio.trim() || undefined;
       
       const user = await register(
         email.trim(), 
         password, 
         name.trim(), 
         "mentor", 
-        trimmedCompany
+        trimmedCompany,
+        trimmedPhone,
+        trimmedPosition,
+        trimmedBio
       );
       
       if (user) {
@@ -289,9 +298,42 @@ const Register = () => {
               {formErrors.company && (
                 <p className="text-xs text-red-500 mt-1">{formErrors.company}</p>
               )}
-              <p className="text-xs text-gray-500">Campo obrigatório para mentores</p>
+              <p className="text-xs text-slate-500 mt-1">Campo obrigatório para mentores</p>
             </div>
-                        
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone (Opcional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Digite seu telefone"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="position">Cargo/Posição (Opcional)</Label>
+              <Input
+                id="position"
+                type="text"
+                value={position}
+                onChange={(e) => setPosition(e.target.value)}
+                placeholder="Qual seu cargo na empresa?"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Sobre você (Opcional)</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Fale um pouco sobre sua experiência"
+                className="min-h-[80px]"
+              />
+            </div>
+
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
               {(isLoading || isSubmitting) ? (
                 <>

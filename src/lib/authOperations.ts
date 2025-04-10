@@ -12,12 +12,15 @@ const MIN_REGISTRATION_INTERVAL = 30000; // 30 seconds in milliseconds
 export const registerUser = async (
   email: string,
   password: string,
-  name: string, 
-  role: "mentor" | "client", 
-  company?: string
+  name: string,
+  role: "mentor" | "client",
+  company?: string,
+  phone?: string,
+  position?: string,
+  bio?: string
 ): Promise<AuthUser | null> => {
   try {
-    console.log("Iniciando registro de novo usuário:", { email, name, role, company });
+    console.log("Iniciando registro de novo usuário:", { email, name, role, company, phone, position, bio });
     
     // Check if we're attempting to register too quickly
     const now = Date.now();
@@ -32,7 +35,7 @@ export const registerUser = async (
     validateRegistrationData(email, password, name, role, company);
     
     // Prepare user metadata
-    const userMetadata = prepareUserMetadata(name, role, company);
+    const userMetadata = prepareUserMetadata(name, role, company, phone, position, bio);
     console.log("Metadados para registro:", userMetadata);
     
     // Register the user
@@ -66,7 +69,10 @@ export const registerUser = async (
       email: data.user.email || '',
       name: userMetadata.name,
       role: userMetadata.role,
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone || null,
+      position: userMetadata.position || null,
+      bio: userMetadata.bio || null
     };
     
     console.log("Retornando usuário básico após registro:", basicUser);
@@ -110,7 +116,10 @@ const validateRegistrationData = (
 const prepareUserMetadata = (
   name: string,
   role: "mentor" | "client",
-  company?: string
+  company?: string,
+  phone?: string,
+  position?: string,
+  bio?: string
 ): Record<string, any> => {
   const metadata: Record<string, any> = {
     name: name.trim(),
@@ -118,9 +127,19 @@ const prepareUserMetadata = (
   };
   
   if (role === "mentor") {
-    metadata.company = company?.trim();
+    metadata.company = company?.trim() ?? undefined;
   } else if (company && company.trim() !== '') {
     metadata.company = company.trim();
+  }
+  
+  if (phone && phone.trim() !== '') {
+    metadata.phone = phone.trim();
+  }
+  if (position && position.trim() !== '') {
+    metadata.position = position.trim();
+  }
+  if (bio && bio.trim() !== '') {
+    metadata.bio = bio.trim();
   }
   
   return metadata;
@@ -147,25 +166,70 @@ const handleRegistrationError = (error: any): never => {
 };
 
 /**
- * Checks if a profile exists for the user after registration.
- * Now simplified to avoid potential RLS issues during registration.
+ * Ensures a profile exists for the user, creating one if needed
  */
 const ensureProfileExists = async (
   user: any,
   name: string,
   role: "mentor" | "client",
-  company?: string
+  company?: string,
+  phone?: string,
+  position?: string,
+  bio?: string
 ): Promise<AuthUser> => {
-  console.log(`Verificando perfil para o usuário ${user.id} após registro.`);
+  let profileData: any = null;
+  let profileError: any = null;
 
-  // Return a basic user object without querying the database
-  // This avoids potential RLS recursion during registration
+  // Check if profile was created by trigger
+  console.log(`Verificando perfil para o usuário ${user.id} após registro.`);
+  ({ data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single());
+
+  // If profile not found or error occurred, try creating manually
+  if (profileError || !profileData) {
+    console.warn("Perfil não encontrado ou erro ao buscar após registro, tentando criar manualmente:", profileError?.message || 'Nenhum dado');
+
+    const profileInsert = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        name: name.trim(),
+        role: role,
+        company: role === "mentor" ? company?.trim() : null,
+        phone: phone?.trim() || null,
+        position: position?.trim() || null,
+        bio: bio?.trim() || null,
+      })
+      .select() // Retorna os dados inseridos
+      .single(); // Espera-se apenas um registro
+
+    if (profileInsert.error) {
+      console.error("Erro ao inserir perfil manualmente:", profileInsert.error);
+      // Lançar um erro mais específico aqui pode ser útil
+      throw new Error(`Database error saving new user profile: ${profileInsert.error.message}`);
+    }
+
+    console.log("Perfil criado manualmente com sucesso:", profileInsert.data);
+    profileData = profileInsert.data; // Usar os dados recém-criados
+
+  } else {
+    console.log("Perfil já existente (provavelmente criado pelo trigger):", profileData);
+  }
+
+  // Mapear os dados do perfil (obtidos do select ou do insert) para AuthUser
+  // Garantir que o objeto retornado tenha os campos mais recentes
   return {
     id: user.id,
     email: user.email || '',
-    name: name.trim(),
-    role: role,
-    company: company
+    name: profileData?.name || name.trim(),
+    role: profileData?.role || role,
+    company: profileData?.company,
+    phone: profileData?.phone,
+    position: profileData?.position,
+    bio: profileData?.bio
   };
 };
 

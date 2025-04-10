@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { 
   AuthState, 
@@ -15,7 +14,16 @@ import { supabase } from "@/integrations/supabase/client";
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, name: string, role: "mentor" | "client", company?: string) => Promise<AuthUser | null>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    role: "mentor" | "client",
+    company?: string,
+    phone?: string,
+    position?: string,
+    bio?: string
+  ) => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -196,16 +204,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (
-    email: string, 
-    password: string, 
-    name: string, 
+    email: string,
+    password: string,
+    name: string,
     role: "mentor" | "client",
-    company?: string
+    company?: string,
+    phone?: string,
+    position?: string,
+    bio?: string
   ): Promise<AuthUser | null> => {
     setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
     
     try {
-      console.log("Registrando usuário:", { email, name, role, company });
+      console.log("Registrando usuário via Context:", { email, name, role, company, phone, position, bio });
       
       if (!email || !password || !name) {
         throw new Error("Preencha todos os campos obrigatórios");
@@ -216,7 +227,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       // Tentar registrar o usuário
-      const user = await registerUser(email, password, name, role, company);
+      const user = await registerUser(
+        email,
+        password,
+        name,
+        role,
+        company,
+        phone,
+        position,
+        bio
+      );
       
       if (!user) {
         console.error("Registro bem-sucedido mas usuário não encontrado");

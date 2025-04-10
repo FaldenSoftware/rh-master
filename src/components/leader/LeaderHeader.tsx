@@ -1,8 +1,8 @@
-
 import { Bell, Search, User, Settings, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -13,6 +13,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const LeaderHeader = () => {
+  const { user, logout } = useAuth();
+
+  const getInitials = (name: string | undefined | null): string => {
+    if (!name) return "?";
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-background">
       <div className="flex h-16 items-center px-6">
@@ -40,8 +51,8 @@ const LeaderHeader = () => {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
-                  <AvatarImage src="" alt="User" />
-                  <AvatarFallback>LR</AvatarFallback>
+                  <AvatarImage src={undefined /* Idealmente, user?.avatar_url ou similar */} alt={user?.name || "User"} />
+                  <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -57,7 +68,7 @@ const LeaderHeader = () => {
                 <span>Configurações</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Sair</span>
               </DropdownMenuItem>

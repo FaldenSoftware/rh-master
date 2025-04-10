@@ -63,8 +63,8 @@ const LeaderSettings = () => {
         lastName,
         email: user?.email || '',
         phone: profileData.phone || '',
-        position: profileData.position || 'Gerente de RH',
-        bio: profileData.bio || 'Profissional de RH com mais de 10 anos de experiência em recrutamento, seleção e desenvolvimento organizacional.',
+        position: profileData.position || '',
+        bio: profileData.bio || '',
         company: profileData.company || ''
       });
     } catch (error) {
