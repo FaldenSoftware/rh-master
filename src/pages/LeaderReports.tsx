@@ -156,7 +156,7 @@ const LeaderReports = () => {
                     os relatórios serão disponibilizados aqui automaticamente.
                   </p>
                 </div>
-              }
+              )}
             </CardContent>
           </Card>
         </TabsContent>
