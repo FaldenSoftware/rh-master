@@ -245,7 +245,7 @@ const LeaderDashboard = () => {
                 Você ainda não tem clientes registrados. Convide novos clientes para começar.
               </p>
               <div className="mt-6">
-                <Link to="/leader/clients" className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+                <Link to="/leader/clients?tab=invite" className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Adicionar cliente
                 </Link>

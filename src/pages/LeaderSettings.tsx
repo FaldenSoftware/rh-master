@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Settings, User, Building, Bell, Shield, Key, Loader2 } from "lucide-react";
+import { Settings, User, Building, Bell, Shield, Key, Loader2, Upload } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import LeaderLayout from "@/components/leader/LeaderLayout";
@@ -16,6 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 const LeaderSettings = () => {
   const [loading, setLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
@@ -38,9 +41,123 @@ const LeaderSettings = () => {
   useEffect(() => {
     if (user) {
       fetchProfileData();
+      fetchAvatarUrl();
     }
   }, [user]);
   
+  // Buscar a URL do avatar do usuário
+  const fetchAvatarUrl = async () => {
+    try {
+      if (!user?.id) return;
+      
+      // Verificar se o usuário tem um avatar no storage
+      const { data: avatarData, error: avatarError } = await supabase
+        .storage
+        .from('avatars')
+        .list(`${user.id}`, {
+          limit: 1,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+      
+      if (avatarError) {
+        console.error('Erro ao buscar avatar:', avatarError);
+        return;
+      }
+      
+      // Se encontrou algum arquivo de avatar
+      if (avatarData && avatarData.length > 0) {
+        const { data: urlData } = await supabase
+          .storage
+          .from('avatars')
+          .getPublicUrl(`${user.id}/${avatarData[0].name}`);
+        
+        if (urlData) {
+          setAvatarUrl(urlData.publicUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar avatar:', error);
+    }
+  };
+  
+  // Função para processar o upload da imagem de perfil
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!user?.id) {
+        toast.error("Você precisa estar logado para alterar sua foto");
+        return;
+      }
+      
+      const file = event.target.files?.[0];
+      if (!file) return;
+      
+      // Validar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast.error("Por favor, selecione uma imagem válida");
+        return;
+      }
+      
+      // Validar tamanho do arquivo (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("A imagem deve ter no máximo 2MB");
+        return;
+      }
+      
+      setUploadingPhoto(true);
+      
+      // Gerar um nome único para o arquivo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+      
+      // Fazer upload do arquivo para o bucket 'avatars'
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        console.error('Erro ao fazer upload:', uploadError);
+        toast.error("Erro ao atualizar foto de perfil");
+        setUploadingPhoto(false);
+        return;
+      }
+      
+      // Obter a URL pública do arquivo
+      const { data: urlData } = await supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      
+      if (urlData) {
+        setAvatarUrl(urlData.publicUrl);
+        
+        // Atualizar o perfil com a URL do avatar
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ avatar_url: urlData.publicUrl })
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.error('Erro ao atualizar perfil:', updateError);
+          toast.error("Erro ao atualizar perfil com a nova foto");
+        } else {
+          toast.success("Foto de perfil atualizada com sucesso");
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao processar imagem:', error);
+      toast.error("Erro ao processar imagem");
+    } finally {
+      setUploadingPhoto(false);
+      // Limpar o input de arquivo
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const fetchProfileData = async () => {
     setProfileLoading(true);
     try {
@@ -227,14 +344,38 @@ const LeaderSettings = () => {
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="h-24 w-24">
-                        <AvatarImage src="" alt="Profile" />
+                        <AvatarImage src={avatarUrl || ""} alt="Profile" />
                         <AvatarFallback className="text-lg">
                           {profile.firstName && profile.lastName 
                             ? `${profile.firstName[0]}${profile.lastName[0]}`
                             : user?.name?.slice(0, 2) || 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      <Button variant="outline" size="sm">Alterar Foto</Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleAvatarChange}
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingPhoto}
+                      >
+                        {uploadingPhoto ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Alterar Foto
+                          </>
+                        )}
+                      </Button>
                     </div>
                     
                     <div className="grid gap-4 flex-1">

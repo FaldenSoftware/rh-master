@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientsList from "@/components/leader/ClientsList";
@@ -7,6 +7,7 @@ import ClientInviteForm from "@/components/leader/ClientInviteForm";
 import InvitationHistory from "@/components/leader/InvitationHistory";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { useLocation } from "react-router-dom";
 
 interface Client {
   id: string;
@@ -17,8 +18,19 @@ interface Client {
 
 const LeaderClients = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [activeTab, setActiveTab] = useState("list");
+  
+  // Verificar se há um parâmetro de URL para definir a aba ativa
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    
+    if (tabParam === 'invite') {
+      setActiveTab('invite');
+    }
+  }, [location]);
 
   const handleEditClient = (client: Client) => {
     setSelectedClient(client);
