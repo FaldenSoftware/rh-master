@@ -16,7 +16,7 @@ const AnimalProfileResultsPage = () => {
   const [latestResultId, setLatestResultId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // If resultId is "latest", fetch the latest result for the user
+  // Se resultId for "latest", busque o resultado mais recente para o usuário
   useEffect(() => {
     const getLatestResult = async () => {
       if (resultId === "latest" && user) {

@@ -49,9 +49,23 @@ import {
 } from "@/lib/animalProfileService";
 import { generateAnimalProfilePDF } from "@/lib/pdfGenerator";
 
+// Importar os novos ícones de animais
+import loboIcon from "/public/lovable-uploads/132cbcdf-964e-42ae-9313-be4df791d118.png";
+import tubaraoIcon from "/public/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png";
+import aguiaIcon from "/public/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png";
+import gatoIcon from "/public/lovable-uploads/fa1f3bb8-13ee-41f6-a1a5-a08a1b273fe5.png";
+
 interface AnimalProfileResultsProps {
   resultId?: string | null;
 }
+
+// Mapeamento dos ícones dos animais
+const animalIcons = {
+  lobo: loboIcon,
+  tubarao: tubaraoIcon,
+  aguia: aguiaIcon,
+  gato: gatoIcon
+};
 
 const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
   const navigate = useNavigate();
@@ -139,7 +153,7 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
   const animalType = result.animal_predominante;
   const animalProfile = animalProfiles[animalType as keyof typeof animalProfiles];
   
-  // If we somehow don't have the animal profile (e.g., data integrity issue), provide fallback
+  // Se por algum motivo não tivermos o perfil do animal (por exemplo, problema de integridade de dados), fornecemos uma alternativa
   if (!animalProfile) {
     console.error("Animal profile not found for:", animalType);
     return (
@@ -156,6 +170,11 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
       </div>
     );
   }
+  
+  // Determinar o ícone do animal
+  const animalIconSrc = animalType.includes('-') 
+    ? animalIcons[animalType.split('-')[0] as keyof typeof animalIcons]
+    : animalIcons[animalType as keyof typeof animalIcons];
   
   const scoreData = [
     { name: "Tubarão (Executor)", value: result.score_tubarao, color: "#F59E0B" },
@@ -193,7 +212,7 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
           
           <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
             <Avatar className="h-28 w-28 bg-white p-0 overflow-hidden">
-              <AvatarImage src={animalProfile.icon} alt={animalProfile.name} className="object-contain" />
+              <AvatarImage src={animalIconSrc} alt={animalProfile.name} className="object-contain" />
               <AvatarFallback className="text-4xl bg-white text-purple-700">
                 {animalProfile.emoji}
               </AvatarFallback>

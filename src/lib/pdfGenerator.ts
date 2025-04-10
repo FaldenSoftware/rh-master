@@ -1,3 +1,4 @@
+
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { AnimalProfileResult } from "./animalProfileService";
@@ -10,6 +11,14 @@ interface UserProfile {
   company?: string;
   email?: string;
 }
+
+// Adicionando o mapeamento para as imagens dos animais
+const animalImages = {
+  lobo: '/public/lovable-uploads/132cbcdf-964e-42ae-9313-be4df791d118.png',
+  tubarao: '/public/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png',
+  aguia: '/public/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png',
+  gato: '/public/lovable-uploads/fa1f3bb8-13ee-41f6-a1a5-a08a1b273fe5.png'
+};
 
 export const generateAnimalProfilePDF = async (
   result: AnimalProfileResult,

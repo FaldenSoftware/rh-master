@@ -23,6 +23,7 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
     queryClient.invalidateQueries({ queryKey: ['clientTests'] });
     queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     queryClient.invalidateQueries({ queryKey: ['testResults'] });
+    queryClient.invalidateQueries({ queryKey: ['animalProfileResults'] });
     
     navigate(`/client/tests/animal-profile/results/latest`);
   };
