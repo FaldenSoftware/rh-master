@@ -1,65 +1,91 @@
 
-import { Bell, Search, User, Settings, LogOut } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import React from "react";
+import { Link } from "react-router-dom";
+import { Bell } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
-const ClientHeader = () => {
+interface ClientHeaderProps {
+  title: string;
+}
+
+const ClientHeader: React.FC<ClientHeaderProps> = ({ title }) => {
+  const { user, logout } = useAuth();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirect is handled in the logout function
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
+  
+  // Get initials from user name
+  const getInitials = () => {
+    if (!user?.name) return "U";
+    
+    const nameParts = user.name.trim().split(" ");
+    if (nameParts.length === 1) return nameParts[0].charAt(0).toUpperCase();
+    
+    return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+  };
+
   return (
-    <header className="sticky top-0 z-30 w-full border-b bg-background">
-      <div className="flex h-16 items-center px-6">
-        <div className="flex items-center gap-2 font-semibold">
-          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">RH Mentor</span>
-          <span className="text-xs bg-purple-100 text-purple-800 rounded-full px-2 py-0.5">Cliente</span>
-        </div>
-        
-        <div className="flex flex-1 items-center justify-end gap-4">
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar..."
-              className="w-full bg-background pl-8 md:w-[200px] lg:w-[240px]"
-            />
-          </div>
-          
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-600"></span>
+    <header className="sticky top-0 z-40 border-b bg-background">
+      <div className="container flex h-16 items-center justify-between py-4">
+        <h1 className="text-2xl font-bold">{title}</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon">
+            <Bell className="h-[1.2rem] w-[1.2rem]" />
+            <span className="sr-only">Notificações</span>
           </Button>
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src="" alt="User" />
-                  <AvatarFallback>JD</AvatarFallback>
+              <Button
+                variant="ghost"
+                className="relative h-8 w-8 rounded-full"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="" alt="Avatar" />
+                  <AvatarFallback>{getInitials()}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{user?.name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Configurações</span>
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem asChild>
+                  <Link to="/client/profile">Perfil</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/client/account">Conta</Link>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sair</span>
+              <DropdownMenuItem
+                className="cursor-pointer text-red-500 focus:text-red-500"
+                onClick={handleLogout}
+              >
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

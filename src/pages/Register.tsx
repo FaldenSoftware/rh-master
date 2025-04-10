@@ -3,13 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { Loader2 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -48,7 +48,14 @@ const Register = () => {
     if (formErrors.company) setFormErrors(prev => ({ ...prev, company: "" }));
   }, [company]);
 
-  // Reset rate limiting after timeout
+  useEffect(() => {
+    if (formErrors.phone) setFormErrors(prev => ({ ...prev, phone: "" }));
+  }, [phone]);
+
+  useEffect(() => {
+    if (formErrors.position) setFormErrors(prev => ({ ...prev, position: "" }));
+  }, [position]);
+
   useEffect(() => {
     let timerId: number | null = null;
     
@@ -110,7 +117,6 @@ const Register = () => {
     e.preventDefault();
     setGeneralError(null);
     
-    // Prevent submission if rate limited
     if (isRateLimited) {
       toast({
         variant: "destructive",
@@ -133,22 +139,17 @@ const Register = () => {
         return;
       }
       
-      console.log("Registrando mentor com empresa:", company);
-      
-      const trimmedCompany = company.trim();
-      const trimmedPhone = phone.trim() || undefined;
-      const trimmedPosition = position.trim() || undefined;
-      const trimmedBio = bio.trim() || undefined;
+      console.log("Registrando mentor com todos os campos:", { company, phone, position, bio });
       
       const user = await register(
         email.trim(), 
         password, 
         name.trim(), 
         "mentor", 
-        trimmedCompany,
-        trimmedPhone,
-        trimmedPosition,
-        trimmedBio
+        company.trim(),
+        phone.trim(),
+        position.trim(),
+        bio.trim()
       );
       
       if (user) {
@@ -156,6 +157,10 @@ const Register = () => {
           title: "Registro realizado com sucesso",
           description: "Redirecionando para o painel...",
         });
+        
+        setTimeout(() => {
+          navigate("/leader");
+        }, 1500);
       } else {
         throw new Error("Falha ao registrar usuário. Tente novamente.");
       }
@@ -166,7 +171,6 @@ const Register = () => {
       if (error instanceof Error) {
         setGeneralError(error.message);
         
-        // Check if error is related to rate limiting
         if (error.message.toLowerCase().includes('security purposes') || 
             error.message.toLowerCase().includes('aguarde') ||
             error.message.toLowerCase().includes('segundos')) {
@@ -298,42 +302,54 @@ const Register = () => {
               {formErrors.company && (
                 <p className="text-xs text-red-500 mt-1">{formErrors.company}</p>
               )}
-              <p className="text-xs text-slate-500 mt-1">Campo obrigatório para mentores</p>
+              <p className="text-xs text-gray-500">Campo obrigatório para mentores</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefone (Opcional)</Label>
+              <Label htmlFor="phone">Telefone</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Digite seu telefone"
+                className={getFieldErrorClass("phone")}
               />
+              {formErrors.phone && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>
+              )}
             </div>
-
+            
             <div className="space-y-2">
-              <Label htmlFor="position">Cargo/Posição (Opcional)</Label>
+              <Label htmlFor="position">Cargo</Label>
               <Input
                 id="position"
                 type="text"
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                placeholder="Qual seu cargo na empresa?"
+                placeholder="Digite seu cargo"
+                className={getFieldErrorClass("position")}
               />
+              {formErrors.position && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.position}</p>
+              )}
             </div>
-
+            
             <div className="space-y-2">
-              <Label htmlFor="bio">Sobre você (Opcional)</Label>
+              <Label htmlFor="bio">Biografia</Label>
               <Textarea
                 id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Fale um pouco sobre sua experiência"
-                className="min-h-[80px]"
+                placeholder="Conte um pouco sobre você e sua experiência"
+                className={getFieldErrorClass("bio")}
+                rows={3}
               />
+              {formErrors.bio && (
+                <p className="text-xs text-red-500 mt-1">{formErrors.bio}</p>
+              )}
             </div>
-
+                        
             <Button type="submit" className="w-full" disabled={isLoading || isSubmitting}>
               {(isLoading || isSubmitting) ? (
                 <>

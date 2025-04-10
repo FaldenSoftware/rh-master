@@ -12,8 +12,8 @@ const MIN_REGISTRATION_INTERVAL = 30000; // 30 seconds in milliseconds
 export const registerUser = async (
   email: string,
   password: string,
-  name: string,
-  role: "mentor" | "client",
+  name: string, 
+  role: "mentor" | "client", 
   company?: string,
   phone?: string,
   position?: string,
@@ -34,9 +34,17 @@ export const registerUser = async (
     
     validateRegistrationData(email, password, name, role, company);
     
-    // Prepare user metadata
-    const userMetadata = prepareUserMetadata(name, role, company, phone, position, bio);
-    console.log("Metadados para registro:", userMetadata);
+    // Prepare user metadata with ALL fields
+    const userMetadata = {
+      name: name.trim(),
+      role,
+      company: company?.trim(),
+      phone: phone?.trim(),
+      position: position?.trim(),
+      bio: bio?.trim()
+    };
+    
+    console.log("Metadados completos para registro:", userMetadata);
     
     // Register the user
     const { data, error } = await supabase.auth.signUp({
@@ -48,6 +56,7 @@ export const registerUser = async (
     });
     
     if (error) {
+      console.error("Erro no signUp:", error);
       handleRegistrationError(error);
     }
     
@@ -60,23 +69,98 @@ export const registerUser = async (
     
     // Wait longer for the trigger to create the profile
     // This helps avoid race conditions with RLS policies
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Directly initialize a basic user object instead of querying the database immediately
-    // This avoids potential RLS recursion during the initial registration flow
-    const basicUser: AuthUser = {
+    // For mentors, set their own ID as mentor_id (self-reference)
+    if (role === "mentor") {
+      try {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ mentor_id: data.user.id })
+          .eq('id', data.user.id);
+          
+        if (updateError) {
+          console.error("Erro ao definir mentor_id:", updateError);
+        } else {
+          console.log("mentor_id definido com sucesso para:", data.user.id);
+        }
+      } catch (mentorUpdateError) {
+        console.error("Exceção ao definir mentor_id:", mentorUpdateError);
+      }
+    }
+    
+    // Directly create a profile in the profiles table as a backup
+    try {
+      const profileData = {
+        id: data.user.id,
+        name: name.trim(),
+        role: role,
+        company: company?.trim(),
+        phone: phone?.trim(),
+        position: position?.trim(),
+        bio: bio?.trim(),
+        mentor_id: role === "mentor" ? data.user.id : null
+      };
+      
+      const { error: profileError } = await supabase.from('profiles').insert(profileData);
+      
+      if (profileError) {
+        // If profile already exists, try to update it instead
+        if (profileError.code === "23505") { // Unique violation error code
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update(profileData)
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error("Erro ao atualizar perfil existente:", updateError);
+          } else {
+            console.log("Perfil atualizado com sucesso");
+          }
+        } else {
+          console.error("Erro ao criar perfil manualmente:", profileError);
+        }
+      } else {
+        console.log("Perfil criado manualmente com sucesso");
+      }
+    } catch (profileInsertError) {
+      console.error("Exceção ao criar perfil manualmente:", profileInsertError);
+    }
+    
+    // Fetch the profile to verify it was created
+    try {
+      const { data: profileData, error: profileQueryError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (profileQueryError) {
+        console.error("Erro ao verificar perfil:", profileQueryError);
+      } else if (profileData) {
+        console.log("Perfil encontrado após registro:", profileData);
+      } else {
+        console.error("Nenhum perfil encontrado após registro");
+      }
+    } catch (profileQueryException) {
+      console.error("Exceção ao verificar perfil:", profileQueryException);
+    }
+    
+    // Return a user object with complete data
+    const authUser: AuthUser = {
       id: data.user.id,
       email: data.user.email || '',
-      name: userMetadata.name,
-      role: userMetadata.role,
-      company: userMetadata.company,
-      phone: userMetadata.phone || null,
-      position: userMetadata.position || null,
-      bio: userMetadata.bio || null
+      name: name.trim(),
+      role: role,
+      company: company?.trim(),
+      mentor_id: role === "mentor" ? data.user.id : null,
+      phone: phone?.trim() || '',
+      position: position?.trim() || '',
+      bio: bio?.trim() || ''
     };
     
-    console.log("Retornando usuário básico após registro:", basicUser);
-    return basicUser;
+    console.log("Retornando usuário completo após registro:", authUser);
+    return authUser;
   } catch (error) {
     console.error('Error registering user:', error);
     throw error;
@@ -111,41 +195,6 @@ const validateRegistrationData = (
 };
 
 /**
- * Prepares user metadata for registration
- */
-const prepareUserMetadata = (
-  name: string,
-  role: "mentor" | "client",
-  company?: string,
-  phone?: string,
-  position?: string,
-  bio?: string
-): Record<string, any> => {
-  const metadata: Record<string, any> = {
-    name: name.trim(),
-    role
-  };
-  
-  if (role === "mentor") {
-    metadata.company = company?.trim() ?? undefined;
-  } else if (company && company.trim() !== '') {
-    metadata.company = company.trim();
-  }
-  
-  if (phone && phone.trim() !== '') {
-    metadata.phone = phone.trim();
-  }
-  if (position && position.trim() !== '') {
-    metadata.position = position.trim();
-  }
-  if (bio && bio.trim() !== '') {
-    metadata.bio = bio.trim();
-  }
-  
-  return metadata;
-};
-
-/**
  * Handles registration errors
  */
 const handleRegistrationError = (error: any): never => {
@@ -163,74 +212,6 @@ const handleRegistrationError = (error: any): never => {
   }
   
   throw new Error(`Erro ao registrar: ${error.message}`);
-};
-
-/**
- * Ensures a profile exists for the user, creating one if needed
- */
-const ensureProfileExists = async (
-  user: any,
-  name: string,
-  role: "mentor" | "client",
-  company?: string,
-  phone?: string,
-  position?: string,
-  bio?: string
-): Promise<AuthUser> => {
-  let profileData: any = null;
-  let profileError: any = null;
-
-  // Check if profile was created by trigger
-  console.log(`Verificando perfil para o usuário ${user.id} após registro.`);
-  ({ data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single());
-
-  // If profile not found or error occurred, try creating manually
-  if (profileError || !profileData) {
-    console.warn("Perfil não encontrado ou erro ao buscar após registro, tentando criar manualmente:", profileError?.message || 'Nenhum dado');
-
-    const profileInsert = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        name: name.trim(),
-        role: role,
-        company: role === "mentor" ? company?.trim() : null,
-        phone: phone?.trim() || null,
-        position: position?.trim() || null,
-        bio: bio?.trim() || null,
-      })
-      .select() // Retorna os dados inseridos
-      .single(); // Espera-se apenas um registro
-
-    if (profileInsert.error) {
-      console.error("Erro ao inserir perfil manualmente:", profileInsert.error);
-      // Lançar um erro mais específico aqui pode ser útil
-      throw new Error(`Database error saving new user profile: ${profileInsert.error.message}`);
-    }
-
-    console.log("Perfil criado manualmente com sucesso:", profileInsert.data);
-    profileData = profileInsert.data; // Usar os dados recém-criados
-
-  } else {
-    console.log("Perfil já existente (provavelmente criado pelo trigger):", profileData);
-  }
-
-  // Mapear os dados do perfil (obtidos do select ou do insert) para AuthUser
-  // Garantir que o objeto retornado tenha os campos mais recentes
-  return {
-    id: user.id,
-    email: user.email || '',
-    name: profileData?.name || name.trim(),
-    role: profileData?.role || role,
-    company: profileData?.company,
-    phone: profileData?.phone,
-    position: profileData?.position,
-    bio: profileData?.bio
-  };
 };
 
 /**
@@ -273,19 +254,32 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
   try {
     console.log("Buscando perfil após login");
     
-    // Give the system some time before querying the profile
-    // This helps prevent RLS recursion issues
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const profile = await getUserProfile(user);
-    
-    if (profile) {
-      console.log("Perfil recuperado após login:", profile);
-      return profile;
+    // Try to get profile directly from database
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    if (profileError) {
+      console.error("Erro ao buscar perfil diretamente:", profileError);
+    } else if (profileData) {
+      console.log("Perfil encontrado diretamente:", profileData);
+      return {
+        id: user.id,
+        email: user.email || '',
+        name: profileData.name || 'Usuário',
+        role: profileData.role || 'client',
+        company: profileData.company,
+        mentor_id: profileData.mentor_id,
+        phone: profileData.phone,
+        position: profileData.position,
+        bio: profileData.bio
+      };
     }
     
-    // Fallback to metadata
-    console.warn("Perfil não encontrado após login, usando dados básicos");
+    // Fallback to user metadata if profile not found
+    console.warn("Perfil não encontrado, usando dados de metadata");
     const userMetadata = user.user_metadata || {};
     
     return {
@@ -293,7 +287,10 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone,
+      position: userMetadata.position,
+      bio: userMetadata.bio
     };
   } catch (error) {
     console.error('Erro ao buscar perfil após login:', error);
@@ -305,7 +302,10 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
-      company: userMetadata.company
+      company: userMetadata.company,
+      phone: userMetadata.phone,
+      position: userMetadata.position,
+      bio: userMetadata.bio
     };
   }
 };
@@ -321,6 +321,13 @@ export const logoutUser = async (): Promise<void> => {
       console.error("Erro ao fazer logout:", error);
       throw error;
     }
+    
+    // Clear any local storage or session storage if needed
+    // localStorage.removeItem('your-auth-key');
+    
+    // Force redirect to home page
+    window.location.href = "/";
+    
     console.log("Logout bem-sucedido");
   } catch (error) {
     console.error('Erro ao fazer logout:', error);
@@ -349,9 +356,46 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     console.log("Sessão encontrada para usuário:", data.session.user.id);
     
     try {
-      return await getUserProfile(data.session.user);
+      // Try to get profile directly from database
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.session.user.id)
+        .single();
+        
+      if (profileError) {
+        console.error("Erro ao buscar perfil diretamente:", profileError);
+      } else if (profileData) {
+        console.log("Perfil encontrado diretamente:", profileData);
+        return {
+          id: data.session.user.id,
+          email: data.session.user.email || '',
+          name: profileData.name || 'Usuário',
+          role: profileData.role || 'client',
+          company: profileData.company || '',
+          mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? data.session.user.id : null),
+          phone: profileData.phone || '',
+          position: profileData.position || '',
+          bio: profileData.bio || ''
+        };
+      }
+      
+      // Fallback to user metadata
+      console.error('Perfil não encontrado, usando dados de metadata');
+      
+      const userMetadata = data.session.user.user_metadata || {};
+      return {
+        id: data.session.user.id,
+        email: data.session.user.email || '',
+        name: userMetadata.name || 'Usuário',
+        role: userMetadata.role || 'client',
+        company: userMetadata.company || '',
+        mentor_id: userMetadata.role === 'mentor' ? data.session.user.id : userMetadata.mentor_id,
+        phone: userMetadata.phone || '',
+        position: userMetadata.position || '',
+        bio: userMetadata.bio || ''
+      };
     } catch (profileError) {
-      // Fallback to metadata
       console.error('Erro ao buscar perfil do usuário atual:', profileError);
       
       const userMetadata = data.session.user.user_metadata || {};
@@ -360,7 +404,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
         email: data.session.user.email || '',
         name: userMetadata.name || 'Usuário',
         role: userMetadata.role || 'client',
-        company: userMetadata.company
+        company: userMetadata.company || '',
+        mentor_id: userMetadata.role === 'mentor' ? data.session.user.id : userMetadata.mentor_id,
+        phone: userMetadata.phone || '',
+        position: userMetadata.position || '',
+        bio: userMetadata.bio || ''
       };
     }
   } catch (error) {

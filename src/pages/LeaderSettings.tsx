@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -38,15 +39,42 @@ const LeaderSettings = () => {
     try {
       console.log("Fetching profile data for user:", user?.id);
       
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+      
       // Fetch user profile from Supabase
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
       
       if (profileError) {
         console.error("Error fetching profile data:", profileError);
+        
+        // Fallback to user object from context if profile query fails
+        if (user) {
+          console.log("Using user data from auth context:", user);
+          
+          // Split name into first and last name
+          const nameParts = user.name ? user.name.split(' ') : ['', ''];
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          setProfile({
+            firstName,
+            lastName,
+            email: user.email || '',
+            phone: user.phone || '',
+            position: user.position || '',
+            bio: user.bio || '',
+            company: user.company || ''
+          });
+          setProfileLoading(false);
+          return;
+        }
+        
         toast.error("Erro ao carregar dados do perfil");
         return;
       }

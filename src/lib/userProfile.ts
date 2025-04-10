@@ -9,55 +9,62 @@ import { AuthUser } from "./authTypes";
 export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
   try {
     console.log("Buscando perfil para usuário:", user.id);
-    // First try to get user profile using SECURITY DEFINER function
-    const { data, error } = await supabase
-      .rpc('get_profile_by_id', { user_id: user.id });
     
-    if (error) {
-      console.error('Erro ao buscar perfil:', error);
-      return await fetchProfileFallback(user);
-    }
-    
-    if (!data || data.length === 0) {
-      console.error('Perfil não encontrado para o usuário:', user.id);
-      return await fetchProfileFallback(user);
-    }
-    
-    console.log("Perfil encontrado:", data[0]);
-    
-    return mapProfileToAuthUser(data[0], user);
-  } catch (error) {
-    console.error('Erro ao buscar perfil:', error);
-    return null;
-  }
-};
-
-/**
- * Fallback method to fetch user profile directly from profiles table
- */
-const fetchProfileFallback = async (user: User): Promise<AuthUser | null> => {
-  try {
-    const profileResult = await supabase
+    // Try direct query approach first - this avoids using RPC that could be causing recursion issues
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
-    
-    if (profileResult.error) {
-      console.error('Erro no fallback para buscar perfil:', profileResult.error);
-      return null;
+      
+    if (profileError) {
+      console.error("Erro ao buscar perfil diretamente:", profileError);
+    } else if (profileData) {
+      console.log("Perfil encontrado diretamente:", profileData);
+      return {
+        id: user.id,
+        email: user.email || '',
+        name: profileData.name || 'Usuário',
+        role: profileData.role || 'client',
+        company: profileData.company || '',
+        mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
+        phone: profileData.phone || '',
+        position: profileData.position || '',
+        bio: profileData.bio || ''
+      };
     }
     
-    if (!profileResult.data) {
-      console.error('Perfil não encontrado para o usuário:', user.id);
-      return null;
-    }
+    // Fallback to user metadata if profile not found in database
+    console.warn("Perfil não encontrado na base de dados, usando metadata do usuário");
+    const userMetadata = user.user_metadata || {};
     
-    console.log("Perfil encontrado via fallback:", profileResult.data);
-    return mapProfileToAuthUser(profileResult.data, user);
+    return {
+      id: user.id,
+      email: user.email || '',
+      name: userMetadata.name || 'Usuário',
+      role: userMetadata.role || 'client',
+      company: userMetadata.company || '',
+      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
+      phone: userMetadata.phone || '',
+      position: userMetadata.position || '',
+      bio: userMetadata.bio || ''
+    };
   } catch (error) {
-    console.error('Erro no fallback para buscar perfil:', error);
-    return null;
+    console.error('Erro ao buscar perfil:', error);
+    
+    // Ultimate fallback - use user metadata
+    const userMetadata = user.user_metadata || {};
+    return {
+      id: user.id,
+      email: user.email || '',
+      name: userMetadata.name || 'Usuário',
+      role: userMetadata.role || 'client',
+      company: userMetadata.company || '',
+      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
+      phone: userMetadata.phone || '',
+      position: userMetadata.position || '',
+      bio: userMetadata.bio || ''
+    };
   }
 };
 
@@ -70,10 +77,10 @@ const mapProfileToAuthUser = (profileData: any, user: User): AuthUser => {
     email: user.email || '',
     name: profileData.name || 'Usuário',
     role: profileData.role || 'client',
-    company: profileData.company,
-    mentor_id: profileData.mentor_id,
-    phone: profileData.phone,
-    position: profileData.position,
-    bio: profileData.bio
+    company: profileData.company || '',
+    mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
+    phone: profileData.phone || '',
+    position: profileData.position || '',
+    bio: profileData.bio || ''
   };
 };

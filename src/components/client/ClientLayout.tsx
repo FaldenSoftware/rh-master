@@ -15,7 +15,7 @@ const ClientLayout = ({ children, title }: ClientLayoutProps) => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <ClientHeader />
+      <ClientHeader title={title} />
       <div className="flex flex-col md:flex-row">
         <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block`}>
           <ClientSidebar />

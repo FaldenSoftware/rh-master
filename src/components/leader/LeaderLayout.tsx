@@ -15,7 +15,7 @@ const LeaderLayout = ({ children, title }: LeaderLayoutProps) => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <LeaderHeader />
+      <LeaderHeader title={title} />
       <div className="flex flex-col md:flex-row">
         <div className={`${sidebarOpen ? 'block' : 'hidden'} md:block`}>
           <LeaderSidebar />
