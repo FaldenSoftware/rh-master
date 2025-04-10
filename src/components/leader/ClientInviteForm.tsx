@@ -1,13 +1,10 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { X, Copy, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { generateInvitationCode } from "@/lib/invitationCode";
+import InviteFormFields from "./InviteFormFields";
+import InviteCodeDisplay from "./InviteCodeDisplay";
+import { generateInviteCode, sendInviteEmail } from "@/services/inviteService";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -18,53 +15,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const { user } = useAuth();
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteCode);
-      toast.success("Código copiado para a área de transferência");
-    } catch (err) {
-      toast.error("Erro ao copiar código");
-      console.error("Falha ao copiar:", err);
-    }
-  };
-
-  // Função para enviar e-mail de convite usando a função Edge do Supabase
-  const sendInviteEmail = async (email: string, code: string) => {
-    try {
-      setIsSendingEmail(true);
-      console.log(`Enviando e-mail para ${email} com código ${code}`);
-      
-      // Chamar a função Edge do Supabase para enviar o e-mail
-      const { data, error } = await supabase.functions.invoke('send-invite-email', {
-        body: { 
-          email, 
-          code,
-          clientName: clientName,
-          mentorName: user?.name || 'Seu mentor',
-          mentorCompany: user?.company || 'RH Mentor Mastery'
-        }
-      });
-      
-      if (error) {
-        console.error("Erro retornado pela função Edge:", error);
-        throw error;
-      }
-      
-      // Registrar sucesso
-      console.log('Resposta do envio de e-mail:', data);
-      toast.success(`E-mail de convite enviado para ${email}`);
-      return true;
-    } catch (error) {
-      console.error("Erro ao enviar email:", error);
-      toast.error("Falha ao enviar o email de convite. Tente novamente mais tarde.");
-      return false;
-    } finally {
-      setIsSendingEmail(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,38 +33,21 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       return;
     }
     
-    if (!user) {
-      toast.error("Você precisa estar logado para convidar clientes");
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
-      // Generate a unique invitation code
-      const code = generateInvitationCode();
+      const result = await generateInviteCode(clientEmail, user);
       
-      // Save the invitation code in the database
-      const { error } = await supabase
-        .from('invitation_codes')
-        .insert({
-          code,
-          mentor_id: user.id,
-          email: clientEmail,
-          is_used: false,
-          // Definir data de expiração para 7 dias a partir de agora
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-        } as any);
-      
-      if (error) {
-        throw error;
+      if (!result.success) {
+        toast.error(result.error || "Erro ao gerar convite");
+        return;
       }
       
-      setInviteCode(code);
+      setInviteCode(result.code!);
       toast.success(`Código de convite gerado para ${clientName}`);
       
       // Enviar email automaticamente após gerar o código
-      await sendInviteEmail(clientEmail, code);
+      await handleSendEmail(clientEmail, result.code!);
       
     } catch (error) {
       console.error("Erro ao gerar convite:", error);
@@ -123,106 +57,48 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
   };
 
+  const handleSendEmail = async (email: string, code: string) => {
+    const success = await sendInviteEmail(email, code, clientName, user);
+    
+    if (success) {
+      toast.success(`E-mail de convite enviado para ${email}`);
+    } else {
+      toast.error("Falha ao enviar o email de convite. Tente novamente mais tarde.");
+    }
+    
+    return success;
+  };
+
+  const handleReset = () => {
+    setInviteCode("");
+    setClientName("");
+    setClientEmail("");
+  };
+
   return (
     <div className="space-y-4 p-2">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Convidar Novo Cliente</h3>
-        <Button variant="ghost" size="icon" onClick={onCancel}>
-          <X className="h-4 w-4" />
-        </Button>
       </div>
       
       {!inviteCode ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="clientName">Nome completo</Label>
-            <Input
-              id="clientName"
-              placeholder="Digite o nome do cliente"
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="clientEmail">Email</Label>
-            <Input
-              id="clientEmail"
-              type="email"
-              placeholder="cliente@empresa.com"
-              value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
-            />
-          </div>
-          
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Gerando..." : "Gerar Código de Convite"}
-            </Button>
-          </div>
-        </form>
+        <InviteFormFields 
+          clientName={clientName}
+          setClientName={setClientName}
+          clientEmail={clientEmail}
+          setClientEmail={setClientEmail}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+        />
       ) : (
-        <div className="space-y-4">
-          <div className="p-4 bg-blue-50 rounded-md border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">Código de convite gerado!</h4>
-            <p className="text-sm text-blue-700 mb-3">
-              Compartilhe este código com o cliente para que ele possa se registrar:
-            </p>
-            <div className="flex items-center gap-2">
-              <Input 
-                value={inviteCode} 
-                readOnly 
-                className="text-md font-mono font-medium bg-white"
-              />
-              <Button 
-                type="button" 
-                size="icon" 
-                variant="outline" 
-                onClick={copyToClipboard}
-              >
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
-            <h4 className="font-medium mb-2 flex items-center">
-              <Mail className="h-4 w-4 mr-2" />
-              Enviar por email
-            </h4>
-            <p className="text-sm text-gray-600 mb-3">
-              Instruções enviadas para: <span className="font-medium">{clientEmail}</span>
-            </p>
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full"
-              onClick={() => sendInviteEmail(clientEmail, inviteCode)}
-              disabled={isSendingEmail}
-            >
-              {isSendingEmail ? "Enviando..." : "Reenviar instruções por email"}
-            </Button>
-          </div>
-          
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Fechar
-            </Button>
-            <Button 
-              type="button" 
-              onClick={() => {
-                setInviteCode("");
-                setClientName("");
-                setClientEmail("");
-              }}
-            >
-              Gerar Novo Convite
-            </Button>
-          </div>
-        </div>
+        <InviteCodeDisplay 
+          inviteCode={inviteCode}
+          clientEmail={clientEmail}
+          onReset={handleReset}
+          onCancel={onCancel}
+          onSendEmail={handleSendEmail}
+        />
       )}
     </div>
   );

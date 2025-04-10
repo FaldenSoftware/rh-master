@@ -10,6 +10,14 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   mentor_id?: string;
+  // Add company-related fields
+  cnpj?: string;
+  industry?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  website?: string;
 }
 
 export interface Test {
