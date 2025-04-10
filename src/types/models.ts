@@ -10,7 +10,7 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   mentor_id?: string;
-  // Add company-related fields
+  // Company-related fields
   cnpj?: string;
   industry?: string;
   address?: string;

@@ -11,7 +11,7 @@ export interface AuthUser {
   phone?: string | null;
   position?: string | null;
   bio?: string | null;
-  // Add company-related fields
+  // Company-related fields
   cnpj?: string | null;
   industry?: string | null;
   address?: string | null;

@@ -21,24 +21,28 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       console.error("Erro ao buscar perfil diretamente:", profileError);
     } else if (profileData) {
       console.log("Perfil encontrado diretamente:", profileData);
+      
+      // Use a type assertion to help TypeScript understand profileData structure
+      const typedProfileData = profileData as any;
+      
       return {
         id: user.id,
         email: user.email || '',
-        name: profileData.name || 'Usuário',
-        role: profileData.role || 'client',
-        company: profileData.company || '',
-        mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
-        phone: profileData.phone || '',
-        position: profileData.position || '',
-        bio: profileData.bio || '',
+        name: typedProfileData.name || 'Usuário',
+        role: typedProfileData.role || 'client',
+        company: typedProfileData.company || '',
+        mentor_id: typedProfileData.mentor_id || (typedProfileData.role === 'mentor' ? user.id : null),
+        phone: typedProfileData.phone || '',
+        position: typedProfileData.position || '',
+        bio: typedProfileData.bio || '',
         // Include company-related fields
-        cnpj: profileData.cnpj || '',
-        industry: profileData.industry || '',
-        address: profileData.address || '',
-        city: profileData.city || '',
-        state: profileData.state || '',
-        zipCode: profileData.zipCode || '',
-        website: profileData.website || ''
+        cnpj: typedProfileData.cnpj || '',
+        industry: typedProfileData.industry || '',
+        address: typedProfileData.address || '',
+        city: typedProfileData.city || '',
+        state: typedProfileData.state || '',
+        zipCode: typedProfileData.zipCode || '',
+        website: typedProfileData.website || ''
       };
     }
     
