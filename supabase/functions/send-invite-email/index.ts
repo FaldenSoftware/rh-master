@@ -201,12 +201,27 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        // Se nenhum serviço conseguiu enviar, lançar erro
-        throw new Error('Falha ao enviar e-mail. Todos os serviços de email falharam.');
+        // Se nenhum serviço conseguiu enviar, retornar erro com status 500
+        // Não lançar exception para evitar erro non-2xx
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam.'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
     } catch (emailError) {
       console.error('Erro geral ao tentar enviar email:', emailError);
-      throw emailError;
+      // Retornar erro com status 500 em vez de lançar exception
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Erro ao processar envio de email',
+          details: emailError.message || 'Erro desconhecido'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
     // Tratar erros
