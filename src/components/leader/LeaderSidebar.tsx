@@ -1,6 +1,9 @@
 
 import { Link } from "react-router-dom";
 import { Home, Users, LineChart, Award, FileText, CreditCard, Settings } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { icon: Home, label: "Dashboard", href: "/leader" },
@@ -13,6 +16,37 @@ const navItems = [
 ];
 
 const LeaderSidebar = () => {
+  const { user } = useAuth();
+  const [companyName, setCompanyName] = useState<string>("");
+  
+  useEffect(() => {
+    // Buscar os dados do perfil do usuário quando o componente for montado
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('company')
+            .eq('id', user.id)
+            .single();
+          
+          if (error) {
+            console.error('Erro ao buscar perfil:', error);
+            return;
+          }
+          
+          if (data?.company) {
+            setCompanyName(data.company);
+          }
+        } catch (error) {
+          console.error('Erro ao buscar perfil:', error);
+        }
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user]);
+  
   return (
     <aside className="hidden md:flex h-screen w-64 flex-col bg-white border-r pt-6">
       <div className="flex px-6 py-2">
@@ -36,7 +70,11 @@ const LeaderSidebar = () => {
       <div className="mt-auto px-6 py-4 border-t">
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted-foreground">Empresa</p>
-          <p className="text-sm font-medium">Empresa XYZ Ltda</p>
+          {companyName ? (
+            <p className="text-sm font-medium">{companyName}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">Não configurada</p>
+          )}
         </div>
       </div>
     </aside>

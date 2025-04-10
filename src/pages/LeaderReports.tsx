@@ -11,18 +11,54 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { FileText, Download, Calendar, Filter, Search, FileSpreadsheet, File } from "lucide-react";
+import { FileText, Download, Calendar, Filter, Search, FileSpreadsheet, File, Loader2 } from "lucide-react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 
-// Mock data for reports
-const recentReports = [
-  { id: "REP001", name: "Relatório de Desempenho Q2", type: "Trimestral", date: "15/06/2024", status: "Completo" },
-  { id: "REP002", name: "Análise de Competências", type: "Individual", date: "10/06/2024", status: "Completo" },
-  { id: "REP003", name: "Avaliação de Clima Organizacional", type: "Anual", date: "05/06/2024", status: "Completo" },
-  { id: "REP004", name: "Relatório de Recrutamento", type: "Mensal", date: "01/06/2024", status: "Completo" },
-];
+// Interface para os relatórios
+interface Report {
+  id: string;
+  name: string;
+  type: string;
+  date: string;
+  status: string;
+}
 
 const LeaderReports = () => {
+  const { user } = useAuth();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasReports, setHasReports] = useState(false);
+  
+  useEffect(() => {
+    // Simular carregamento de dados
+    const loadReports = async () => {
+      setLoading(true);
+      
+      try {
+        // Em um ambiente real, aqui você buscaria os relatórios do banco de dados
+        // Exemplo: const { data } = await supabase.from('reports').select('*').eq('mentor_id', user.id);
+        
+        // Simular um tempo de carregamento
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Para fins de demonstração, não carregamos dados falsos
+        // Se o usuário tiver relatórios reais no futuro, eles seriam carregados aqui
+        setReports([]);
+        setHasReports(false);
+      } catch (error) {
+        console.error("Erro ao carregar relatórios:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (user) {
+      loadReports();
+    }
+  }, [user]);
+  
   return (
     <LeaderLayout title="Relatórios">
       <Tabs defaultValue="all" className="w-full">
@@ -59,50 +95,68 @@ const LeaderReports = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-4 relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar relatórios..." className="pl-8" />
-              </div>
-              
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Nome do Relatório</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentReports.map((report) => (
-                      <TableRow key={report.id}>
-                        <TableCell className="font-medium">{report.id}</TableCell>
-                        <TableCell>{report.name}</TableCell>
-                        <TableCell>{report.type}</TableCell>
-                        <TableCell>{report.date}</TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
-                            {report.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" title="Baixar como PDF">
-                              <File className="h-4 w-4 text-red-500" />
-                            </Button>
-                            <Button variant="ghost" size="icon" title="Baixar como Excel">
-                              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Carregando relatórios...</span>
+                </div>
+              ) : hasReports ? (
+                <>
+                  <div className="mb-4 relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Buscar relatórios..." className="pl-8" />
+                  </div>
+                  
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>Nome do Relatório</TableHead>
+                          <TableHead>Tipo</TableHead>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reports.map((report) => (
+                          <TableRow key={report.id}>
+                            <TableCell className="font-medium">{report.id}</TableCell>
+                            <TableCell>{report.name}</TableCell>
+                            <TableCell>{report.type}</TableCell>
+                            <TableCell>{report.date}</TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
+                                {report.status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="icon" title="Baixar como PDF">
+                                  <File className="h-4 w-4 text-red-500" />
+                                </Button>
+                                <Button variant="ghost" size="icon" title="Baixar como Excel">
+                                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <FileText className="h-16 w-16 text-muted-foreground mb-4 opacity-20" />
+                  <h3 className="text-lg font-medium mb-2">Nenhum relatório disponível</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Você ainda não possui relatórios gerados. À medida que seus clientes realizarem testes, 
+                    os relatórios serão disponibilizados aqui automaticamente.
+                  </p>
+                </div>
+              }
             </CardContent>
           </Card>
         </TabsContent>
