@@ -75,7 +75,40 @@ export const generateAnimalProfilePDF = async (
   addPageHeader();
   addPageFooter();
   
-  // Add user information section
+  // Parse the animal predominante (handling ties)
+  const animals = result.animal_predominante.split('-');
+  const animalType = animals[0]; // Get the first animal type if there are multiple
+  
+  // Load animal image
+  let animalImage = null;
+  try {
+    // Note: In a PDF, we need to use base64 image data
+    // Since we can't dynamically create a canvas here, we'll use a placeholder and rely on the image paths
+    const img = new Image();
+    img.src = animalImages[animalType as keyof typeof animalImages].replace('/public', '');
+    
+    // Create a temporary canvas element to convert image to base64
+    const canvas = document.createElement('canvas');
+    canvas.width = 100;
+    canvas.height = 100;
+    const ctx = canvas.getContext('2d');
+    
+    // Wait for the image to load before drawing it
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => {
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 100, 100);
+          animalImage = canvas.toDataURL('image/png');
+        }
+        resolve();
+      };
+      img.onerror = reject;
+    });
+  } catch (error) {
+    console.error("Error loading animal image:", error);
+  }
+  
+  // Add user information section with animal image
   pdf.setTextColor(textColor);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
@@ -84,14 +117,26 @@ export const generateAnimalProfilePDF = async (
   pdf.setDrawColor(220, 220, 220);
   pdf.line(margin, 50, pageWidth - margin, 50);
   
+  // Create a layout with user info on left and animal image on right
+  const userInfoWidth = contentWidth * 0.65;
+  const imageWidth = contentWidth * 0.35;
+  
+  // Add user information on the left side
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(12);
   pdf.text(`Nome: ${user.name || "Não informado"}`, margin, 60);
   pdf.text(`Empresa: ${user.company || "Não informada"}`, margin, 70);
   pdf.text(`Data de Avaliação: ${new Date(result.completed_at).toLocaleDateString('pt-BR')}`, margin, 80);
   
-  // Parse the animal predominante (handling ties)
-  const animals = result.animal_predominante.split('-');
+  // Add animal image on the right side
+  if (animalImage) {
+    try {
+      const imageX = margin + userInfoWidth + 20;
+      pdf.addImage(animalImage, 'PNG', imageX, 45, 40, 40);
+    } catch (error) {
+      console.error("Error adding image to PDF:", error);
+    }
+  }
   
   // Get data for the predominant animal(s)
   const mainResults = animals.map(animal => {
@@ -179,6 +224,7 @@ export const generateAnimalProfilePDF = async (
   // Add a page break for detailed descriptions
   pdf.addPage();
   addPageHeader();
+  addPageFooter();
   
   // Detailed profile descriptions
   yPos = 45;

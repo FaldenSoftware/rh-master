@@ -211,12 +211,13 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
           </div>
           
           <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
-            <Avatar className="h-28 w-28 bg-white p-0 overflow-hidden">
-              <AvatarImage src={animalIconSrc} alt={animalProfile.name} className="object-contain" />
-              <AvatarFallback className="text-4xl bg-white text-purple-700">
-                {animalProfile.emoji}
-              </AvatarFallback>
-            </Avatar>
+            <div className="h-28 w-28 rounded-full bg-white p-1 overflow-hidden border-4 border-white shadow-lg">
+              <img 
+                src={animalIconSrc} 
+                alt={animalProfile.name} 
+                className="w-full h-full object-cover rounded-full"
+              />
+            </div>
             
             <div>
               <CardTitle className="text-2xl md:text-3xl font-bold">
