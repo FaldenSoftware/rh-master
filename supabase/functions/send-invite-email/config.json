@@ -2,5 +2,7 @@
   "name": "send-invite-email",
   "version": "1.0.0",
   "description": "Função para enviar e-mails de convite para clientes",
-  "verify_jwt": true
+  "verify_jwt": true,
+  "allowed_request_domains": ["api.sendgrid.com"],
+  "import_map": "../import_map.json"
 }

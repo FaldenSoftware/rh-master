@@ -29,40 +29,30 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
   };
 
-  // Função para enviar e-mail de convite
+  // Função para enviar e-mail de convite usando a Edge Function do Supabase
   const sendInviteEmail = async (email: string, code: string) => {
     try {
-      // Simular o envio de e-mail diretamente
-      // Em um ambiente de produção, isso seria feito através de uma API real
       console.log(`Enviando e-mail para ${email} com código ${code}`);
       
-      // Registrar os dados que seriam enviados em um e-mail real
-      const emailData = {
-        to: email,
-        subject: `Convite para RH Mentor Mastery`,
-        body: `
-          Olá ${clientName},
-          
-          Você foi convidado(a) por ${user?.name || 'Seu mentor'} da empresa ${user?.company || 'RH Mentor Mastery'} para participar da plataforma RH Mentor Mastery.
-          
-          Para se registrar, utilize o código: ${code}
-          
-          Ou acesse diretamente: https://rh-mentor-mastery.vercel.app/client/register?code=${code}
-          
-          Este convite é válido por 7 dias.
-          
-          Atenciosamente,
-          Equipe RH Mentor Mastery
-        `
-      };
+      // Chamar a Edge Function do Supabase para enviar o e-mail
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: { 
+          email, 
+          code,
+          clientName,
+          mentorName: user?.name || 'Seu mentor',
+          mentorCompany: user?.company || 'RH Mentor Mastery'
+        }
+      });
       
-      // Registrar no console para fins de demonstração
-      console.log('Dados do e-mail:', emailData);
+      if (error) {
+        console.error("Erro na Edge Function:", error);
+        throw new Error(error.message);
+      }
       
-      // Simular um tempo de envio
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Registrar sucesso no console
+      console.log('E-mail enviado com sucesso para:', email);
       
-      // Simular sucesso
       toast.success(`Instruções de registro enviadas para ${email}`);
       return true;
     } catch (error) {

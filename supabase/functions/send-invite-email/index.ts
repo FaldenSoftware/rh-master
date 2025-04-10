@@ -55,42 +55,42 @@ serve(async (req) => {
       Equipe RH Mentor Mastery
     `;
 
-    // Configurar o serviço de e-mail (usando um serviço de e-mail externo como SendGrid ou similar)
-    // Aqui estamos simulando o envio de e-mail para fins de demonstração
-    // Em um ambiente de produção, você usaria um serviço real como SendGrid, AWS SES, etc.
+    // Configurar o serviço de e-mail usando SendGrid
+    console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
     
-    // Simular envio bem-sucedido
-    // Em um ambiente real, você faria algo como:
-    // const apiKey = Deno.env.get('SENDGRID_API_KEY');
-    // const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${apiKey}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({
-    //     personalizations: [{ to: [{ email: data.email }] }],
-    //     from: { email: 'noreply@rhmentormastery.com', name: 'RH Mentor Mastery' },
-    //     subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-    //     content: [{ type: 'text/html', value: emailBody.replace(/\n/g, '<br>') }]
-    //   })
-    // });
+    // Obter a chave de API do SendGrid das variáveis de ambiente
+    const apiKey = Deno.env.get('SENDGRID_API_KEY');
     
-    // Para fins de demonstração, vamos simular uma resposta bem-sucedida
-    console.log(`Simulando envio de e-mail para ${data.email} com código ${data.code}`);
+    if (!apiKey) {
+      console.error('SENDGRID_API_KEY não está configurada nas variáveis de ambiente');
+      throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
+    }
     
-    // Registrar os dados que seriam enviados em um ambiente real
+    // Preparar o conteúdo do e-mail em formato HTML
+    const htmlContent = emailBody.replace(/\n/g, '<br>');
+    
+    // Fazer a requisição para a API do SendGrid
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: data.email }] }],
+        from: { email: 'noreply@rhmentormastery.com', name: 'RH Mentor Mastery' },
+        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+        content: [{ type: 'text/html', value: htmlContent }]
+      })
+    });
+    
+    // Registrar informações sobre a tentativa de envio
     console.log({
       to: data.email,
       subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-      content: emailBody
+      status: response.status,
+      statusText: response.statusText
     });
-    
-    // Simular uma resposta bem-sucedida
-    const response = {
-      ok: true,
-      json: () => Promise.resolve({ message: 'E-mail enviado com sucesso (simulação)' })
-    };
 
     // Verificar resposta
     if (!response.ok) {
