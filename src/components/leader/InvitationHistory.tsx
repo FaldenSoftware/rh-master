@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,7 @@ interface Invitation {
 const InvitationHistory = () => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingEmails, setSendingEmails] = useState<Record<string, boolean>>({});
   const { user } = useAuth();
 
   useEffect(() => {
@@ -67,9 +69,10 @@ const InvitationHistory = () => {
     }
   };
 
-  const sendInviteEmail = async (email: string, code: string) => {
+  const sendInviteEmail = async (email: string, code: string, inviteId: string) => {
     try {
-      // Aqui implementaremos o envio de email
+      setSendingEmails(prev => ({ ...prev, [inviteId]: true }));
+      
       const { error } = await supabase.functions.invoke('send-invite-email', {
         body: { 
           email, 
@@ -81,10 +84,12 @@ const InvitationHistory = () => {
       
       if (error) throw error;
       
-      toast.success(`Instruções de registro enviadas para ${email}`);
+      toast.success(`E-mail de convite enviado para ${email}`);
     } catch (error) {
       console.error("Erro ao enviar email:", error);
       toast.error("Não foi possível enviar o email de convite");
+    } finally {
+      setSendingEmails(prev => ({ ...prev, [inviteId]: false }));
     }
   };
 
@@ -150,11 +155,15 @@ const InvitationHistory = () => {
                     <Button 
                       variant="outline" 
                       size="icon"
-                      onClick={() => sendInviteEmail(invitation.email, invitation.code)}
+                      onClick={() => sendInviteEmail(invitation.email, invitation.code, invitation.id)}
                       title="Reenviar email"
-                      disabled={invitation.is_used}
+                      disabled={invitation.is_used || sendingEmails[invitation.id]}
                     >
-                      <Mail className="h-4 w-4" />
+                      {sendingEmails[invitation.id] ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Mail className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </TableCell>

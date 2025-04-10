@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const { user } = useAuth();
 
   const copyToClipboard = async () => {
@@ -32,10 +34,11 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   // Função para enviar e-mail de convite usando a função Edge do Supabase
   const sendInviteEmail = async (email: string, code: string) => {
     try {
+      setIsSendingEmail(true);
       console.log(`Enviando e-mail para ${email} com código ${code}`);
       
       // Chamar a função Edge do Supabase para enviar o e-mail
-      const { error } = await supabase.functions.invoke('send-invite-email', {
+      const { data, error } = await supabase.functions.invoke('send-invite-email', {
         body: { 
           email, 
           code,
@@ -45,16 +48,21 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro retornado pela função Edge:", error);
+        throw error;
+      }
       
       // Registrar sucesso
-      console.log('E-mail enviado com sucesso para:', email);
-      toast.success(`Instruções de registro enviadas para ${email}`);
+      console.log('Resposta do envio de e-mail:', data);
+      toast.success(`E-mail de convite enviado para ${email}`);
       return true;
     } catch (error) {
       console.error("Erro ao enviar email:", error);
-      toast.error("Não foi possível enviar o email de convite, mas o código foi gerado com sucesso");
+      toast.error("Falha ao enviar o email de convite. Tente novamente mais tarde.");
       return false;
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -193,8 +201,9 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
               variant="outline" 
               className="w-full"
               onClick={() => sendInviteEmail(clientEmail, inviteCode)}
+              disabled={isSendingEmail}
             >
-              Reenviar instruções por email
+              {isSendingEmail ? "Enviando..." : "Reenviar instruções por email"}
             </Button>
           </div>
           
