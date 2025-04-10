@@ -29,6 +29,31 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
   };
 
+  // Função para enviar e-mail de convite
+  const sendInviteEmail = async (email: string, code: string) => {
+    try {
+      // Aqui implementamos o envio de email usando Edge Functions do Supabase
+      const { error } = await supabase.functions.invoke('send-invite-email', {
+        body: { 
+          email, 
+          code,
+          clientName,
+          mentorName: user?.name || 'Seu mentor',
+          mentorCompany: user?.company || 'RH Mentor Mastery'
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Instruções de registro enviadas para ${email}`);
+      return true;
+    } catch (error) {
+      console.error("Erro ao enviar email:", error);
+      toast.error("Não foi possível enviar o email de convite, mas o código foi gerado com sucesso");
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -57,13 +82,15 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       const code = generateInvitationCode();
       
       // Save the invitation code in the database
-      // Using the raw query method to avoid type issues until Supabase types are updated
       const { error } = await supabase
         .from('invitation_codes')
         .insert({
           code,
           mentor_id: user.id,
           email: clientEmail,
+          is_used: false,
+          // Definir data de expiração para 7 dias a partir de agora
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         } as any);
       
       if (error) {
@@ -72,6 +99,10 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       
       setInviteCode(code);
       toast.success(`Código de convite gerado para ${clientName}`);
+      
+      // Enviar email automaticamente após gerar o código
+      await sendInviteEmail(clientEmail, code);
+      
     } catch (error) {
       console.error("Erro ao gerar convite:", error);
       toast.error("Erro ao gerar convite");
@@ -157,9 +188,9 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
               type="button" 
               variant="outline" 
               className="w-full"
-              onClick={() => toast.success(`Instruções de registro enviadas para ${clientEmail}`)}
+              onClick={() => sendInviteEmail(clientEmail, inviteCode)}
             >
-              Enviar instruções por email
+              Reenviar instruções por email
             </Button>
           </div>
           

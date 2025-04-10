@@ -4,6 +4,7 @@ import LeaderLayout from "@/components/leader/LeaderLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientsList from "@/components/leader/ClientsList";
 import ClientInviteForm from "@/components/leader/ClientInviteForm";
+import InvitationHistory from "@/components/leader/InvitationHistory";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
@@ -48,6 +49,7 @@ const LeaderClients = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="list">Lista de Clientes</TabsTrigger>
             <TabsTrigger value="invite">Convidar Cliente</TabsTrigger>
+            <TabsTrigger value="history">Histórico de Convites</TabsTrigger>
           </TabsList>
           
           <TabsContent value="list">
@@ -74,6 +76,20 @@ const LeaderClients = () => {
               </CardHeader>
               <CardContent>
                 <ClientInviteForm onCancel={handleCancelInvite} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Convites</CardTitle>
+                <CardDescription>
+                  Visualize todos os convites enviados e seu status atual.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <InvitationHistory />
               </CardContent>
             </Card>
           </TabsContent>
