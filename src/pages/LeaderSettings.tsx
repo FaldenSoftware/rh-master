@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -230,8 +231,11 @@ const LeaderSettings = () => {
       
       console.log("Profile data loaded:", profileData);
       
+      // Type assertion to inform TypeScript about the extended fields
+      const typedProfileData = profileData as any;
+      
       // Split name into first and last name
-      const nameParts = profileData.name ? profileData.name.split(' ') : ['', ''];
+      const nameParts = typedProfileData.name ? typedProfileData.name.split(' ') : ['', ''];
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
@@ -239,18 +243,18 @@ const LeaderSettings = () => {
         firstName,
         lastName,
         email: user?.email || '',
-        phone: profileData.phone || '',
-        position: profileData.position || '',
-        bio: profileData.bio || '',
-        company: profileData.company || '',
+        phone: typedProfileData.phone || '',
+        position: typedProfileData.position || '',
+        bio: typedProfileData.bio || '',
+        company: typedProfileData.company || '',
         // Recuperar dados da empresa do perfil (se existirem)
-        cnpj: profileData.cnpj || '',
-        industry: profileData.industry || '',
-        address: profileData.address || '',
-        city: profileData.city || '',
-        state: profileData.state || '',
-        zipCode: profileData.zipCode || '',
-        website: profileData.website || ''
+        cnpj: typedProfileData.cnpj || '',
+        industry: typedProfileData.industry || '',
+        address: typedProfileData.address || '',
+        city: typedProfileData.city || '',
+        state: typedProfileData.state || '',
+        zipCode: typedProfileData.zipCode || '',
+        website: typedProfileData.website || ''
       });
     } catch (error) {
       console.error("Error in fetchProfileData:", error);
