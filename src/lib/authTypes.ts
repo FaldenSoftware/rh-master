@@ -11,6 +11,14 @@ export interface AuthUser {
   phone?: string | null;
   position?: string | null;
   bio?: string | null;
+  // Add company-related fields
+  cnpj?: string | null;
+  industry?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  website?: string | null;
 }
 
 export interface AuthState {
