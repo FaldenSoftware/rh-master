@@ -1,8 +1,21 @@
 
 // Supabase Edge Function para enviar e-mails de convite
+// Declarações de tipos para o ambiente Deno
+declare global {
+  interface DenoNamespace {
+    env: {
+      get(key: string): string | undefined;
+    };
+  }
+  const Deno: DenoNamespace;
+}
+
 // @ts-ignore: Ignorando erro de importação do Deno em ambiente de desenvolvimento
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+// @ts-ignore: Ignorando erro de importação do npm em ambiente de desenvolvimento
 import { Resend } from 'npm:resend@2.0.0';
+// @ts-ignore: Ignorando erro de importação do npm em ambiente de desenvolvimento
+import sgMail from 'npm:@sendgrid/mail@7.7.0';
 
 // Interface para os dados do corpo da requisição
 interface InviteEmailData {
@@ -51,16 +64,34 @@ serve(async (req) => {
       );
     }
 
-    // Inicializar cliente Resend
+    // Verificar se temos pelo menos um serviço de email configurado
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (!resendApiKey) {
-      console.error('RESEND_API_KEY não está configurada nas variáveis de ambiente');
+    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
+    
+    if (!resendApiKey && !sendgridApiKey) {
+      console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
       throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
     }
     
-    console.log("Resend API Key encontrada, comprimento:", resendApiKey.length);
+    // Log das chaves disponíveis (apenas comprimento para segurança)
+    if (resendApiKey) {
+      console.log("Resend API Key encontrada, comprimento:", resendApiKey.length);
+    }
+    if (sendgridApiKey) {
+      console.log("SendGrid API Key encontrada, comprimento:", sendgridApiKey.length);
+    }
     
-    const resend = new Resend(resendApiKey);
+    // Inicializar cliente Resend se disponível
+    // @ts-ignore: Ignorando erro de tipo do Resend
+    let resend: any = null;
+    if (resendApiKey) {
+      resend = new Resend(resendApiKey);
+    }
+    
+    // Inicializar SendGrid se disponível
+    if (sendgridApiKey) {
+      sgMail.setApiKey(sendgridApiKey);
+    }
     
     // Montar o corpo do e-mail com formato HTML
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
@@ -98,34 +129,83 @@ serve(async (req) => {
     console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
     
     try {
-      // Enviar e-mail usando Resend
-      const emailResponse = await resend.emails.send({
-        from: 'RH Mentor Mastery <onboarding@resend.dev>',
-        to: [data.email],
-        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-        html: htmlContent
-      });
+      let emailSent = false;
+      let emailId = '';
+      let serviceUsed = '';
       
-      // Registrar resposta do Resend
-      console.log('Resposta do Resend:', JSON.stringify(emailResponse));
+      // Tentar enviar com Resend primeiro (se disponível)
+      if (resend) {
+        try {
+          console.log('Tentando enviar email via Resend...');
+          const emailResponse = await resend.emails.send({
+            from: 'RH Mentor Mastery <onboarding@resend.dev>',
+            to: [data.email],
+            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+            html: htmlContent
+          });
+          
+          // Registrar resposta do Resend
+          console.log('Resposta do Resend:', JSON.stringify(emailResponse));
 
-      // Verificar se o e-mail foi enviado com sucesso
-      if (!emailResponse?.id) {
-        console.error('Erro ao enviar e-mail:', emailResponse);
-        throw new Error('Falha ao enviar e-mail através do Resend');
+          // Verificar se o e-mail foi enviado com sucesso
+          if (emailResponse?.id) {
+            emailSent = true;
+            emailId = emailResponse.id;
+            serviceUsed = 'Resend';
+            console.log('Email enviado com sucesso via Resend');
+          } else {
+            console.error('Erro ao enviar e-mail com Resend:', emailResponse);
+          }
+        } catch (resendError) {
+          console.error('Erro específico ao enviar email com Resend:', resendError);
+        }
       }
-
-      // Retornar sucesso
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'E-mail enviado com sucesso',
-          id: emailResponse.id
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      
+      // Se Resend falhou ou não está disponível, tentar SendGrid
+      if (!emailSent && sendgridApiKey) {
+        try {
+          console.log('Tentando enviar email via SendGrid...');
+          const msg = {
+            to: data.email,
+            from: 'onboarding@rhmentormastery.com.br', // Usar um domínio verificado no SendGrid
+            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+            html: htmlContent,
+          };
+          
+          const sendgridResponse = await sgMail.send(msg);
+          console.log('Resposta do SendGrid:', JSON.stringify(sendgridResponse));
+          
+          if (sendgridResponse && sendgridResponse[0]?.statusCode === 202) {
+            emailSent = true;
+            emailId = 'sg_' + Date.now(); // SendGrid não retorna ID, então criamos um
+            serviceUsed = 'SendGrid';
+            console.log('Email enviado com sucesso via SendGrid');
+          } else {
+            console.error('Erro ao enviar e-mail com SendGrid:', sendgridResponse);
+          }
+        } catch (sendgridError) {
+          console.error('Erro específico ao enviar email com SendGrid:', sendgridError);
+        }
+      }
+      
+      // Verificar se algum serviço conseguiu enviar o email
+      if (emailSent) {
+        // Retornar sucesso
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: `E-mail enviado com sucesso via ${serviceUsed}`,
+            id: emailId,
+            service: serviceUsed
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        // Se nenhum serviço conseguiu enviar, lançar erro
+        throw new Error('Falha ao enviar e-mail. Todos os serviços de email falharam.');
+      }
     } catch (emailError) {
-      console.error('Erro específico ao enviar email com Resend:', emailError);
+      console.error('Erro geral ao tentar enviar email:', emailError);
       throw emailError;
     }
   } catch (error) {

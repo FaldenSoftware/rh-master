@@ -51,14 +51,30 @@ export const generateInviteCode = async (
   }
 };
 
+interface SendEmailResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  service?: string;
+}
+
 export const sendInviteEmail = async (
   email: string,
   code: string,
   clientName: string | undefined,
   user: AuthUser | null
-): Promise<boolean> => {
+): Promise<SendEmailResult> => {
   try {
     console.log(`Enviando e-mail para ${email} com código ${code}`);
+    
+    // Validar parâmetros
+    if (!email || !code) {
+      console.error("Parâmetros inválidos para envio de email", { email, code });
+      return { 
+        success: false, 
+        error: "Email e código são obrigatórios para enviar o convite" 
+      };
+    }
     
     // Log important data for debugging
     console.log("Dados sendo enviados:", { 
@@ -82,14 +98,35 @@ export const sendInviteEmail = async (
     
     if (error) {
       console.error("Erro retornado pela função Edge:", error);
-      throw error;
+      return { 
+        success: false, 
+        error: `Erro ao enviar email: ${error.message || 'Falha na comunicação com o servidor'}` 
+      };
+    }
+    
+    // Verificar se a resposta contém os dados esperados
+    if (!data || typeof data !== 'object') {
+      console.error("Resposta inválida da função Edge:", data);
+      return { 
+        success: false, 
+        error: "Resposta inválida do servidor de email" 
+      };
     }
     
     // Registrar sucesso
     console.log('Resposta do envio de e-mail:', data);
-    return true;
+    
+    // Retornar resultado detalhado
+    return { 
+      success: true, 
+      message: data.message || 'Email enviado com sucesso',
+      service: data.service
+    };
   } catch (error) {
     console.error("Erro ao enviar email:", error);
-    return false;
+    return { 
+      success: false, 
+      error: error?.message || "Falha ao enviar o email de convite. Tente novamente mais tarde."
+    };
   }
 };

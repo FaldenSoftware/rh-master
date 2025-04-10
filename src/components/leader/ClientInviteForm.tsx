@@ -58,15 +58,39 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   };
 
   const handleSendEmail = async (email: string, code: string) => {
-    const success = await sendInviteEmail(email, code, clientName, user);
+    // Mostrar toast de carregamento
+    const loadingToast = toast.loading("Enviando e-mail de convite...");
     
-    if (success) {
-      toast.success(`E-mail de convite enviado para ${email}`);
-    } else {
-      toast.error("Falha ao enviar o email de convite. Tente novamente mais tarde.");
+    try {
+      // Chamar o serviço de envio de e-mail com tratamento de erro aprimorado
+      const result = await sendInviteEmail(email, code, clientName, user);
+      
+      // Remover toast de carregamento
+      toast.dismiss(loadingToast);
+      
+      if (result.success) {
+        // Mostrar mensagem de sucesso com detalhes do serviço usado
+        const serviceInfo = result.service ? ` via ${result.service}` : '';
+        toast.success(`E-mail de convite enviado para ${email}${serviceInfo}`);
+        return true;
+      } else {
+        // Mostrar mensagem de erro específica
+        const errorMessage = result.error || "Falha ao enviar o email de convite. Tente novamente mais tarde.";
+        toast.error(errorMessage);
+        
+        // Log detalhado do erro para debugging
+        console.error("Detalhes do erro de envio:", result);
+        return false;
+      }
+    } catch (error) {
+      // Remover toast de carregamento em caso de exceção
+      toast.dismiss(loadingToast);
+      
+      // Mostrar erro genérico
+      toast.error("Erro inesperado ao enviar o email. Tente novamente mais tarde.");
+      console.error("Exceção ao enviar email:", error);
+      return false;
     }
-    
-    return success;
   };
 
   const handleReset = () => {
