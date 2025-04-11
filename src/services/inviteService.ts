@@ -21,7 +21,7 @@ export const createClientInvitation = async (
     
     // Verificar se já existe um convite para este email
     const { data: existingInvite, error: checkError } = await supabase
-      .from('invitations')
+      .from('invitation_codes')
       .select('id')
       .eq('email', clientEmail)
       .eq('mentor_id', mentor.id)
@@ -37,7 +37,7 @@ export const createClientInvitation = async (
     // Atualizar convite existente ou criar novo
     if (existingInvite) {
       const { error: updateError } = await supabase
-        .from('invitations')
+        .from('invitation_codes')
         .update({
           is_used: false,
           expires_at: expirationDate
@@ -54,7 +54,7 @@ export const createClientInvitation = async (
       // Create new invitation with a generated code
       const code = Math.random().toString(36).substring(2, 10);
       const { data, error } = await supabase
-        .from('invitations')
+        .from('invitation_codes')
         .insert({
           code,
           mentor_id: mentor.id,
@@ -97,16 +97,16 @@ export const createClientInvitation = async (
  */
 export const sendInviteEmail = async (
   clientEmail: string,
-  clientName: string,
-  mentorName: string
+  clientName?: string,
+  mentorName?: string
 ) => {
   try {
     // Chamar a Edge Function para enviar o email
     const { data, error } = await supabase.functions.invoke('send-invite-email', {
       body: {
         to: clientEmail,
-        clientName,
-        mentorName
+        clientName: clientName || 'Cliente',
+        mentorName: mentorName || 'Mentor'
       }
     });
     

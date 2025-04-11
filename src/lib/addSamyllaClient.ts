@@ -18,18 +18,19 @@ export const addSamyllaClient = async () => {
     const mentorId = mentorData.id;
     
     // Verificar se o cliente já existe
-    const { data: existingClient, error: clientError } = await supabase
+    const { data: existingClientData, error: clientError } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('email', 'samybarreto@hotmail.com')
-      .single();
+      .maybeSingle();
     
-    if (existingClient) {
+    // Use type checking to safely handle the response
+    if (existingClientData) {
       // Se o cliente já existe, apenas atualize o mentor_id
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ mentor_id: mentorId })
-        .eq('id', existingClient.id);
+        .eq('id', existingClientData.id);
         
       if (updateError) {
         console.error("Erro ao atualizar cliente:", updateError);

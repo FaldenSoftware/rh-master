@@ -63,7 +63,8 @@ const InvitationHistory = () => {
     try {
       setSendingEmails(prev => ({ ...prev, [inviteId]: true }));
       
-      const result = await sendInviteEmail(email, undefined, user);
+      // Fix: Pass clientName as undefined and mentorName as user.name instead of user object
+      const result = await sendInviteEmail(email, undefined, user.name);
       
       if (result.success) {
         toast.success(`E-mail de convite reenviado para ${email}`);
