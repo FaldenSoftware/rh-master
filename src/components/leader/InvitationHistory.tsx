@@ -4,14 +4,14 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { sendInviteEmail } from "@/services/inviteService";
 
 interface Invitation {
   id: string;
-  code: string;
   email: string;
   created_at: string;
   is_used: boolean;
@@ -59,32 +59,17 @@ const InvitationHistory = () => {
     }
   };
 
-  const copyToClipboard = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      toast.success("Código copiado para a área de transferência");
-    } catch (err) {
-      toast.error("Erro ao copiar código");
-      console.error("Falha ao copiar:", err);
-    }
-  };
-
-  const sendInviteEmail = async (email: string, code: string, inviteId: string) => {
+  const resendInviteEmail = async (email: string, inviteId: string) => {
     try {
       setSendingEmails(prev => ({ ...prev, [inviteId]: true }));
       
-      const { error } = await supabase.functions.invoke('send-invite-email', {
-        body: { 
-          email, 
-          code,
-          mentorName: user?.name || 'Seu mentor',
-          mentorCompany: user?.company || 'RH Mentor Mastery'
-        }
-      });
+      const result = await sendInviteEmail(email, undefined, user);
       
-      if (error) throw error;
-      
-      toast.success(`E-mail de convite enviado para ${email}`);
+      if (result.success) {
+        toast.success(`E-mail de convite reenviado para ${email}`);
+      } else {
+        toast.error(`Falha ao reenviar e-mail: ${result.error || "Erro desconhecido"}`);
+      }
     } catch (error) {
       console.error("Erro ao enviar email:", error);
       toast.error("Não foi possível enviar o email de convite");
@@ -114,7 +99,6 @@ const InvitationHistory = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
-              <TableHead>Código</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -124,7 +108,6 @@ const InvitationHistory = () => {
             {invitations.map((invitation) => (
               <TableRow key={invitation.id}>
                 <TableCell>{invitation.email}</TableCell>
-                <TableCell className="font-mono text-xs">{invitation.code}</TableCell>
                 <TableCell>
                   {formatDistanceToNow(new Date(invitation.created_at), { 
                     addSuffix: true,
@@ -146,16 +129,8 @@ const InvitationHistory = () => {
                   <div className="flex justify-end gap-2">
                     <Button 
                       variant="outline" 
-                      size="icon" 
-                      onClick={() => copyToClipboard(invitation.code)}
-                      title="Copiar código"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
                       size="icon"
-                      onClick={() => sendInviteEmail(invitation.email, invitation.code, invitation.id)}
+                      onClick={() => resendInviteEmail(invitation.email, invitation.id)}
                       title="Reenviar email"
                       disabled={invitation.is_used || sendingEmails[invitation.id]}
                     >

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -10,11 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { verifyInvitationCode, isValidCodeFormat } from "@/lib/invitationCode";
-import { InvitationCode } from "@/types/models";
 import { AuthUser } from "@/lib/auth";
 
 const formSchema = z.object({
@@ -29,85 +27,65 @@ const formSchema = z.object({
   }),
   phone: z.string().optional(),
   position: z.string().optional(),
-  bio: z.string().optional(),
-  inviteCode: z.string().min(12, {
-    message: "Código de convite é obrigatório e deve ter 12 caracteres.",
-  }).refine(isValidCodeFormat, {
-    message: "Código de convite inválido. Deve ter 12 caracteres e incluir letras e números/caracteres especiais."
-  })
+  bio: z.string().optional()
 });
 
 export default function ClientRegister() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isCodeValid, setIsCodeValid] = useState<boolean | null>(null);
-  const [inviteData, setInviteData] = useState<InvitationCode | null>(null);
   const { register } = useAuth();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      email: searchParams.get("email") || "",
+      email: "",
       password: "",
       phone: "",
       position: "",
-      bio: "",
-      inviteCode: searchParams.get("code") || "",
+      bio: ""
     },
   });
 
-  const watchInviteCode = form.watch("inviteCode");
+  // Buscar o mentor_id do URL search params se disponível
+  const searchParams = new URLSearchParams(window.location.search);
+  const mentorId = searchParams.get("mentor_id");
+  const clientEmail = searchParams.get("email");
 
+  // Preencher o email do formulário se disponível no URL
   useEffect(() => {
-    const verifyCode = async () => {
-      if (watchInviteCode && watchInviteCode.length === 12) {
-        setIsVerifying(true);
-        setIsCodeValid(null);
-        
-        const result = await verifyInvitationCode(watchInviteCode, supabase);
-        
-        setIsCodeValid(result.valid);
-        if (result.valid && result.data) {
-          setInviteData(result.data as InvitationCode);
-          if (result.data.email && !form.getValues("email")) {
-            form.setValue("email", result.data.email);
-          }
-        } else {
-          setInviteData(null);
-        }
-        
-        setIsVerifying(false);
-      } else {
-        setIsCodeValid(null);
-        setInviteData(null);
-      }
-    };
-    
-    const timeoutId = setTimeout(verifyCode, 500);
-    return () => clearTimeout(timeoutId);
-  }, [watchInviteCode, form]);
+    if (clientEmail) {
+      form.setValue("email", clientEmail);
+    }
+  }, [clientEmail, form]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     
     try {
-      if (!isCodeValid) {
+      // Tenta encontrar um convite não utilizado para este email
+      const { data: invitationData } = await supabase
+        .from('invitation_codes')
+        .select('mentor_id')
+        .eq('email', values.email)
+        .eq('is_used', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      // Determina o mentor_id para vincular ao cliente
+      const mentorIdToUse = mentorId || (invitationData?.mentor_id as string | null);
+
+      if (!mentorIdToUse) {
         toast({
           variant: "destructive",
-          title: "Código inválido",
-          description: "O código de convite é inválido ou expirou.",
+          title: "Erro no registro",
+          description: "Não foi possível encontrar um mentor válido para associar à sua conta.",
         });
         setIsLoading(false);
         return;
-      }
-      
-      const mentorId = inviteData?.mentor_id;
-      if (!mentorId) {
-        throw new Error("Mentor ID não encontrado no código de convite");
       }
       
       const result: AuthUser | null = await register(
@@ -122,21 +100,24 @@ export default function ClientRegister() {
       );
       
       if (result !== null) {
-        const { error } = await supabase
+        // Marcar convites como utilizados
+        const { error: updateError } = await supabase
           .from('invitation_codes')
           .update({ 
             is_used: true,
             used_by: result.id
-          } as any)
-          .eq('code', values.inviteCode);
+          })
+          .eq('email', values.email)
+          .eq('is_used', false);
         
-        if (error) {
-          console.error("Erro ao atualizar código de convite:", error);
+        if (updateError) {
+          console.error("Erro ao atualizar códigos de convite:", updateError);
         }
         
+        // Vincular cliente ao mentor
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({ mentor_id: mentorId } as any)
+          .update({ mentor_id: mentorIdToUse })
           .eq('id', result.id);
           
         if (profileError) {
@@ -175,46 +156,6 @@ export default function ClientRegister() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="inviteCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center">
-                        Código de convite <span className="text-red-500 ml-1">*</span>
-                      </FormLabel>
-                      <div className="relative">
-                        <FormControl>
-                          <Input 
-                            placeholder="Digite o código de 12 dígitos" 
-                            {...field} 
-                            className={`font-mono ${
-                              isCodeValid === true ? 'border-green-500 pr-10' : 
-                              isCodeValid === false ? 'border-red-500 pr-10' : ''
-                            }`}
-                          />
-                        </FormControl>
-                        {isVerifying && (
-                          <div className="absolute right-3 top-3">
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          </div>
-                        )}
-                        {isCodeValid === true && !isVerifying && (
-                          <div className="absolute right-3 top-3">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          </div>
-                        )}
-                        {isCodeValid === false && !isVerifying && (
-                          <div className="absolute right-3 top-3">
-                            <AlertCircle className="h-4 w-4 text-red-500" />
-                          </div>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="name"
@@ -300,7 +241,7 @@ export default function ClientRegister() {
                   )}
                 />
                 
-                <Button type="submit" className="w-full" disabled={isLoading || isVerifying || isCodeValid === false}>
+                <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

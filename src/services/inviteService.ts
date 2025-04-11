@@ -1,16 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { generateInvitationCode } from "@/lib/invitationCode";
 import { AuthUser } from "@/lib/authTypes";
 
 interface InviteResult {
   success: boolean;
-  code?: string;
+  message?: string;
   error?: string;
+  clientEmail?: string;
 }
 
-export const generateInviteCode = async (
+export const createClientInvitation = async (
   clientEmail: string,
+  clientName: string | undefined,
   user: AuthUser | null
 ): Promise<InviteResult> => {
   if (!user) {
@@ -21,32 +22,44 @@ export const generateInviteCode = async (
   }
   
   try {
-    // Generate a unique invitation code
-    const code = generateInvitationCode();
-    
-    // Save the invitation code in the database
+    // Save the invitation in the database directly linked to the mentor
     const { error } = await supabase
       .from('invitation_codes')
       .insert({
-        code,
         mentor_id: user.id,
         email: clientEmail,
         is_used: false,
         // Definir data de expiração para 7 dias a partir de agora
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      } as any);
+      });
     
     if (error) {
-      console.error("Erro ao gerar convite:", error);
+      console.error("Erro ao criar convite:", error);
       throw error;
     }
     
-    return { success: true, code };
+    // Immediately try to send the email
+    const emailResult = await sendInviteEmail(clientEmail, clientName, user);
+    
+    if (!emailResult.success) {
+      return { 
+        success: true, 
+        message: "Convite criado, mas houve um problema ao enviar o email. Tente reenviar o email mais tarde.",
+        error: emailResult.error,
+        clientEmail
+      };
+    }
+    
+    return { 
+      success: true, 
+      message: "Convite criado e email enviado com sucesso!",
+      clientEmail
+    };
   } catch (error) {
-    console.error("Erro ao gerar convite:", error);
+    console.error("Erro ao criar convite:", error);
     return { 
       success: false, 
-      error: "Erro ao gerar convite" 
+      error: "Erro ao criar convite" 
     };
   }
 };
@@ -60,26 +73,24 @@ interface SendEmailResult {
 
 export const sendInviteEmail = async (
   email: string,
-  code: string,
   clientName: string | undefined,
   user: AuthUser | null
 ): Promise<SendEmailResult> => {
   try {
-    console.log(`Enviando e-mail para ${email} com código ${code}`);
+    console.log(`Enviando e-mail para ${email}`);
     
     // Validar parâmetros
-    if (!email || !code) {
-      console.error("Parâmetros inválidos para envio de email", { email, code });
+    if (!email) {
+      console.error("Parâmetros inválidos para envio de email", { email });
       return { 
         success: false, 
-        error: "Email e código são obrigatórios para enviar o convite" 
+        error: "Email é obrigatório para enviar o convite" 
       };
     }
     
     // Log important data for debugging
     console.log("Dados sendo enviados:", { 
       email, 
-      code,
       clientName,
       mentorName: user?.name || 'Seu mentor',
       mentorCompany: user?.company || 'RH Mentor Mastery'
@@ -89,7 +100,6 @@ export const sendInviteEmail = async (
     const result = await supabase.functions.invoke('send-invite-email', {
       body: { 
         email, 
-        code,
         clientName,
         mentorName: user?.name || 'Seu mentor',
         mentorCompany: user?.company || 'RH Mentor Mastery'

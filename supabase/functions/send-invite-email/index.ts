@@ -20,7 +20,6 @@ import sgMail from 'npm:@sendgrid/mail@7.7.0';
 // Interface para os dados do corpo da requisição
 interface InviteEmailData {
   email: string;
-  code: string;
   clientName?: string;
   mentorName: string;
   mentorCompany: string;
@@ -43,8 +42,8 @@ serve(async (req) => {
     // Verificar método
     if (req.method !== 'POST') {
       return new Response(
-        JSON.stringify({ error: 'Método não permitido' }),
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Método não permitido' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -55,12 +54,12 @@ serve(async (req) => {
     console.log("Dados recebidos:", JSON.stringify(data));
     
     // Validar dados obrigatórios
-    if (!data.email || !data.code) {
-      const errorMsg = 'Email e código são obrigatórios';
-      console.error(errorMsg, { email: data.email, code: data.code });
+    if (!data.email) {
+      const errorMsg = 'Email é obrigatório';
+      console.error(errorMsg, { email: data.email });
       return new Response(
-        JSON.stringify({ error: errorMsg }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: errorMsg }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -103,7 +102,7 @@ serve(async (req) => {
     // Montar o corpo do e-mail com formato HTML
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
     // @ts-ignore: Ignorando erro de referência ao Deno em ambiente de desenvolvimento
-    const registerUrl = `${'https://rh-mentor-mastery.vercel.app'}/client/register?code=${data.code}`;
+    const registerUrl = `${'https://rh-mentor-mastery.vercel.app'}/client/register`;
     
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -111,11 +110,7 @@ serve(async (req) => {
         
         <p>Você foi convidado(a) por <strong>${data.mentorName}</strong> da empresa <strong>${data.mentorCompany}</strong> para participar da plataforma RH Mentor Mastery.</p>
         
-        <p>Para se registrar, utilize o código abaixo ou clique no link:</p>
-        
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center;">
-          <p style="font-size: 18px; font-weight: bold; font-family: monospace;">Código de convite: ${data.code}</p>
-        </div>
+        <p>Para se registrar, clique no link abaixo:</p>
         
         <p style="text-align: center;">
           <a href="${registerUrl}" style="background-color: #4F46E5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Registrar-se Agora</a>
@@ -133,7 +128,7 @@ serve(async (req) => {
     `;
     
     // Registrar os dados que serão enviados
-    console.log(`Enviando e-mail para ${data.email} com código ${data.code}`);
+    console.log(`Enviando e-mail para ${data.email}`);
     
     try {
       let emailSent = false;

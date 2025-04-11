@@ -3,8 +3,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
-import InviteCodeDisplay from "./InviteCodeDisplay";
-import { generateInviteCode, sendInviteEmail } from "@/services/inviteService";
+import { createClientInvitation, sendInviteEmail } from "@/services/inviteService";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -14,7 +16,11 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteStatus, setInviteStatus] = useState<{
+    success?: boolean;
+    message?: string;
+    error?: string;
+  } | null>(null);
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,83 +40,54 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     }
     
     setIsSubmitting(true);
+    setInviteStatus(null);
     
     try {
       // Mostrar toast de carregamento
-      const loadingToast = toast.loading("Gerando código de convite...");
+      const loadingToast = toast.loading("Enviando convite...");
       
-      const result = await generateInviteCode(clientEmail, user);
+      const result = await createClientInvitation(clientEmail, clientName, user);
       
       // Remover toast de carregamento
       toast.dismiss(loadingToast);
       
       if (!result.success) {
         // Exibir mensagem de erro mais detalhada
-        const errorMsg = result.error || "Erro ao gerar convite";
+        const errorMsg = result.error || "Erro ao enviar convite";
         toast.error(errorMsg);
-        console.error("Falha ao gerar convite:", errorMsg);
+        setInviteStatus({
+          success: false,
+          error: errorMsg
+        });
+        console.error("Falha ao enviar convite:", errorMsg);
         return;
       }
       
-      setInviteCode(result.code!);
-      toast.success(`Código de convite gerado para ${clientName}`);
+      // Atualizar status e mostrar sucesso
+      setInviteStatus({
+        success: true,
+        message: result.message || `Convite enviado com sucesso para ${clientName}`
+      });
       
-      // Enviar email automaticamente após gerar o código
-      await handleSendEmail(clientEmail, result.code!);
+      toast.success(`Convite enviado para ${clientName}`);
       
     } catch (error) {
-      console.error("Erro ao gerar convite:", error);
+      console.error("Erro ao enviar convite:", error);
       // Mensagem de erro mais informativa
-      toast.error("Erro ao gerar convite. Verifique a conexão com o servidor e tente novamente.");
+      const errorMessage = "Erro ao enviar convite. Verifique a conexão com o servidor e tente novamente.";
+      
+      toast.error(errorMessage);
+      setInviteStatus({
+        success: false,
+        error: errorMessage
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSendEmail = async (email: string, code: string) => {
-    // Mostrar toast de carregamento
-    const loadingToast = toast.loading("Enviando e-mail de convite...");
-    
-    try {
-      // Chamar o serviço de envio de e-mail com tratamento de erro aprimorado
-      const result = await sendInviteEmail(email, code, clientName, user);
-      
-      // Remover toast de carregamento
-      toast.dismiss(loadingToast);
-      
-      if (result.success) {
-        // Mostrar mensagem de sucesso com detalhes do serviço usado
-        const serviceInfo = result.service ? ` via ${result.service}` : '';
-        toast.success(`E-mail de convite enviado para ${email}${serviceInfo}`);
-        return true;
-      } else {
-        // Verificar se o erro está relacionado à configuração do servidor
-        let errorMessage = result.error || "Falha ao enviar o email de convite. Tente novamente mais tarde.";
-        
-        // Adicionar mensagem mais amigável para erros de configuração
-        if (errorMessage.includes('API') || errorMessage.includes('configura') || errorMessage.includes('ausente')) {
-          errorMessage = `${errorMessage} \n\nO código de convite foi gerado com sucesso, mas não foi possível enviar o email. Você pode copiar o código e enviá-lo manualmente.`;
-        }
-        
-        toast.error(errorMessage);
-        
-        // Log detalhado do erro para debugging
-        console.error("Detalhes do erro de envio:", result);
-        return false;
-      }
-    } catch (error) {
-      // Remover toast de carregamento em caso de exceção
-      toast.dismiss(loadingToast);
-      
-      // Mostrar erro mais informativo
-      toast.error("Erro inesperado ao enviar o email. O código foi gerado com sucesso, mas você precisará enviá-lo manualmente.");
-      console.error("Exceção ao enviar email:", error);
-      return false;
-    }
-  };
-
   const handleReset = () => {
-    setInviteCode("");
+    setInviteStatus(null);
     setClientName("");
     setClientEmail("");
   };
@@ -121,7 +98,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         <h3 className="text-lg font-medium">Convidar Novo Cliente</h3>
       </div>
       
-      {!inviteCode ? (
+      {!inviteStatus?.success ? (
         <InviteFormFields 
           clientName={clientName}
           setClientName={setClientName}
@@ -132,13 +109,32 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
           onCancel={onCancel}
         />
       ) : (
-        <InviteCodeDisplay 
-          inviteCode={inviteCode}
-          clientEmail={clientEmail}
-          onReset={handleReset}
-          onCancel={onCancel}
-          onSendEmail={handleSendEmail}
-        />
+        <div className="space-y-4">
+          <Alert className="bg-green-50 text-green-800 border-green-200">
+            <CheckCircle className="h-4 w-4 mr-2" />
+            <AlertTitle>Convite enviado com sucesso</AlertTitle>
+            <AlertDescription>
+              Um email foi enviado para {clientEmail} com as instruções para registro.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="pt-2 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Fechar
+            </Button>
+            <Button type="button" onClick={handleReset}>
+              Enviar Novo Convite
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {inviteStatus?.success === false && (
+        <Alert className="bg-red-50 text-red-800 border-red-200 mt-4">
+          <XCircle className="h-4 w-4 mr-2" />
+          <AlertTitle>Erro ao enviar convite</AlertTitle>
+          <AlertDescription>{inviteStatus.error}</AlertDescription>
+        </Alert>
       )}
     </div>
   );
