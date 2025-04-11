@@ -36,10 +36,19 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     setIsSubmitting(true);
     
     try {
+      // Mostrar toast de carregamento
+      const loadingToast = toast.loading("Gerando código de convite...");
+      
       const result = await generateInviteCode(clientEmail, user);
       
+      // Remover toast de carregamento
+      toast.dismiss(loadingToast);
+      
       if (!result.success) {
-        toast.error(result.error || "Erro ao gerar convite");
+        // Exibir mensagem de erro mais detalhada
+        const errorMsg = result.error || "Erro ao gerar convite";
+        toast.error(errorMsg);
+        console.error("Falha ao gerar convite:", errorMsg);
         return;
       }
       
@@ -51,7 +60,8 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       
     } catch (error) {
       console.error("Erro ao gerar convite:", error);
-      toast.error("Erro ao gerar convite");
+      // Mensagem de erro mais informativa
+      toast.error("Erro ao gerar convite. Verifique a conexão com o servidor e tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -74,8 +84,14 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         toast.success(`E-mail de convite enviado para ${email}${serviceInfo}`);
         return true;
       } else {
-        // Mostrar mensagem de erro específica
-        const errorMessage = result.error || "Falha ao enviar o email de convite. Tente novamente mais tarde.";
+        // Verificar se o erro está relacionado à configuração do servidor
+        let errorMessage = result.error || "Falha ao enviar o email de convite. Tente novamente mais tarde.";
+        
+        // Adicionar mensagem mais amigável para erros de configuração
+        if (errorMessage.includes('API') || errorMessage.includes('configura') || errorMessage.includes('ausente')) {
+          errorMessage = `${errorMessage} \n\nO código de convite foi gerado com sucesso, mas não foi possível enviar o email. Você pode copiar o código e enviá-lo manualmente.`;
+        }
+        
         toast.error(errorMessage);
         
         // Log detalhado do erro para debugging
@@ -86,8 +102,8 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       // Remover toast de carregamento em caso de exceção
       toast.dismiss(loadingToast);
       
-      // Mostrar erro genérico
-      toast.error("Erro inesperado ao enviar o email. Tente novamente mais tarde.");
+      // Mostrar erro mais informativo
+      toast.error("Erro inesperado ao enviar o email. O código foi gerado com sucesso, mas você precisará enviá-lo manualmente.");
       console.error("Exceção ao enviar email:", error);
       return false;
     }

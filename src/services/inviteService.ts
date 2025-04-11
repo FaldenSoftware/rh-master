@@ -123,7 +123,6 @@ export const sendInviteEmail = async (
       };
     }
     
-    // Verificar se a resposta contém os dados esperados
     // Verificar se result tem a propriedade data (pode não ter se vier do catch)
     const responseData = 'data' in result ? result.data : null;
     
@@ -132,6 +131,16 @@ export const sendInviteEmail = async (
       return { 
         success: false, 
         error: "Resposta inválida do servidor de email" 
+      };
+    }
+    
+    // Verificar se a resposta indica sucesso ou erro
+    // A Edge Function agora sempre retorna status 200, mas pode indicar erro no campo success
+    if (responseData.success === false) {
+      console.error("Erro reportado pela Edge Function:", responseData.error);
+      return {
+        success: false,
+        error: responseData.error || "Falha ao enviar email. Verifique as configurações do servidor."
       };
     }
     

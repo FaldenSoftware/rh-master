@@ -70,7 +70,14 @@ serve(async (req) => {
     
     if (!resendApiKey && !sendgridApiKey) {
       console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
-      throw new Error('Configuração de e-mail ausente. Contate o administrador do sistema.');
+      // Em vez de lançar um erro, retornar uma resposta com status 200 mas com indicação de erro
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Configuração de e-mail ausente. Contate o administrador do sistema.'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     // Log das chaves disponíveis (apenas comprimento para segurança)
@@ -201,26 +208,26 @@ serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        // Se nenhum serviço conseguiu enviar, retornar erro com status 500
-        // Não lançar exception para evitar erro non-2xx
+        // Se nenhum serviço conseguiu enviar, retornar erro com status 200 (não 500)
+        // para evitar o erro non-2xx no frontend
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam.'
+            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam. Verifique se as chaves de API estão configuradas corretamente.'
           }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } catch (emailError) {
       console.error('Erro geral ao tentar enviar email:', emailError);
-      // Retornar erro com status 500 em vez de lançar exception
+      // Retornar erro com status 200 em vez de 500 para evitar erro non-2xx
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Erro ao processar envio de email',
           details: emailError.message || 'Erro desconhecido'
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
@@ -229,10 +236,11 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: 'Falha ao processar solicitação de envio de e-mail',
         details: error.message 
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
