@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
@@ -119,4 +118,35 @@ const mapProfileToAuthUser = (profileData: any, user: User): AuthUser => {
     zipCode: profileData.zipCode || '',
     website: profileData.website || ''
   };
+};
+
+/**
+ * Updates user profile data in Supabase
+ */
+export const updateUserProfile = async (profileData: Partial<AuthUser>): Promise<boolean> => {
+  try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.error("No authenticated user found");
+      return false;
+    }
+    
+    // Update profile
+    const { error } = await supabase
+      .from('profiles')
+      .update(profileData)
+      .eq('id', user.id);
+      
+    if (error) {
+      console.error("Error updating profile:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return false;
+  }
 };

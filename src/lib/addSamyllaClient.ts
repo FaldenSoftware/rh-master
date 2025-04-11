@@ -20,7 +20,7 @@ export const addSamyllaClient = async () => {
     // Verificar se o cliente já existe
     const { data: existingClient, error: clientError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email')
       .eq('email', 'samybarreto@hotmail.com')
       .single();
     

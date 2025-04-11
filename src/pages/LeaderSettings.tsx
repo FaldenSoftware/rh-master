@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +13,7 @@ import LeaderLayout from "@/components/leader/LeaderLayout";
 import { useAuth } from "@/context/AuthContext";
 import { updateUserProfile } from "@/lib/userProfile";
 import { addSamyllaClient } from "@/lib/addSamyllaClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -63,7 +63,7 @@ const LeaderSettings = () => {
   const [isSubmittingSecurity, setIsSubmittingSecurity] = useState(false);
   const [isAddingClient, setIsAddingClient] = useState(false);
   
-  const { user, isLoading, updatePassword, updateProfile } = useAuth();
+  const { user, isLoading } = useAuth();
 
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
@@ -128,14 +128,19 @@ const LeaderSettings = () => {
     setIsSubmittingProfile(true);
 
     try {
-      await updateProfile({
+      // Update user profile using updateUserProfile
+      const updated = await updateUserProfile({
         name: data.name,
         phone: data.phone,
         position: data.position,
         bio: data.bio
       });
       
-      toast.success("Perfil atualizado com sucesso");
+      if (updated) {
+        toast.success("Perfil atualizado com sucesso");
+      } else {
+        toast.error("Erro ao atualizar perfil");
+      }
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
       toast.error("Erro ao atualizar perfil");
@@ -149,7 +154,7 @@ const LeaderSettings = () => {
 
     try {
       // Atualizar apenas os dados da empresa
-      await updateUserProfile({
+      const updated = await updateUserProfile({
         company: data.company,
         cnpj: data.cnpj,
         industry: data.industry,
@@ -160,7 +165,11 @@ const LeaderSettings = () => {
         website: data.website || null
       });
       
-      toast.success("Dados da empresa atualizados com sucesso");
+      if (updated) {
+        toast.success("Dados da empresa atualizados com sucesso");
+      } else {
+        toast.error("Erro ao atualizar dados da empresa");
+      }
     } catch (error) {
       console.error("Erro ao atualizar dados da empresa:", error);
       toast.error("Erro ao atualizar dados da empresa");
@@ -173,7 +182,15 @@ const LeaderSettings = () => {
     setIsSubmittingSecurity(true);
 
     try {
-      await updatePassword(data.currentPassword, data.newPassword);
+      // Update password using supabase directly
+      const { error } = await supabase.auth.updateUser({
+        password: data.newPassword
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
       securityForm.reset();
       toast.success("Senha atualizada com sucesso");
     } catch (error) {
