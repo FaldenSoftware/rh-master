@@ -20,12 +20,15 @@ export const createClientInvitation = async (
     const expirationDate = addDays(new Date(), 7).toISOString();
     
     // Verificar se já existe um convite para este email
-    const { data: existingInvite, error: checkError } = await supabase
+    const inviteQuery = await supabase
       .from('invitation_codes')
       .select('id')
       .eq('email', clientEmail)
       .eq('mentor_id', mentor.id)
-      .single();
+      .maybeSingle();
+      
+    const existingInvite = inviteQuery.data;
+    const checkError = inviteQuery.error;
       
     if (checkError && checkError.code !== 'PGRST116') {
       console.error("Erro ao verificar convite existente:", checkError);

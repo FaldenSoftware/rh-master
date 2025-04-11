@@ -18,15 +18,23 @@ export const addSamyllaClient = async () => {
     const mentorId = mentorData.id;
     
     // Verificar se o cliente já existe
-    const { data: existingClientData, error: clientError } = await supabase
+    // Fix: Use explicit typing to avoid excessive type instantiation
+    const existingClientQuery = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id')
       .eq('email', 'samybarreto@hotmail.com')
       .maybeSingle();
     
-    // Use type checking to safely handle the response
-    if (existingClientData) {
-      // Se o cliente já existe, apenas atualize o mentor_id
+    const existingClientData = existingClientQuery.data;
+    const clientError = existingClientQuery.error;
+    
+    if (clientError && clientError.code !== 'PGRST116') {
+      console.error("Erro ao verificar cliente:", clientError);
+      return { success: false, error: "Erro ao verificar cliente existente" };
+    }
+    
+    // Se o cliente já existe, apenas atualize o mentor_id
+    if (existingClientData && existingClientData.id) {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ mentor_id: mentorId })
