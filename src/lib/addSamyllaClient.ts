@@ -18,11 +18,13 @@ export const addSamyllaClient = async () => {
     const mentorId = mentorData.id;
     
     // Verificar se o cliente já existe usando abordagem mais simples
-    // para evitar problemas de inferência de tipo
+    // Adicionando tipagem explícita para evitar recursão infinita
     const clientQuery = await supabase
       .from('profiles')
-      .select('id')
-      .eq('email', 'samybarreto@hotmail.com');
+      .select('id') as { 
+        data: { id: string }[] | null, 
+        error: any 
+      };
     
     const existingClientData = clientQuery.data?.[0];
     const clientError = clientQuery.error;
