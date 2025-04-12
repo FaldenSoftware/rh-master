@@ -67,7 +67,7 @@ const InviteFormFields = ({
           type="submit" 
           disabled={isSubmitting || !clientName || !clientEmail || !isEmailValid(clientEmail)}
         >
-          {isSubmitting ? "Gerando..." : "Gerar Código de Convite"}
+          {isSubmitting ? "Enviando..." : "Enviar Convite"}
         </Button>
       </div>
     </form>

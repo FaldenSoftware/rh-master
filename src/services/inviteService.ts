@@ -107,9 +107,10 @@ export const sendInviteEmail = async (
     // Chamar a Edge Function para enviar o email
     const { data, error } = await supabase.functions.invoke('send-invite-email', {
       body: {
-        to: clientEmail,
+        email: clientEmail,
         clientName: clientName || 'Cliente',
-        mentorName: mentorName || 'Mentor'
+        mentorName: mentorName || 'Mentor',
+        mentorCompany: 'RH Mentor Mastery'
       }
     });
     

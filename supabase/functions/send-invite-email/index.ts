@@ -48,15 +48,24 @@ serve(async (req) => {
     }
 
     // Obter dados do corpo da requisição
-    const data = await req.json() as InviteEmailData;
+    const rawData = await req.json();
+    console.log("Dados brutos recebidos:", JSON.stringify(rawData));
     
-    // Log all incoming data for debugging
-    console.log("Dados recebidos:", JSON.stringify(data));
+    // Normalizar os dados para garantir compatibilidade com diferentes formatos
+    const data: InviteEmailData = {
+      email: rawData.email || rawData.to || '',
+      clientName: rawData.clientName || rawData.client_name || '',
+      mentorName: rawData.mentorName || rawData.mentor_name || 'Seu mentor',
+      mentorCompany: rawData.mentorCompany || rawData.mentor_company || 'RH Mentor Mastery'
+    };
+    
+    // Log dos dados normalizados para debugging
+    console.log("Dados normalizados:", JSON.stringify(data));
     
     // Validar dados obrigatórios
     if (!data.email) {
       const errorMsg = 'Email é obrigatório';
-      console.error(errorMsg, { email: data.email });
+      console.error(errorMsg, { dados_recebidos: rawData });
       return new Response(
         JSON.stringify({ success: false, error: errorMsg }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
