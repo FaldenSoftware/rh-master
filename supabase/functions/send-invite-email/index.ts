@@ -171,7 +171,7 @@ serve(async (req) => {
           sgMail.setApiKey(sendgridApiKey);
           const msg = {
             to: data.email,
-            from: 'onboarding@rhmentormastery.com.br', // Usar um domínio verificado no SendGrid
+            from: 'noreply@seudominioverificado.com.br', // SUBSTITUA AQUI PELO SEU DOMÍNIO VERIFICADO
             subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
             html: htmlContent,
           };
