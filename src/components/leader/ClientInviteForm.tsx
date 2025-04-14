@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
 import { createClientInvitation, sendInviteEmail } from "@/services/inviteService";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ClientInviteFormProps {
@@ -20,6 +20,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     success?: boolean;
     message?: string;
     error?: string;
+    isApiKeyError?: boolean;
   } | null>(null);
   const { user } = useAuth();
 
@@ -52,12 +53,17 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       toast.dismiss(loadingToast);
       
       if (!result.success) {
+        // Check if this is an API key configuration error
+        const isApiKeyError = result.error?.includes("Configuração de email ausente") || 
+                            result.error?.includes("API key");
+        
         // Exibir mensagem de erro mais detalhada
         const errorMsg = result.error || "Erro ao enviar convite";
         toast.error(errorMsg);
         setInviteStatus({
           success: false,
-          error: errorMsg
+          error: errorMsg,
+          isApiKeyError: isApiKeyError
         });
         console.error("Falha ao enviar convite:", errorMsg);
         return;
@@ -130,10 +136,27 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       )}
       
       {inviteStatus?.success === false && (
-        <Alert className="bg-red-50 text-red-800 border-red-200 mt-4">
-          <XCircle className="h-4 w-4 mr-2" />
-          <AlertTitle>Erro ao enviar convite</AlertTitle>
-          <AlertDescription>{inviteStatus.error}</AlertDescription>
+        <Alert className={`mt-4 ${inviteStatus.isApiKeyError ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
+          {inviteStatus.isApiKeyError ? (
+            <AlertTriangle className="h-4 w-4 mr-2" />
+          ) : (
+            <XCircle className="h-4 w-4 mr-2" />
+          )}
+          <AlertTitle>
+            {inviteStatus.isApiKeyError ? 'Erro de configuração' : 'Erro ao enviar convite'}
+          </AlertTitle>
+          <AlertDescription>
+            {inviteStatus.isApiKeyError ? (
+              <>
+                {inviteStatus.error}
+                <p className="mt-2 text-sm">
+                  O administrador do sistema precisa configurar as chaves de API para o envio de emails.
+                </p>
+              </>
+            ) : (
+              inviteStatus.error
+            )}
+          </AlertDescription>
         </Alert>
       )}
     </div>

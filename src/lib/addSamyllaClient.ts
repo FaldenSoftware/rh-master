@@ -1,85 +1,49 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export const addSamyllaClient = async () => {
+export const addSamyllaClient = async (
+  email: string,
+  name: string,
+  mentorId: string
+) => {
   try {
-    // Buscar o ID do mentor Marcos Belmiro
-    const { data: mentorData, error: mentorError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('name', 'Marcos Belmiro')
-      .single();
+    // Check if email already exists in profiles
+    const { data: existingUser, error: queryError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
     
-    if (mentorError || !mentorData) {
-      console.error("Erro ao encontrar mentor:", mentorError);
-      return { success: false, error: "Mentor não encontrado" };
+    if (queryError) {
+      console.error("Error checking existing user:", queryError);
+      return { success: false, error: "Error checking if user already exists" };
     }
-    
-    const mentorId = mentorData.id;
-    
-    // Verificar se o cliente já existe usando abordagem mais simples
-    // Adicionando tipagem explícita para evitar recursão infinita
-    const clientQuery = await supabase
-      .from('profiles')
-      .select('id') as { 
-        data: { id: string }[] | null, 
-        error: any 
-      };
-    
-    const existingClientData = clientQuery.data?.[0];
-    const clientError = clientQuery.error;
-    
-    if (clientError) {
-      console.error("Erro ao verificar cliente:", clientError);
-      return { success: false, error: "Erro ao verificar cliente existente" };
+
+    // If user exists, return error
+    if (existingUser) {
+      return { success: false, error: "Email already registered" };
     }
-    
-    // Se o cliente já existe, apenas atualize o mentor_id
-    if (existingClientData && existingClientData.id) {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ mentor_id: mentorId })
-        .eq('id', existingClientData.id);
-        
-      if (updateError) {
-        console.error("Erro ao atualizar cliente:", updateError);
-        return { success: false, error: "Erro ao atualizar cliente" };
-      }
-      
-      return { success: true, message: "Cliente atualizado com sucesso" };
-    }
-    
-    // Registrar o novo cliente
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: 'samybarreto@hotmail.com',
-      password: '123456',
-      options: {
-        data: {
-          name: 'Samylla',
-          role: 'client'
+
+    // Create invitation
+    const { error: inviteError } = await supabase
+      .from("clients")
+      .insert([
+        {
+          email,
+          name,
+          mentor_id: mentorId,
+          status: "pending"
         }
-      }
-    });
-    
-    if (authError || !authData.user) {
-      console.error("Erro ao criar usuário:", authError);
-      return { success: false, error: "Erro ao criar usuário" };
+      ]);
+
+    if (inviteError) {
+      console.error("Error creating client:", inviteError);
+      return { success: false, error: "Failed to create client" };
     }
-    
-    // Atualizar o mentor_id do cliente
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ mentor_id: mentorId })
-      .eq('id', authData.user.id);
-      
-    if (updateError) {
-      console.error("Erro ao vincular cliente ao mentor:", updateError);
-      return { success: false, error: "Erro ao vincular cliente ao mentor" };
-    }
-    
-    return { success: true, message: "Cliente adicionado com sucesso" };
+
+    return { success: true };
   } catch (error) {
-    console.error("Erro ao adicionar cliente:", error);
-    return { success: false, error: "Erro interno ao adicionar cliente" };
+    console.error("Error adding client:", error);
+    return { success: false, error: "Unknown error adding client" };
   }
 };
