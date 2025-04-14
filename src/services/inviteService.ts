@@ -16,7 +16,7 @@ export const createClientInvitation = async (
       throw new Error("Mentor não autenticado");
     }
 
-    // Gerar convite (sem código já que não há mais necessidade)
+    // Gerar convite
     const expirationDate = addDays(new Date(), 7).toISOString();
     
     // Verificar se já existe um convite para este email
@@ -86,7 +86,7 @@ export const createClientInvitation = async (
            emailResult.error.includes('ausente'))) {
         return { 
           success: false, 
-          error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API necessárias.",
+          error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
           isApiKeyError: true
         };
       }
@@ -139,7 +139,7 @@ export const sendInviteEmail = async (
         console.error("Erro de configuração de API:", errorMsg);
         return { 
           success: false, 
-          error: "Configuração de email ausente. Contate o administrador do sistema.",
+          error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
           isApiKeyError: true
         };
       }
@@ -159,7 +159,7 @@ export const sendInviteEmail = async (
          error.message.includes('ausente'))) {
       return { 
         success: false, 
-        error: "Configuração de email ausente. Contate o administrador do sistema.",
+        error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
         isApiKeyError: true
       };
     }

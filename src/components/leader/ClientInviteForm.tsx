@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
 import { createClientInvitation } from "@/services/inviteService";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface ClientInviteFormProps {
@@ -153,8 +153,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
               <>
                 {inviteStatus.error}
                 <p className="mt-2 text-sm">
-                  O administrador do sistema precisa configurar as chaves de API para o envio de emails.
-                  É necessário configurar as chaves RESEND_API_KEY ou SENDGRID_API_KEY nas funções do Supabase.
+                  O administrador do sistema precisa configurar a chave RESEND_API_KEY nas funções do Supabase.
                 </p>
               </>
             ) : (

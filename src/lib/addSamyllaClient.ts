@@ -11,7 +11,8 @@ export const addSamyllaClient = async (
     const { data: existingUserData, error: queryError } = await supabase
       .from("profiles")
       .select("id")
-      .eq("email", email);
+      .eq("email", email)
+      .maybeSingle();
     
     if (queryError) {
       console.error("Error checking existing user:", queryError);
@@ -19,18 +20,18 @@ export const addSamyllaClient = async (
     }
 
     // If user exists, return error
-    const existingUser = existingUserData && existingUserData.length > 0 ? existingUserData[0] : null;
-    if (existingUser) {
+    if (existingUserData) {
       return { success: false, error: "Email already registered" };
     }
 
-    // Create invitation in invitation_codes table instead of non-existent clients table
+    // Create invitation in invitation_codes table
+    const code = Math.random().toString(36).substring(2, 10);
     const { error: inviteError } = await supabase
       .from("invitation_codes")
       .insert([
         {
           email,
-          code: Math.random().toString(36).substring(2, 10),
+          code,
           mentor_id: mentorId,
           is_used: false
         }
