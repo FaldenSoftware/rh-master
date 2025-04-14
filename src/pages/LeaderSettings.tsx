@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +13,6 @@ import { Loader2, Save, User, Building2, Shield } from "lucide-react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
 import { useAuth } from "@/context/AuthContext";
 import { updateUserProfile } from "@/lib/userProfile";
-import { addSamyllaClient } from "@/lib/addSamyllaClient";
 import { supabase } from "@/integrations/supabase/client";
 
 const profileFormSchema = z.object({
@@ -61,7 +61,6 @@ const LeaderSettings = () => {
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
   const [isSubmittingCompany, setIsSubmittingCompany] = useState(false);
   const [isSubmittingSecurity, setIsSubmittingSecurity] = useState(false);
-  const [isAddingClient, setIsAddingClient] = useState(false);
   
   const { user, isLoading } = useAuth();
 
@@ -193,34 +192,6 @@ const LeaderSettings = () => {
       toast.error("Erro ao atualizar senha. Verifique se a senha atual está correta.");
     } finally {
       setIsSubmittingSecurity(false);
-    }
-  };
-
-  const handleAddSamyllaClient = async () => {
-    setIsAddingClient(true);
-    
-    try {
-      if (!user || !user.id) {
-        toast.error("Usuário não autenticado");
-        return;
-      }
-      
-      const result = await addSamyllaClient(
-        "samylla@example.com", 
-        "Samylla", 
-        user.id
-      );
-      
-      if (result.success) {
-        toast.success("Cliente Samylla adicionada com sucesso!");
-      } else {
-        toast.error(`Falha ao adicionar cliente: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Erro ao adicionar cliente:", error);
-      toast.error("Erro ao adicionar cliente");
-    } finally {
-      setIsAddingClient(false);
     }
   };
 
@@ -369,24 +340,6 @@ const LeaderSettings = () => {
                     </div>
                   </form>
                 </Form>
-
-                <div className="mt-6 border-t pt-6">
-                  <h3 className="text-lg font-medium mb-4">Ações administrativas</h3>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleAddSamyllaClient}
-                    disabled={isAddingClient}
-                  >
-                    {isAddingClient ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Adicionando...
-                      </>
-                    ) : (
-                      "Adicionar Samylla como cliente"
-                    )}
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
