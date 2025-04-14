@@ -116,12 +116,38 @@ serve(async (req) => {
       // Inicializar cliente Resend
       const resend = new Resend(resendApiKey);
       
+      // Verificar se estamos em modo de teste ou produção
+      // Em modo de teste, só podemos enviar para o próprio email cadastrado no Resend
+      const ownerEmail = 'rh.mentorapp@gmail.com'; // Email registrado no Resend
+      const isTestMode = !Deno.env.get('DOMAIN_VERIFIED');
+      
       console.log('Enviando email via Resend...');
       const emailResponse = await resend.emails.send({
-        from: 'RH Mentor Mastery <onboarding@resend.dev>',
-        to: [data.email],
-        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-        html: htmlContent
+        // Se estiver em modo de teste, enviar do endereço padrão do Resend
+        // Se estiver em produção com domínio verificado, usar o domínio verificado
+        from: isTestMode 
+          ? 'RH Mentor Mastery <onboarding@resend.dev>' 
+          : 'RH Mentor Mastery <noreply@seu-dominio-verificado.com>',
+        
+        // Em modo de teste, só podemos enviar para o dono da conta
+        // Em produção, podemos enviar para qualquer destinatário
+        to: [isTestMode ? ownerEmail : data.email],
+        
+        // Se estiver em modo de teste e o destinatário for diferente do email do dono,
+        // adicionar uma nota sobre o modo de teste
+        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}${isTestMode ? ' [MODO DE TESTE]' : ''}`,
+        
+        // Adicionar uma nota ao conteúdo do email em modo de teste
+        html: isTestMode && data.email !== ownerEmail
+          ? `
+            <div style="background-color: #ffeb3b; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+              <strong>MODO DE TESTE:</strong> Este email deveria ser enviado para ${data.email}, 
+              mas como você está em modo de teste sem um domínio verificado, 
+              ele só pode ser enviado para ${ownerEmail}.
+              <p><a href="https://resend.com/domains">Clique aqui para verificar um domínio no Resend</a></p>
+            </div>
+            ${htmlContent}`
+          : htmlContent
       });
       
       // Registrar resposta do Resend
@@ -133,7 +159,10 @@ serve(async (req) => {
           JSON.stringify({ 
             success: true, 
             message: 'E-mail enviado com sucesso via Resend',
-            id: emailResponse.id
+            id: emailResponse.id,
+            isTestMode: isTestMode,
+            actualRecipient: isTestMode ? ownerEmail : data.email,
+            intendedRecipient: data.email
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -149,11 +178,31 @@ serve(async (req) => {
       }
     } catch (emailError) {
       console.error('Erro ao enviar email com Resend:', emailError);
+      
+      // Verificar se o erro é relacionado à falta de verificação de domínio
+      const errorMessage = emailError.message || 'Erro desconhecido';
+      const isDomainError = errorMessage.includes('domain') || 
+                          errorMessage.includes('verify') || 
+                          errorMessage.includes('from address') ||
+                          errorMessage.includes('validation_error');
+      
+      if (isDomainError) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'É necessário verificar um domínio no Resend para enviar emails para outros destinatários.',
+            details: 'Acesse https://resend.com/domains para verificar um domínio e depois altere o endereço "from" na função para usar seu domínio verificado.',
+            originalError: errorMessage
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Erro ao processar envio de email',
-          details: emailError.message || 'Erro desconhecido'
+          details: errorMessage
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

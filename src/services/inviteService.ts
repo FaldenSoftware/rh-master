@@ -91,7 +91,30 @@ export const createClientInvitation = async (
         };
       }
       
+      // Check if the error is related to domain verification
+      if (emailResult.error && 
+          (emailResult.error.includes('domain') || 
+           emailResult.error.includes('verify') ||
+           emailResult.error.includes('validation_error'))) {
+        return { 
+          success: false, 
+          error: "É necessário verificar um domínio no Resend para enviar emails. Acesse https://resend.com/domains",
+          isDomainError: true
+        };
+      }
+      
       return { success: false, error: emailResult.error || "Erro ao enviar email" };
+    }
+    
+    // Check if in test mode and actual recipient is different from intended
+    if (emailResult.isTestMode && emailResult.actualRecipient !== clientEmail) {
+      return { 
+        success: true, 
+        message: "Convite criado com sucesso, mas o email foi enviado para o proprietário da conta Resend (modo de teste)",
+        isTestMode: true,
+        actualRecipient: emailResult.actualRecipient,
+        intendedRecipient: clientEmail
+      };
     }
     
     return { 
@@ -144,8 +167,30 @@ export const sendInviteEmail = async (
         };
       }
       
+      // Check if the error is related to domain verification
+      if (errorMsg.includes('domain') || 
+          errorMsg.includes('verify') ||
+          errorMsg.includes('validation_error')) {
+        console.error("Erro de verificação de domínio:", errorMsg);
+        return { 
+          success: false, 
+          error: "É necessário verificar um domínio no Resend para enviar emails.",
+          isDomainError: true
+        };
+      }
+      
       console.error("Erro do serviço de email:", errorMsg);
       return { success: false, error: errorMsg };
+    }
+    
+    // Pass along the test mode information if it exists
+    if (data.isTestMode) {
+      return { 
+        success: true,
+        isTestMode: true,
+        actualRecipient: data.actualRecipient,
+        intendedRecipient: data.intendedRecipient
+      };
     }
     
     return { success: true };
@@ -161,6 +206,18 @@ export const sendInviteEmail = async (
         success: false, 
         error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
         isApiKeyError: true
+      };
+    }
+    
+    // Check if the error is related to domain verification
+    if (error.message && 
+        (error.message.includes('domain') || 
+         error.message.includes('verify') ||
+         error.message.includes('validation_error'))) {
+      return { 
+        success: false, 
+        error: "É necessário verificar um domínio no Resend para enviar emails.",
+        isDomainError: true
       };
     }
     
