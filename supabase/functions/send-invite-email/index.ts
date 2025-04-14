@@ -49,8 +49,9 @@ serve(async (req) => {
     // Verificar se temos pelo menos um serviço de email configurado
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
+    const verifiedDomain = Deno.env.get('RESEND_VERIFIED_DOMAIN');
     
-    // Log detalhado das chaves (apenas informar se estão presentes por segurança)
+    // Log detalhado das chaves e domínios configurados
     if (mailgunApiKey) {
       console.log("Mailgun API Key encontrada, primeiros caracteres:", 
         mailgunApiKey.substring(0, 5) + "... (comprimento total: " + mailgunApiKey.length + ")");
@@ -63,6 +64,12 @@ serve(async (req) => {
         resendApiKey.substring(0, 5) + "... (comprimento total: " + resendApiKey.length + ")");
     } else {
       console.error("ERRO: Chave de API do Resend não encontrada nas variáveis de ambiente!");
+    }
+    
+    if (verifiedDomain) {
+      console.log("Domínio verificado para Resend encontrado:", verifiedDomain);
+    } else {
+      console.log("Nenhum domínio verificado configurado para Resend, usando domínio padrão onboarding@resend.dev");
     }
     
     if (!mailgunApiKey && !resendApiKey) {
@@ -86,6 +93,9 @@ serve(async (req) => {
       let emailSent = false;
       let emailId = '';
       let serviceUsed = '';
+      let isTestMode = false;
+      let actualRecipient = '';
+      let intendedRecipient = '';
       
       // Tentativa 1: Mailgun (se disponível)
       if (!emailSent && mailgunApiKey) {
@@ -117,20 +127,42 @@ serve(async (req) => {
           emailSent = true;
           emailId = resendResult.id || '';
           serviceUsed = resendResult.service || 'Resend';
+          
+          // Verifica se está em modo de teste no Resend
+          // No modo de teste, o Resend envia emails apenas para o proprietário da conta
+          if (!verifiedDomain) {
+            console.log('Resend está em modo de teste, emails são enviados apenas para o dono da conta');
+            isTestMode = true;
+            intendedRecipient = data.email;
+            // Não podemos saber com certeza qual o email do proprietário da conta Resend
+            actualRecipient = "proprietário da conta Resend";
+          }
+          
           console.log('Email enviado com sucesso via Resend');
         }
       }
       
       // Verificar se algum serviço conseguiu enviar o email
       if (emailSent) {
-        // Retornar sucesso
+        // Retornar sucesso com informações sobre o modo de teste se aplicável
+        const responseData = {
+          success: true,
+          message: `E-mail enviado com sucesso via ${serviceUsed}`,
+          id: emailId,
+          service: serviceUsed
+        };
+        
+        // Adicionar informações de modo de teste, se aplicável
+        if (isTestMode) {
+          Object.assign(responseData, {
+            isTestMode,
+            intendedRecipient,
+            actualRecipient
+          });
+        }
+        
         return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: `E-mail enviado com sucesso via ${serviceUsed}`,
-            id: emailId,
-            service: serviceUsed
-          }),
+          JSON.stringify(responseData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
@@ -168,4 +200,3 @@ serve(async (req) => {
     );
   }
 });
-

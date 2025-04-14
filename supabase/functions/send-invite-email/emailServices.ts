@@ -54,8 +54,15 @@ export const sendWithResend = async (
   
   try {
     const resend = new Resend(resendApiKey);
+    const verifiedDomain = Deno.env.get('RESEND_VERIFIED_DOMAIN');
+    const fromEmail = verifiedDomain 
+      ? `RH Mentor Mastery <noreply@${verifiedDomain}>` 
+      : 'RH Mentor Mastery <onboarding@resend.dev>';
+    
+    console.log(`Enviando email usando o endereço: ${fromEmail}`);
+    
     const emailResponse = await resend.emails.send({
-      from: 'RH Mentor Mastery <onboarding@resend.dev>',
+      from: fromEmail,
       to: [email],
       subject,
       html: htmlContent
