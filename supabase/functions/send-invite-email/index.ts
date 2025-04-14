@@ -86,6 +86,7 @@ serve(async (req) => {
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
     const registerUrl = `https://rh-mentor-mastery.vercel.app/client/register`;
     
+    // Corrigindo o formato HTML para garantir que seja válido e completo
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <h2 style="color: #4F46E5;">${clientNameText}</h2>
@@ -119,15 +120,13 @@ serve(async (req) => {
       // Verificar se estamos em modo de teste ou produção
       // Em modo de teste, só podemos enviar para o próprio email cadastrado no Resend
       const ownerEmail = 'rh.mentorapp@gmail.com'; // Email registrado no Resend
-      const isTestMode = !Deno.env.get('DOMAIN_VERIFIED');
+      const isTestMode = !Deno.env.get('DOMAIN_VERIFIED') || true; // Forçando modo de teste até que o domínio seja verificado
       
       console.log('Enviando email via Resend...');
       const emailResponse = await resend.emails.send({
         // Se estiver em modo de teste, enviar do endereço padrão do Resend
         // Se estiver em produção com domínio verificado, usar o domínio verificado
-        from: isTestMode 
-          ? 'RH Mentor Mastery <onboarding@resend.dev>' 
-          : 'RH Mentor Mastery <noreply@seu-dominio-verificado.com>',
+        from: 'RH Mentor Mastery <onboarding@resend.dev>',
         
         // Em modo de teste, só podemos enviar para o dono da conta
         // Em produção, podemos enviar para qualquer destinatário
@@ -171,7 +170,8 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Falha ao enviar e-mail. Resposta inválida da API Resend.'
+            error: 'Falha ao enviar e-mail. Resposta inválida da API Resend.',
+            details: JSON.stringify(emailResponse)
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

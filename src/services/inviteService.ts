@@ -154,6 +154,7 @@ export const sendInviteEmail = async (
     
     if (!data || !data.success) {
       const errorMsg = data?.error || "Resposta inválida do servidor";
+      console.error("Erro detalhado:", data?.details || "Sem detalhes adicionais");
       
       // Check if the error is related to API keys
       if (errorMsg.includes('API key') || 
