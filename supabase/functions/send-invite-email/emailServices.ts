@@ -1,7 +1,7 @@
 
 import { Resend } from 'npm:resend@2.0.0';
 import formData from 'npm:form-data@4.0.0';
-import Mailgun from 'npm:mailgun.js@9.5.0';
+import Mailgun from 'npm:mailgun.js@9.3.0';
 
 export const sendWithMailgun = async (
   email: string, 
@@ -78,4 +78,3 @@ export const sendWithResend = async (
     return { success: false, error: resendError };
   }
 };
-
