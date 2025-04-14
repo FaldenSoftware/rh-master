@@ -69,7 +69,7 @@ serve(async (req) => {
     if (verifiedDomain) {
       console.log("Domínio verificado para Resend encontrado:", verifiedDomain);
     } else {
-      console.log("Nenhum domínio verificado configurado para Resend, usando domínio padrão onboarding@resend.dev");
+      console.log("ATENÇÃO: Nenhum domínio verificado configurado para Resend. Será necessário verificar o domínio rhmentormastery.com.br em https://resend.com/domains");
     }
     
     if (!mailgunApiKey && !resendApiKey) {
@@ -96,6 +96,8 @@ serve(async (req) => {
       let isTestMode = false;
       let actualRecipient = '';
       let intendedRecipient = '';
+      let domainError = false;
+      let domainErrorMessage = '';
       
       // Tentativa 1: Mailgun (se disponível)
       if (!emailSent && mailgunApiKey) {
@@ -127,18 +129,20 @@ serve(async (req) => {
           emailSent = true;
           emailId = resendResult.id || '';
           serviceUsed = resendResult.service || 'Resend';
+          isTestMode = resendResult.isTestMode || false;
           
-          // Verifica se está em modo de teste no Resend
-          // No modo de teste, o Resend envia emails apenas para o proprietário da conta
-          if (!verifiedDomain) {
-            console.log('Resend está em modo de teste, emails são enviados apenas para o dono da conta');
-            isTestMode = true;
+          // Em modo de teste, o destinatário real é o proprietário da conta Resend
+          if (isTestMode) {
+            console.log('Resend está em modo de teste, emails são enviados apenas para o proprietário da conta');
             intendedRecipient = data.email;
-            // Não podemos saber com certeza qual o email do proprietário da conta Resend
             actualRecipient = "proprietário da conta Resend";
           }
           
           console.log('Email enviado com sucesso via Resend');
+        } else if (resendResult.isDomainError) {
+          domainError = true;
+          domainErrorMessage = resendResult.errorMessage || 'Domínio não verificado no Resend';
+          console.error('Erro de domínio no Resend:', domainErrorMessage);
         }
       }
       
@@ -157,7 +161,8 @@ serve(async (req) => {
           Object.assign(responseData, {
             isTestMode,
             intendedRecipient,
-            actualRecipient
+            actualRecipient,
+            warningMessage: "O email foi enviado em modo de teste. Acesse https://resend.com/domains para verificar o domínio rhmentormastery.com.br"
           });
         }
         
@@ -165,12 +170,24 @@ serve(async (req) => {
           JSON.stringify(responseData),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else if (domainError) {
+        // Retornar erro específico de domínio não verificado
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Erro de domínio', 
+            message: domainErrorMessage,
+            action: "Por favor, verifique o domínio rhmentormastery.com.br em https://resend.com/domains"
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       } else {
         // Se nenhum serviço conseguiu enviar, retornar erro detalhado
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam. Verifique se as chaves de API estão configuradas corretamente e se os domínios estão verificados.'
+            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam.',
+            message: 'Verifique se as chaves de API estão configuradas corretamente e se o domínio rhmentormastery.com.br está verificado em https://resend.com/domains'
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
