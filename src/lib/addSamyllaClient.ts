@@ -2,8 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const addSamyllaClient = async (
-  email: string,
-  name: string,
+  email: string = "samylla@example.com",
+  name: string = "Samylla",
   mentorId: string
 ) => {
   try {
@@ -12,9 +12,9 @@ export const addSamyllaClient = async (
       .from("profiles")
       .select("id")
       .eq("email", email)
-      .maybeSingle();
+      .single();
     
-    if (queryError) {
+    if (queryError && queryError.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
       console.error("Error checking existing user:", queryError);
       return { success: false, error: "Error checking if user already exists" };
     }

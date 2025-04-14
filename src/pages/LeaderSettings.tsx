@@ -101,7 +101,6 @@ const LeaderSettings = () => {
 
   useEffect(() => {
     if (user && !isLoading) {
-      // Preencher o formulário de perfil com os dados do usuário
       profileForm.reset({
         name: user.name || "",
         email: user.email || "",
@@ -110,7 +109,6 @@ const LeaderSettings = () => {
         bio: user.bio || "",
       });
 
-      // Preencher o formulário da empresa
       companyForm.reset({
         company: user.company || "",
         cnpj: (user as any).cnpj || "",
@@ -128,7 +126,6 @@ const LeaderSettings = () => {
     setIsSubmittingProfile(true);
 
     try {
-      // Update user profile using updateUserProfile
       const updated = await updateUserProfile({
         name: data.name,
         phone: data.phone,
@@ -153,7 +150,6 @@ const LeaderSettings = () => {
     setIsSubmittingCompany(true);
 
     try {
-      // Atualizar apenas os dados da empresa
       const updated = await updateUserProfile({
         company: data.company,
         cnpj: data.cnpj,
@@ -182,7 +178,6 @@ const LeaderSettings = () => {
     setIsSubmittingSecurity(true);
 
     try {
-      // Update password using supabase directly
       const { error } = await supabase.auth.updateUser({
         password: data.newPassword
       });
@@ -205,7 +200,16 @@ const LeaderSettings = () => {
     setIsAddingClient(true);
     
     try {
-      const result = await addSamyllaClient();
+      if (!user || !user.id) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+      
+      const result = await addSamyllaClient(
+        "samylla@example.com", 
+        "Samylla", 
+        user.id
+      );
       
       if (result.success) {
         toast.success("Cliente Samylla adicionada com sucesso!");
