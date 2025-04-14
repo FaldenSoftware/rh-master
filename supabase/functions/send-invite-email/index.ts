@@ -13,7 +13,6 @@ declare global {
 // Importando módulos necessários
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { Resend } from 'npm:resend@2.0.0';
-import sgMail from 'npm:@sendgrid/mail@7.7.0';
 import formData from 'npm:form-data@4.0.0';
 import Mailgun from 'npm:mailgun.js@9.5.0';
 
@@ -74,7 +73,6 @@ serve(async (req) => {
 
     // Verificar se temos pelo menos um serviço de email configurado
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
     const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
     
     // Log detalhado das chaves (apenas informar se estão presentes por segurança)
@@ -85,13 +83,6 @@ serve(async (req) => {
       console.error("ERRO: Chave de API do Resend não encontrada nas variáveis de ambiente!");
     }
     
-    if (sendgridApiKey) {
-      console.log("SendGrid API Key encontrada, primeiros caracteres:", 
-        sendgridApiKey.substring(0, 5) + "... (comprimento total: " + sendgridApiKey.length + ")");
-    } else {
-      console.error("ERRO: Chave de API do SendGrid não encontrada nas variáveis de ambiente!");
-    }
-    
     if (mailgunApiKey) {
       console.log("Mailgun API Key encontrada, primeiros caracteres:", 
         mailgunApiKey.substring(0, 5) + "... (comprimento total: " + mailgunApiKey.length + ")");
@@ -99,12 +90,12 @@ serve(async (req) => {
       console.error("ERRO: Chave de API do Mailgun não encontrada nas variáveis de ambiente!");
     }
     
-    if (!resendApiKey && !sendgridApiKey && !mailgunApiKey) {
+    if (!resendApiKey && !mailgunApiKey) {
       console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar as chaves da API Resend, SendGrid ou Mailgun.'
+          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar as chaves da API Resend ou Mailgun.'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -209,34 +200,6 @@ serve(async (req) => {
         }
       }
       
-      // Tentativa 3: SendGrid (se os anteriores falharam)
-      if (!emailSent && sendgridApiKey) {
-        try {
-          console.log('Tentando enviar email via SendGrid...');
-          sgMail.setApiKey(sendgridApiKey);
-          const msg = {
-            to: data.email,
-            from: 'noreply@seu-dominio-verificado.com', // Substitua pelo seu domínio verificado no SendGrid
-            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
-            html: htmlContent,
-          };
-          
-          const sendgridResponse = await sgMail.send(msg);
-          console.log('Resposta do SendGrid:', JSON.stringify(sendgridResponse));
-          
-          if (sendgridResponse && sendgridResponse[0]?.statusCode === 202) {
-            emailSent = true;
-            emailId = 'sg_' + Date.now(); // SendGrid não retorna ID, então criamos um
-            serviceUsed = 'SendGrid';
-            console.log('Email enviado com sucesso via SendGrid');
-          } else {
-            console.error('Erro ao enviar e-mail com SendGrid:', sendgridResponse);
-          }
-        } catch (sendgridError) {
-          console.error('Erro específico ao enviar email com SendGrid:', sendgridError);
-        }
-      }
-      
       // Verificar se algum serviço conseguiu enviar o email
       if (emailSent) {
         // Retornar sucesso
@@ -284,3 +247,4 @@ serve(async (req) => {
     );
   }
 });
+

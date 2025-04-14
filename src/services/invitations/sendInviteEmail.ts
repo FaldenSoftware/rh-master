@@ -36,7 +36,7 @@ export const sendInviteEmail = async (
         console.error("Erro de configuração de API:", errorMsg);
         return { 
           success: false, 
-          error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
+          error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API.",
           isApiKeyError: true
         };
       }
@@ -48,7 +48,7 @@ export const sendInviteEmail = async (
         console.error("Erro de verificação de domínio:", errorMsg);
         return { 
           success: false, 
-          error: "É necessário verificar um domínio no Resend para enviar emails.",
+          error: "É necessário verificar um domínio para enviar emails.",
           isDomainError: true
         };
       }
@@ -78,7 +78,7 @@ export const sendInviteEmail = async (
          error.message.includes('ausente'))) {
       return { 
         success: false, 
-        error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
+        error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API.",
         isApiKeyError: true
       };
     }
@@ -90,7 +90,7 @@ export const sendInviteEmail = async (
          error.message.includes('validation_error'))) {
       return { 
         success: false, 
-        error: "É necessário verificar um domínio no Resend para enviar emails.",
+        error: "É necessário verificar um domínio para enviar emails.",
         isDomainError: true
       };
     }
