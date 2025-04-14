@@ -20,7 +20,7 @@ export const sendWithMailgun = async (
   
   try {
     const mailgunResponse = await mg.messages.create(mailgunDomain, {
-      from: 'RH Mentor Mastery <noreply@mailgun.org>',
+      from: 'RH Mentor Mastery <noreply@rhmentormastery.com.br>',
       to: [email],
       subject,
       html: htmlContent
@@ -54,10 +54,7 @@ export const sendWithResend = async (
   
   try {
     const resend = new Resend(resendApiKey);
-    const verifiedDomain = Deno.env.get('RESEND_VERIFIED_DOMAIN');
-    const fromEmail = verifiedDomain 
-      ? `RH Mentor Mastery <noreply@${verifiedDomain}>` 
-      : 'RH Mentor Mastery <onboarding@resend.dev>';
+    const fromEmail = 'RH Mentor Mastery <noreply@rhmentormastery.com.br>';
     
     console.log(`Enviando email usando o endereço: ${fromEmail}`);
     
