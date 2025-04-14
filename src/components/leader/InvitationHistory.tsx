@@ -16,7 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { Mail, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { sendInviteEmail } from '@/services/inviteService';
+import { sendInviteEmail } from '@/services/invitations';
 import { InvitationCode } from '@/types/models';
 
 export const InvitationHistory = () => {

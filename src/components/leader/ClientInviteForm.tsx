@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
-import { createClientInvitation } from "@/services/inviteService";
+import { createClientInvitation } from "@/services/invitations";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
