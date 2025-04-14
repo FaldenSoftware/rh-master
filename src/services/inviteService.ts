@@ -27,7 +27,7 @@ export const createClientInvitation = async (
       .eq('mentor_id', mentor.id)
       .maybeSingle();
       
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
       console.error("Erro ao verificar convite existente:", checkError);
       return { success: false, error: "Erro ao verificar convite existente" };
     }
@@ -80,10 +80,14 @@ export const createClientInvitation = async (
       console.error("Erro ao enviar email:", emailResult.error);
       
       // Return a more specific error message about API keys if that's the issue
-      if (emailResult.error && emailResult.error.includes('API key')) {
+      if (emailResult.error && 
+          (emailResult.error.includes('API key') || 
+           emailResult.error.includes('Configuração de e-mail') || 
+           emailResult.error.includes('ausente'))) {
         return { 
           success: false, 
-          error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API necessárias."
+          error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API necessárias.",
+          isApiKeyError: true
         };
       }
       
@@ -129,11 +133,14 @@ export const sendInviteEmail = async (
       const errorMsg = data?.error || "Resposta inválida do servidor";
       
       // Check if the error is related to API keys
-      if (errorMsg.includes('API key') || errorMsg.includes('Configuração de e-mail ausente')) {
+      if (errorMsg.includes('API key') || 
+          errorMsg.includes('Configuração de e-mail ausente') || 
+          errorMsg.includes('ausente')) {
         console.error("Erro de configuração de API:", errorMsg);
         return { 
           success: false, 
-          error: "Configuração de email ausente. Contate o administrador do sistema." 
+          error: "Configuração de email ausente. Contate o administrador do sistema.",
+          isApiKeyError: true
         };
       }
       
@@ -146,10 +153,14 @@ export const sendInviteEmail = async (
     console.error("Erro ao enviar email:", error);
     
     // Check if the error is related to API keys
-    if (error.message && (error.message.includes('API key') || error.message.includes('Configuração de e-mail'))) {
+    if (error.message && 
+        (error.message.includes('API key') || 
+         error.message.includes('Configuração de e-mail') ||
+         error.message.includes('ausente'))) {
       return { 
         success: false, 
-        error: "Configuração de email ausente. Contate o administrador do sistema." 
+        error: "Configuração de email ausente. Contate o administrador do sistema.",
+        isApiKeyError: true
       };
     }
     

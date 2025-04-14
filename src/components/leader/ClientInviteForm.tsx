@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
-import { createClientInvitation, sendInviteEmail } from "@/services/inviteService";
+import { createClientInvitation } from "@/services/inviteService";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -54,8 +54,11 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       
       if (!result.success) {
         // Check if this is an API key configuration error
-        const isApiKeyError = result.error?.includes("Configuração de email ausente") || 
-                            result.error?.includes("API key");
+        const isApiKeyError = result.isApiKeyError || 
+                            (result.error && (
+                              result.error.includes("Configuração de email ausente") || 
+                              result.error.includes("API key") ||
+                              result.error.includes("ausente")));
         
         // Exibir mensagem de erro mais detalhada
         const errorMsg = result.error || "Erro ao enviar convite";
@@ -151,6 +154,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
                 {inviteStatus.error}
                 <p className="mt-2 text-sm">
                   O administrador do sistema precisa configurar as chaves de API para o envio de emails.
+                  É necessário configurar as chaves RESEND_API_KEY ou SENDGRID_API_KEY nas funções do Supabase.
                 </p>
               </>
             ) : (
