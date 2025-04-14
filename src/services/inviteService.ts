@@ -20,15 +20,12 @@ export const createClientInvitation = async (
     const expirationDate = addDays(new Date(), 7).toISOString();
     
     // Verificar se já existe um convite para este email
-    const inviteQuery = await supabase
+    const { data: existingInvite, error: checkError } = await supabase
       .from('invitation_codes')
       .select('id')
       .eq('email', clientEmail)
       .eq('mentor_id', mentor.id)
       .maybeSingle();
-      
-    const existingInvite = inviteQuery.data;
-    const checkError = inviteQuery.error;
       
     if (checkError && checkError.code !== 'PGRST116') {
       console.error("Erro ao verificar convite existente:", checkError);
@@ -81,6 +78,15 @@ export const createClientInvitation = async (
     
     if (!emailResult.success) {
       console.error("Erro ao enviar email:", emailResult.error);
+      
+      // Return a more specific error message about API keys if that's the issue
+      if (emailResult.error && emailResult.error.includes('API key')) {
+        return { 
+          success: false, 
+          error: "Configuração de email ausente. Contate o administrador do sistema para configurar as chaves de API necessárias."
+        };
+      }
+      
       return { success: false, error: emailResult.error || "Erro ao enviar email" };
     }
     
@@ -121,6 +127,16 @@ export const sendInviteEmail = async (
     
     if (!data || !data.success) {
       const errorMsg = data?.error || "Resposta inválida do servidor";
+      
+      // Check if the error is related to API keys
+      if (errorMsg.includes('API key') || errorMsg.includes('Configuração de e-mail ausente')) {
+        console.error("Erro de configuração de API:", errorMsg);
+        return { 
+          success: false, 
+          error: "Configuração de email ausente. Contate o administrador do sistema." 
+        };
+      }
+      
       console.error("Erro do serviço de email:", errorMsg);
       return { success: false, error: errorMsg };
     }
@@ -128,6 +144,15 @@ export const sendInviteEmail = async (
     return { success: true };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
+    
+    // Check if the error is related to API keys
+    if (error.message && (error.message.includes('API key') || error.message.includes('Configuração de e-mail'))) {
+      return { 
+        success: false, 
+        error: "Configuração de email ausente. Contate o administrador do sistema." 
+      };
+    }
+    
     return { success: false, error: "Erro interno ao enviar email" };
   }
 };
