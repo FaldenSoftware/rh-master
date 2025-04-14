@@ -80,8 +80,7 @@ serve(async (req) => {
       );
     }
     
-    console.log("Resend API Key encontrada, primeiros caracteres:", 
-      resendApiKey.substring(0, 4) + "... (comprimento total: " + resendApiKey.length + ")");
+    console.log("Verificando API key do Resend...");
     
     // Montar o corpo do e-mail com formato HTML
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
