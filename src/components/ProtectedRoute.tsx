@@ -13,7 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredRole 
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, isDevMode } = useAuth();
   const location = useLocation();
 
   // Mostrar estado de carregamento se ainda estiver verificando autenticação
@@ -24,6 +24,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Não autenticado - redirecionar para login
   if (!isAuthenticated || !user) {
     return <Navigate to="/client/login" state={{ from: location }} replace />;
+  }
+
+  // Developer mode always passes access check
+  if (isDevMode) {
+    console.log("DEV MODE: Bypassing access check for", requiredRole);
+    return <>{children}</>;
   }
 
   // Verificar acesso baseado em função

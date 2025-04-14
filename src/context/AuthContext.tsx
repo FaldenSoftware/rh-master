@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser } from "@/lib/auth";
+import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin } from "@/lib/auth";
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<AuthUser | null>;
+  devLogin: (email: string, name: string, role: "mentor" | "client") => Promise<AuthUser | null>;
   register: (
     email: string, 
     password: string, 
@@ -15,6 +16,7 @@ interface AuthContextType extends AuthState {
     bio?: string
   ) => Promise<AuthUser | null>;
   logout: () => Promise<void>;
+  isDevMode: boolean;
 }
 
 const initialState: AuthState = {
@@ -27,18 +29,39 @@ const initialState: AuthState = {
 const AuthContext = createContext<AuthContextType>({
   ...initialState,
   login: async () => null,
+  devLogin: async () => null,
   register: async () => null,
   logout: async () => {},
+  isDevMode: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>(initialState);
+  const [isDevMode, setIsDevMode] = useState<boolean>(localStorage.getItem('devModeActive') === 'true');
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Check for dev mode first
+        if (localStorage.getItem('devModeActive') === 'true') {
+          const devModeUser = localStorage.getItem('devModeUser');
+          if (devModeUser) {
+            console.log("DEV MODE: Initializing with dev user");
+            const user = JSON.parse(devModeUser) as AuthUser;
+            setState({
+              user,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+            setIsDevMode(true);
+            return;
+          }
+        }
+
+        // Regular authentication setup
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log("Auth state changed:", event, session?.user?.id);
           
@@ -115,6 +138,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const devLogin = async (email: string, name: string, role: "mentor" | "client"): Promise<AuthUser | null> => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const user = await devModeLogin(email, name, role);
+      setState({
+        user,
+        isAuthenticated: !!user,
+        isLoading: false,
+        error: null,
+      });
+      setIsDevMode(true);
+      return user;
+    } catch (error) {
+      console.error("Erro no dev login (AuthContext):", error);
+      setState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Erro no modo desenvolvedor",
+      });
+      throw error;
+    }
+  };
+
   const register = async (
     email: string, 
     password: string, 
@@ -157,6 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading: false,
         error: null,
       });
+      setIsDevMode(false);
     } catch (error) {
       console.error("Erro no logout (AuthContext):", error);
       setState(prev => ({
@@ -168,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider value={{ ...state, login, devLogin, register, logout, isDevMode }}>
       {children}
     </AuthContext.Provider>
   );

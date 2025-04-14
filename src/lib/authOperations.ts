@@ -248,6 +248,44 @@ export const loginUser = async (
 };
 
 /**
+ * Developer mode login - bypasses authentication
+ * Only for development purposes!
+ */
+export const devModeLogin = async (
+  email: string,
+  name: string,
+  role: "mentor" | "client"
+): Promise<AuthUser | null> => {
+  try {
+    console.log("DEV MODE LOGIN:", { email, name, role });
+    
+    // Create a mock user object
+    const mockUser: AuthUser = {
+      id: `dev-user-${Date.now()}`,
+      email: email || 'dev@example.com',
+      name: name || 'Dev User',
+      role: role,
+      company: role === 'mentor' ? 'Dev Company' : undefined,
+      mentor_id: role === 'mentor' ? `dev-user-${Date.now()}` : undefined,
+      phone: '000-000-0000',
+      position: role === 'mentor' ? 'Developer' : 'Client',
+      bio: 'Developer mode user'
+    };
+    
+    console.log("DEV MODE: Creating mock user:", mockUser);
+    
+    // Store in localStorage for persistence
+    localStorage.setItem('devModeUser', JSON.stringify(mockUser));
+    localStorage.setItem('devModeActive', 'true');
+    
+    return mockUser;
+  } catch (error) {
+    console.error('Error in dev mode login:', error);
+    return null;
+  }
+};
+
+/**
  * Retrieves user profile after login, with fallback
  */
 const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> => {
@@ -316,6 +354,20 @@ const fetchUserProfileAfterLogin = async (user: any): Promise<AuthUser | null> =
 export const logoutUser = async (): Promise<void> => {
   try {
     console.log("Iniciando logout");
+    
+    // Check if we're in dev mode
+    if (localStorage.getItem('devModeActive') === 'true') {
+      console.log("DEV MODE: Clearing dev mode user");
+      localStorage.removeItem('devModeUser');
+      localStorage.removeItem('devModeActive');
+      
+      // Force redirect to home page
+      window.location.href = "/";
+      
+      console.log("Dev mode logout bem-sucedido");
+      return;
+    }
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Erro ao fazer logout:", error);
@@ -341,6 +393,17 @@ export const logoutUser = async (): Promise<void> => {
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
     console.log("Verificando sessão atual");
+    
+    // Check if we're in dev mode
+    if (localStorage.getItem('devModeActive') === 'true') {
+      const devModeUser = localStorage.getItem('devModeUser');
+      if (devModeUser) {
+        console.log("DEV MODE: Returning stored user");
+        return JSON.parse(devModeUser) as AuthUser;
+      }
+    }
+    
+    // Regular authentication flow
     const { data, error } = await supabase.auth.getSession();
     
     if (error) {
