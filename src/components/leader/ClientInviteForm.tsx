@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import InviteFormFields from "./InviteFormFields";
 import { createClientInvitation } from "@/services/invitations";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import InviteErrorAlert from "./invitation/InviteErrorAlert";
+import InviteSuccessAlert from "./invitation/InviteSuccessAlert";
+import InviteFormActions from "./invitation/InviteFormActions";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -134,89 +134,28 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         />
       ) : (
         <div className="space-y-4">
-          <Alert className="bg-green-50 text-green-800 border-green-200">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            <AlertTitle>Convite enviado com sucesso</AlertTitle>
-            <AlertDescription>
-              {inviteStatus.isTestMode ? (
-                <>
-                  Um email foi enviado para <strong>{inviteStatus.actualRecipient}</strong> (modo de teste).<br/>
-                  <span className="text-amber-600">
-                    Nota: O email deveria ter sido enviado para {inviteStatus.intendedRecipient},
-                    mas como você está em modo de teste, foi enviado para o proprietário da conta Resend.
-                  </span>
-                </>
-              ) : (
-                <>Um email foi enviado para {clientEmail} com as instruções para registro.</>
-              )}
-            </AlertDescription>
-          </Alert>
+          <InviteSuccessAlert 
+            message={inviteStatus.message}
+            isTestMode={inviteStatus.isTestMode}
+            actualRecipient={inviteStatus.actualRecipient}
+            intendedRecipient={inviteStatus.intendedRecipient}
+            clientEmail={clientEmail}
+          />
           
-          {inviteStatus.isTestMode && (
-            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
-              <Info className="h-4 w-4 mr-2" />
-              <AlertTitle>Modo de Teste do Resend</AlertTitle>
-              <AlertDescription>
-                <p>Para enviar emails para outros destinatários, você precisa verificar um domínio no Resend:</p>
-                <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>Acesse <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">https://resend.com/domains</a></li>
-                  <li>Adicione e verifique seu domínio</li>
-                  <li>Atualize a configuração da função Edge no arquivo supabase/functions/send-invite-email/index.ts</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="pt-2 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Fechar
-            </Button>
-            <Button type="button" onClick={handleReset}>
-              Enviar Novo Convite
-            </Button>
-          </div>
+          <InviteFormActions 
+            onCancel={onCancel}
+            onReset={handleReset}
+            isSuccess={true}
+          />
         </div>
       )}
       
       {inviteStatus?.success === false && (
-        <Alert className={`mt-4 ${inviteStatus.isDomainError ? 'bg-amber-50 text-amber-800 border-amber-200' : inviteStatus.isApiKeyError ? 'bg-yellow-50 text-yellow-800 border-yellow-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
-          {inviteStatus.isDomainError ? (
-            <AlertTriangle className="h-4 w-4 mr-2" />
-          ) : inviteStatus.isApiKeyError ? (
-            <AlertTriangle className="h-4 w-4 mr-2" />
-          ) : (
-            <XCircle className="h-4 w-4 mr-2" />
-          )}
-          <AlertTitle>
-            {inviteStatus.isDomainError ? 'Domínio não verificado' : 
-             inviteStatus.isApiKeyError ? 'Erro de configuração' : 
-             'Erro ao enviar convite'}
-          </AlertTitle>
-          <AlertDescription>
-            {inviteStatus.isDomainError ? (
-              <>
-                {inviteStatus.error}
-                <p className="mt-2 text-sm">
-                  Para enviar emails para qualquer destinatário, você precisa verificar um domínio no Resend:
-                </p>
-                <ol className="list-decimal list-inside mt-1 text-sm">
-                  <li>Acesse <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">https://resend.com/domains</a></li>
-                  <li>Adicione e verifique seu domínio</li>
-                  <li>Atualize a função Edge para usar seu domínio verificado</li>
-                </ol>
-              </>
-            ) : inviteStatus.isApiKeyError ? (
-              <>
-                {inviteStatus.error}
-                <p className="mt-2 text-sm">
-                  O administrador do sistema precisa configurar a chave RESEND_API_KEY nas funções do Supabase.
-                </p>
-              </>
-            ) : (
-              inviteStatus.error
-            )}
-          </AlertDescription>
-        </Alert>
+        <InviteErrorAlert 
+          error={inviteStatus.error}
+          isApiKeyError={inviteStatus.isApiKeyError}
+          isDomainError={inviteStatus.isDomainError}
+        />
       )}
     </div>
   );
