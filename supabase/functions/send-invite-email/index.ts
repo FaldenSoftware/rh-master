@@ -14,6 +14,8 @@ declare global {
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { Resend } from 'npm:resend@2.0.0';
 import sgMail from 'npm:@sendgrid/mail@7.7.0';
+import formData from 'npm:form-data@4.0.0';
+import Mailgun from 'npm:mailgun.js@9.5.0';
 
 // Interface para os dados do corpo da requisição
 interface InviteEmailData {
@@ -73,6 +75,7 @@ serve(async (req) => {
     // Verificar se temos pelo menos um serviço de email configurado
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
+    const mailgunApiKey = Deno.env.get('MAILGUN_API_KEY');
     
     // Log detalhado das chaves (apenas informar se estão presentes por segurança)
     if (resendApiKey) {
@@ -89,12 +92,19 @@ serve(async (req) => {
       console.error("ERRO: Chave de API do SendGrid não encontrada nas variáveis de ambiente!");
     }
     
-    if (!resendApiKey && !sendgridApiKey) {
+    if (mailgunApiKey) {
+      console.log("Mailgun API Key encontrada, primeiros caracteres:", 
+        mailgunApiKey.substring(0, 5) + "... (comprimento total: " + mailgunApiKey.length + ")");
+    } else {
+      console.error("ERRO: Chave de API do Mailgun não encontrada nas variáveis de ambiente!");
+    }
+    
+    if (!resendApiKey && !sendgridApiKey && !mailgunApiKey) {
       console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar as chaves da API Resend ou SendGrid.'
+          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar as chaves da API Resend, SendGrid ou Mailgun.'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -135,8 +145,43 @@ serve(async (req) => {
       let emailId = '';
       let serviceUsed = '';
       
-      // Tentar enviar com Resend primeiro (se disponível)
-      if (resendApiKey) {
+      // Tentativa 1: Mailgun (prioridade já que foi adicionado mais recentemente)
+      if (!emailSent && mailgunApiKey) {
+        try {
+          console.log('Tentando enviar email via Mailgun...');
+          const mailgunClient = new Mailgun(formData);
+          const mg = mailgunClient.client({
+            username: 'api',
+            key: mailgunApiKey,
+          });
+          
+          // Você deve substituir 'sandbox.mailgun.org' pelo seu domínio verificado
+          // Note que domínios sandbox só podem enviar para e-mails autorizados
+          const mailgunDomain = 'sandbox.mailgun.org'; // Substitua pelo seu domínio verificado
+          const mailgunResponse = await mg.messages.create(mailgunDomain, {
+            from: 'RH Mentor Mastery <noreply@mailgun.org>',
+            to: [data.email],
+            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+            html: htmlContent
+          });
+          
+          console.log('Resposta do Mailgun:', JSON.stringify(mailgunResponse));
+          
+          if (mailgunResponse && mailgunResponse.id) {
+            emailSent = true;
+            emailId = mailgunResponse.id;
+            serviceUsed = 'Mailgun';
+            console.log('Email enviado com sucesso via Mailgun');
+          } else {
+            console.error('Erro ao enviar e-mail com Mailgun:', mailgunResponse);
+          }
+        } catch (mailgunError) {
+          console.error('Erro específico ao enviar email com Mailgun:', mailgunError);
+        }
+      }
+      
+      // Tentativa 2: Resend (se Mailgun falhou)
+      if (!emailSent && resendApiKey) {
         try {
           console.log('Tentando enviar email via Resend...');
           const resend = new Resend(resendApiKey);
@@ -164,14 +209,14 @@ serve(async (req) => {
         }
       }
       
-      // Se Resend falhou ou não está disponível, tentar SendGrid
+      // Tentativa 3: SendGrid (se os anteriores falharam)
       if (!emailSent && sendgridApiKey) {
         try {
           console.log('Tentando enviar email via SendGrid...');
           sgMail.setApiKey(sendgridApiKey);
           const msg = {
             to: data.email,
-            from: 'noreply@seudominioverificado.com.br', // SUBSTITUA AQUI PELO SEU DOMÍNIO VERIFICADO
+            from: 'noreply@seu-dominio-verificado.com', // Substitua pelo seu domínio verificado no SendGrid
             subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
             html: htmlContent,
           };
@@ -209,7 +254,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam. Verifique se as chaves de API estão configuradas corretamente.'
+            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam. Verifique se as chaves de API estão configuradas corretamente e se os domínios estão verificados.'
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
