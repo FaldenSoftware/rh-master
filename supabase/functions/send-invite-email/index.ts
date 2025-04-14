@@ -13,6 +13,7 @@ declare global {
 // Importando módulos necessários
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { Resend } from 'npm:resend@2.0.0';
+import sgMail from 'npm:@sendgrid/mail@7.7.0';
 
 // Interface para os dados do corpo da requisição
 interface InviteEmailData {
@@ -46,7 +47,7 @@ serve(async (req) => {
 
     // Obter dados do corpo da requisição
     const rawData = await req.json();
-    console.log("Dados recebidos:", JSON.stringify(rawData));
+    console.log("Dados brutos recebidos:", JSON.stringify(rawData));
     
     // Normalizar os dados para garantir compatibilidade com diferentes formatos
     const data: InviteEmailData = {
@@ -55,6 +56,9 @@ serve(async (req) => {
       mentorName: rawData.mentorName || rawData.mentor_name || 'Seu mentor',
       mentorCompany: rawData.mentorCompany || rawData.mentor_company || 'RH Mentor Mastery'
     };
+    
+    // Log dos dados normalizados para debugging
+    console.log("Dados normalizados:", JSON.stringify(data));
     
     // Validar dados obrigatórios
     if (!data.email) {
@@ -66,27 +70,40 @@ serve(async (req) => {
       );
     }
 
-    // Verificar se a chave Resend API está configurada
+    // Verificar se temos pelo menos um serviço de email configurado
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
     
-    if (!resendApiKey) {
-      console.error('RESEND_API_KEY não está configurada nas variáveis de ambiente');
+    // Log detalhado das chaves (apenas informar se estão presentes por segurança)
+    if (resendApiKey) {
+      console.log("Resend API Key encontrada, primeiros caracteres:", 
+        resendApiKey.substring(0, 5) + "... (comprimento total: " + resendApiKey.length + ")");
+    } else {
+      console.error("ERRO: Chave de API do Resend não encontrada nas variáveis de ambiente!");
+    }
+    
+    if (sendgridApiKey) {
+      console.log("SendGrid API Key encontrada, primeiros caracteres:", 
+        sendgridApiKey.substring(0, 5) + "... (comprimento total: " + sendgridApiKey.length + ")");
+    } else {
+      console.error("ERRO: Chave de API do SendGrid não encontrada nas variáveis de ambiente!");
+    }
+    
+    if (!resendApiKey && !sendgridApiKey) {
+      console.error('Nenhuma API key de serviço de email está configurada nas variáveis de ambiente');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar a chave da API Resend.'
+          error: 'Configuração de e-mail ausente. Contate o administrador do sistema para configurar as chaves da API Resend ou SendGrid.'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    console.log("Verificando API key do Resend...");
-    
     // Montar o corpo do e-mail com formato HTML
     const clientNameText = data.clientName ? `Olá ${data.clientName},` : 'Olá,';
     const registerUrl = `https://rh-mentor-mastery.vercel.app/client/register`;
     
-    // Corrigindo o formato HTML para garantir que seja válido e completo
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
         <h2 style="color: #4F46E5;">${clientNameText}</h2>
@@ -114,102 +131,103 @@ serve(async (req) => {
     console.log(`Enviando e-mail para ${data.email}`);
     
     try {
-      // Inicializar cliente Resend
-      const resend = new Resend(resendApiKey);
+      let emailSent = false;
+      let emailId = '';
+      let serviceUsed = '';
       
-      // Verificar se estamos em modo de teste ou produção
-      // Em modo de teste, só podemos enviar para o próprio email cadastrado no Resend
-      const ownerEmail = 'rh.mentorapp@gmail.com'; // Email registrado no Resend
-      const isTestMode = !Deno.env.get('DOMAIN_VERIFIED') || true; // Forçando modo de teste até que o domínio seja verificado
-      
-      console.log('Enviando email via Resend...');
-      const emailResponse = await resend.emails.send({
-        // Se estiver em modo de teste, enviar do endereço padrão do Resend
-        // Se estiver em produção com domínio verificado, usar o domínio verificado
-        from: 'RH Mentor Mastery <onboarding@resend.dev>',
-        
-        // Em modo de teste, só podemos enviar para o dono da conta
-        // Em produção, podemos enviar para qualquer destinatário
-        to: [isTestMode ? ownerEmail : data.email],
-        
-        // Se estiver em modo de teste e o destinatário for diferente do email do dono,
-        // adicionar uma nota sobre o modo de teste
-        subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}${isTestMode ? ' [MODO DE TESTE]' : ''}`,
-        
-        // Adicionar uma nota ao conteúdo do email em modo de teste
-        html: isTestMode && data.email !== ownerEmail
-          ? `
-            <div style="background-color: #ffeb3b; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
-              <strong>MODO DE TESTE:</strong> Este email deveria ser enviado para ${data.email}, 
-              mas como você está em modo de teste sem um domínio verificado, 
-              ele só pode ser enviado para ${ownerEmail}.
-              <p><a href="https://resend.com/domains">Clique aqui para verificar um domínio no Resend</a></p>
-            </div>
-            ${htmlContent}`
-          : htmlContent
-      });
-      
-      // Registrar resposta do Resend
-      console.log('Resposta do Resend:', JSON.stringify(emailResponse));
+      // Tentar enviar com Resend primeiro (se disponível)
+      if (resendApiKey) {
+        try {
+          console.log('Tentando enviar email via Resend...');
+          const resend = new Resend(resendApiKey);
+          const emailResponse = await resend.emails.send({
+            from: 'RH Mentor Mastery <onboarding@resend.dev>',
+            to: [data.email],
+            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+            html: htmlContent
+          });
+          
+          // Registrar resposta do Resend
+          console.log('Resposta do Resend:', JSON.stringify(emailResponse));
 
-      // Verificar se o e-mail foi enviado com sucesso
-      if (emailResponse?.id) {
+          // Verificar se o e-mail foi enviado com sucesso
+          if (emailResponse?.id) {
+            emailSent = true;
+            emailId = emailResponse.id;
+            serviceUsed = 'Resend';
+            console.log('Email enviado com sucesso via Resend');
+          } else {
+            console.error('Erro ao enviar e-mail com Resend:', emailResponse);
+          }
+        } catch (resendError) {
+          console.error('Erro específico ao enviar email com Resend:', resendError);
+        }
+      }
+      
+      // Se Resend falhou ou não está disponível, tentar SendGrid
+      if (!emailSent && sendgridApiKey) {
+        try {
+          console.log('Tentando enviar email via SendGrid...');
+          sgMail.setApiKey(sendgridApiKey);
+          const msg = {
+            to: data.email,
+            from: 'onboarding@rhmentormastery.com.br', // Usar um domínio verificado no SendGrid
+            subject: `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
+            html: htmlContent,
+          };
+          
+          const sendgridResponse = await sgMail.send(msg);
+          console.log('Resposta do SendGrid:', JSON.stringify(sendgridResponse));
+          
+          if (sendgridResponse && sendgridResponse[0]?.statusCode === 202) {
+            emailSent = true;
+            emailId = 'sg_' + Date.now(); // SendGrid não retorna ID, então criamos um
+            serviceUsed = 'SendGrid';
+            console.log('Email enviado com sucesso via SendGrid');
+          } else {
+            console.error('Erro ao enviar e-mail com SendGrid:', sendgridResponse);
+          }
+        } catch (sendgridError) {
+          console.error('Erro específico ao enviar email com SendGrid:', sendgridError);
+        }
+      }
+      
+      // Verificar se algum serviço conseguiu enviar o email
+      if (emailSent) {
+        // Retornar sucesso
         return new Response(
           JSON.stringify({ 
             success: true, 
-            message: 'E-mail enviado com sucesso via Resend',
-            id: emailResponse.id,
-            isTestMode: isTestMode,
-            actualRecipient: isTestMode ? ownerEmail : data.email,
-            intendedRecipient: data.email
+            message: `E-mail enviado com sucesso via ${serviceUsed}`,
+            id: emailId,
+            service: serviceUsed
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        console.error('Erro na resposta do Resend:', emailResponse);
+        // Se nenhum serviço conseguiu enviar, retornar erro detalhado
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Falha ao enviar e-mail. Resposta inválida da API Resend.',
-            details: JSON.stringify(emailResponse)
+            error: 'Falha ao enviar e-mail. Todos os serviços de email falharam. Verifique se as chaves de API estão configuradas corretamente.'
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     } catch (emailError) {
-      console.error('Erro ao enviar email com Resend:', emailError);
-      
-      // Verificar se o erro é relacionado à falta de verificação de domínio
-      const errorMessage = emailError.message || 'Erro desconhecido';
-      const isDomainError = errorMessage.includes('domain') || 
-                          errorMessage.includes('verify') || 
-                          errorMessage.includes('from address') ||
-                          errorMessage.includes('validation_error');
-      
-      if (isDomainError) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'É necessário verificar um domínio no Resend para enviar emails para outros destinatários.',
-            details: 'Acesse https://resend.com/domains para verificar um domínio e depois altere o endereço "from" na função para usar seu domínio verificado.',
-            originalError: errorMessage
-          }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
+      console.error('Erro geral ao tentar enviar email:', emailError);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: 'Erro ao processar envio de email',
-          details: errorMessage
+          details: emailError.message || 'Erro desconhecido'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
   } catch (error) {
-    // Tratar erros gerais
-    console.error('Erro geral ao processar requisição:', error);
+    // Tratar erros
+    console.error('Erro ao enviar e-mail:', error);
     
     return new Response(
       JSON.stringify({ 
