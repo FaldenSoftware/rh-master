@@ -52,7 +52,7 @@ const AnimalProfileTest = () => {
         toast({
           title: "Aviso",
           description: `Precisamos de pelo menos ${MIN_QUESTIONS} perguntas para o teste, mas só temos ${questionsData.length}. Algumas perguntas podem se repetir.`,
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive"
         });
         
         // Clone questions if we don't have enough

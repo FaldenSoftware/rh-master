@@ -151,6 +151,7 @@ const LeaderSettings = () => {
     try {
       const updated = await updateUserProfile({
         company: data.company,
+        // The following fields are now properly typed in AuthUser
         cnpj: data.cnpj,
         industry: data.industry,
         address: data.address,

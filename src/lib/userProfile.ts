@@ -6,15 +6,15 @@ import { AuthUser } from "./authTypes";
 /**
  * Retrieves user profile data from Supabase
  */
-export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
+export const getUserProfile = async (userId: string): Promise<AuthUser | null> => {
   try {
-    console.log("Buscando perfil para usuário:", user.id);
+    console.log("Buscando perfil para usuário:", userId);
     
     // Try direct query approach first - this avoids using RPC that could be causing recursion issues
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single();
       
     if (profileError) {
@@ -26,15 +26,17 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       const typedProfileData = profileData as any;
       
       return {
-        id: user.id,
-        email: user.email || '',
+        id: userId,
+        email: typedProfileData.email || '',
         name: typedProfileData.name || 'Usuário',
         role: typedProfileData.role || 'client',
         company: typedProfileData.company || '',
-        mentor_id: typedProfileData.mentor_id || (typedProfileData.role === 'mentor' ? user.id : null),
+        mentor_id: typedProfileData.mentor_id || (typedProfileData.role === 'mentor' ? userId : null),
         phone: typedProfileData.phone || '',
         position: typedProfileData.position || '',
         bio: typedProfileData.bio || '',
+        createdAt: typedProfileData.created_at || new Date().toISOString(),
+        avatar_url: typedProfileData.avatar_url || '',
         // Include company-related fields
         cnpj: typedProfileData.cnpj || '',
         industry: typedProfileData.industry || '',
@@ -46,20 +48,28 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
       };
     }
     
-    // Fallback to user metadata if profile not found in database
-    console.warn("Perfil não encontrado na base de dados, usando metadata do usuário");
+    // Fallback to get user metadata from auth API
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (userError || !user) {
+      console.error("Erro ao buscar usuário:", userError);
+      return null;
+    }
+    
     const userMetadata = user.user_metadata || {};
     
     return {
-      id: user.id,
+      id: userId,
       email: user.email || '',
       name: userMetadata.name || 'Usuário',
       role: userMetadata.role || 'client',
       company: userMetadata.company || '',
-      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
+      mentor_id: userMetadata.role === 'mentor' ? userId : userMetadata.mentor_id,
       phone: userMetadata.phone || '',
       position: userMetadata.position || '',
       bio: userMetadata.bio || '',
+      createdAt: user.created_at || new Date().toISOString(),
+      avatar_url: userMetadata.avatar_url || '',
       // Include company-related fields in fallback
       cnpj: userMetadata.cnpj || '',
       industry: userMetadata.industry || '',
@@ -72,53 +82,29 @@ export const getUserProfile = async (user: User): Promise<AuthUser | null> => {
   } catch (error) {
     console.error('Erro ao buscar perfil:', error);
     
-    // Ultimate fallback - use user metadata
-    const userMetadata = user.user_metadata || {};
+    // Ultimate fallback - return minimal profile
     return {
-      id: user.id,
-      email: user.email || '',
-      name: userMetadata.name || 'Usuário',
-      role: userMetadata.role || 'client',
-      company: userMetadata.company || '',
-      mentor_id: userMetadata.role === 'mentor' ? user.id : userMetadata.mentor_id,
-      phone: userMetadata.phone || '',
-      position: userMetadata.position || '',
-      bio: userMetadata.bio || '',
+      id: userId,
+      email: '',
+      name: 'Usuário',
+      role: 'client',
+      company: '',
+      createdAt: new Date().toISOString(),
+      mentor_id: '',
+      phone: '',
+      position: '',
+      bio: '',
+      avatar_url: '',
       // Include company-related fields in ultimate fallback
-      cnpj: userMetadata.cnpj || '',
-      industry: userMetadata.industry || '',
-      address: userMetadata.address || '',
-      city: userMetadata.city || '',
-      state: userMetadata.state || '',
-      zipCode: userMetadata.zipCode || '',
-      website: userMetadata.website || ''
+      cnpj: '',
+      industry: '',
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      website: ''
     };
   }
-};
-
-/**
- * Maps profile data to AuthUser object
- */
-const mapProfileToAuthUser = (profileData: any, user: User): AuthUser => {
-  return {
-    id: user.id,
-    email: user.email || '',
-    name: profileData.name || 'Usuário',
-    role: profileData.role || 'client',
-    company: profileData.company || '',
-    mentor_id: profileData.mentor_id || (profileData.role === 'mentor' ? user.id : null),
-    phone: profileData.phone || '',
-    position: profileData.position || '',
-    bio: profileData.bio || '',
-    // Include company-related fields
-    cnpj: profileData.cnpj || '',
-    industry: profileData.industry || '',
-    address: profileData.address || '',
-    city: profileData.city || '',
-    state: profileData.state || '',
-    zipCode: profileData.zipCode || '',
-    website: profileData.website || ''
-  };
 };
 
 /**

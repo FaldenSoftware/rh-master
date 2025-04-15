@@ -176,6 +176,13 @@ export const updateUserProfile = async (
     company: string;
     bio: string;
     avatar_url: string;
+    cnpj: string;
+    industry: string;
+    address: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    website: string;
   }>
 ): Promise<AuthUser | null> => {
   try {
