@@ -20,6 +20,8 @@ import {
   markClientTestCompleted
 } from "@/lib/animalProfileService";
 
+const MIN_QUESTIONS = 10; // Minimum number of questions required
+
 const AnimalProfileTest = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -46,15 +48,43 @@ const AnimalProfileTest = () => {
       setIsLoading(true);
       const questionsData = await fetchAnimalProfileQuestions();
       
-      // Separate standard questions and reserve some for tie-breaking
-      const mainQuestions = questionsData.slice(0, 5);
-      const reservedQuestions = questionsData.slice(5);
+      if (questionsData.length < MIN_QUESTIONS) {
+        toast({
+          title: "Aviso",
+          description: `Precisamos de pelo menos ${MIN_QUESTIONS} perguntas para o teste, mas só temos ${questionsData.length}. Algumas perguntas podem se repetir.`,
+          variant: "warning",
+        });
+        
+        // Clone questions if we don't have enough
+        let extendedQuestions = [...questionsData];
+        while (extendedQuestions.length < MIN_QUESTIONS) {
+          // Add copies of existing questions with slight modifications
+          const additionalQuestions = questionsData.map(q => ({
+            ...q,
+            id: `${q.id}-copy-${Math.random().toString(36).substring(7)}`, // Create a unique ID
+            pergunta: `${q.pergunta} (continuação)` // Slightly modify the question
+          }));
+          extendedQuestions = [...extendedQuestions, ...additionalQuestions];
+        }
+        
+        // Take exactly MIN_QUESTIONS
+        extendedQuestions = extendedQuestions.slice(0, MIN_QUESTIONS);
+        
+        // Use all questions for the main test
+        setQuestions(extendedQuestions);
+        setTieBreakQuestions([]);
+      } else {
+        // Divide questions: MIN_QUESTIONS for main test, rest for tie-breaking
+        const mainQuestions = questionsData.slice(0, MIN_QUESTIONS);
+        const reservedQuestions = questionsData.slice(MIN_QUESTIONS);
+        
+        setQuestions(mainQuestions);
+        setTieBreakQuestions(reservedQuestions);
+      }
       
-      setQuestions(mainQuestions);
-      setTieBreakQuestions(reservedQuestions);
-      
-      if (mainQuestions.length > 0) {
-        setShuffledOptions(shuffleAnswers(mainQuestions[0]));
+      // Initialize with first question
+      if (questionsData.length > 0) {
+        setShuffledOptions(shuffleAnswers(questionsData[0]));
         
         if (user) {
           const newResultId = await createAnimalProfileResult(user.id);

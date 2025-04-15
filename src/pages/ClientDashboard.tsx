@@ -113,7 +113,7 @@ const ClientDashboard = () => {
     }
   };
 
-  // Dados de exemplo para o dashboard quando não há dados reais
+  // Dados básicos para o dashboard quando não há dados reais
   const getDummyDashboardData = () => {
     return {
       pendingTests: [
@@ -152,28 +152,11 @@ const ClientDashboard = () => {
     isLoading: isResultsLoading
   } = useTestResults(userId || undefined);
 
-  // Gerar dados para o gráfico de resultados
+  // Gerar dados para o gráfico de resultados apenas se existirem resultados reais
   const generateResultData = () => {
     if (testResults.length === 0) {
-      // Dados de exemplo se não houver testes concluídos
-      const lastSixMonths = [];
-      const currentDate = new Date();
-      
-      for (let i = 5; i >= 0; i--) {
-        const month = new Date(currentDate);
-        month.setMonth(currentDate.getMonth() - i);
-        
-        // Nomes dos meses em português
-        const monthName = month.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-        const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-        
-        lastSixMonths.push({
-          month: capitalizedMonth,
-          score: 65 + Math.floor(Math.random() * 3) * 5 + i * 3 // Valor base + variação aleatória + progressão
-        });
-      }
-      
-      return lastSixMonths;
+      // Sem dados se não houver testes concluídos
+      return [];
     } else {
       // Ordenar resultados por data
       const sortedResults = [...testResults].sort((a, b) => 
@@ -192,6 +175,7 @@ const ClientDashboard = () => {
   };
 
   const resultData = generateResultData();
+  const hasTestResults = testResults.length > 0;
 
   // Função para navegar para a página de testes
   const handleViewAllTests = () => {
@@ -213,26 +197,20 @@ const ClientDashboard = () => {
   // Se ocorreu um erro, mostrar uma versão simplificada do dashboard
   const showSimplifiedDashboard = isDashboardError || !dashboardData;
 
-  // Determinar perfil predominante baseado nos resultados ou usar valor padrão
-  const dominantProfile = testResults.length > 0 && testResults[0].profileScores 
+  // Determinar perfil predominante baseado nos resultados ou usar valor vazio
+  const dominantProfile = hasTestResults && testResults[0].profileScores 
     ? testResults[0].profileScores.sort((a, b) => b.value - a.value)[0].name 
-    : "Planejador";
+    : "";
 
-  // Calcular pontuação geral média ou usar valor padrão
-  const averageScore = testResults.length > 0 
+  // Calcular pontuação geral média ou usar valor zerado
+  const averageScore = hasTestResults 
     ? Math.round(testResults.reduce((sum, test) => sum + test.score, 0) / testResults.length) 
-    : 82;
+    : 0;
 
-  // Obter habilidades em ordem decrescente de pontuação
-  const topSkills = testResults.length > 0 && testResults[0].skillScores
+  // Obter habilidades apenas se houver resultados de teste
+  const topSkills = hasTestResults && testResults[0].skillScores
     ? [...testResults[0].skillScores].sort((a, b) => b.value - a.value)
-    : [
-        { skill: "Proatividade", value: 90 },
-        { skill: "Inteligência Emocional", value: 85 },
-        { skill: "Comunicação", value: 80 },
-        { skill: "Trabalho em Equipe", value: 75 },
-        { skill: "Liderança", value: 65 }
-      ];
+    : [];
 
   return (
     <ClientLayout title="Dashboard">
@@ -287,9 +265,9 @@ const ClientDashboard = () => {
               <Brain className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{dominantProfile}</div>
+              <div className="text-2xl font-bold">{dominantProfile || "Não definido"}</div>
               <p className="text-xs text-muted-foreground">
-                Baseado em seus resultados
+                {hasTestResults ? "Baseado em seus resultados" : "Complete um teste para descobrir"}
               </p>
             </CardContent>
           </Card>
@@ -299,9 +277,9 @@ const ClientDashboard = () => {
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{averageScore}/100</div>
+              <div className="text-2xl font-bold">{hasTestResults ? `${averageScore}/100` : "N/A"}</div>
               <p className="text-xs text-muted-foreground">
-                {testResults.length > 0 
+                {hasTestResults 
                   ? "Média de todos os testes concluídos" 
                   : "Complete testes para obter sua pontuação"}
               </p>
@@ -366,41 +344,47 @@ const ClientDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={resultData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis domain={[50, 100]} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="score" 
-                      stroke="#8884d8" 
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                <div>
-                  <p className="text-sm font-medium">Tendência</p>
-                  <p className="text-xs text-muted-foreground">
-                    {testResults.length > 0 
-                      ? "Baseada em seus testes concluídos" 
-                      : "Complete testes para visualizar sua tendência"}
+              {hasTestResults ? (
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={resultData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis domain={[50, 100]} />
+                      <Tooltip />
+                      <Line 
+                        type="monotone" 
+                        dataKey="score" 
+                        stroke="#8884d8" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                    <div>
+                      <p className="text-sm font-medium">Tendência</p>
+                      <p className="text-xs text-muted-foreground">Baseada em seus testes concluídos</p>
+                    </div>
+                    {resultData.length > 1 && (
+                      <Badge className="bg-green-500">
+                        {`${Math.round(resultData[resultData.length - 1].score - resultData[0].score)} pontos de evolução`}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[250px] text-center">
+                  <div className="bg-gray-100 p-3 rounded-full mb-4">
+                    <FileText className="h-6 w-6 text-gray-500" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Dados não disponíveis</h3>
+                  <p className="text-muted-foreground max-w-md">
+                    Complete pelo menos um teste para visualizar sua evolução de resultados.
                   </p>
                 </div>
-                {testResults.length > 0 && (
-                  <Badge className="bg-green-500">
-                    {resultData.length > 1 
-                      ? `${Math.round(resultData[resultData.length - 1].score - resultData[0].score)} pontos de evolução` 
-                      : "Evolução disponível após mais testes"}
-                  </Badge>
-                )}
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -414,7 +398,7 @@ const ClientDashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {topSkills?.length > 0 ? (
+            {topSkills.length > 0 ? (
               <div className="space-y-4">
                 {topSkills.map((skill) => (
                   <div key={skill.skill}>
@@ -428,7 +412,11 @@ const ClientDashboard = () => {
               </div>
             ) : (
               <div className="text-center py-6">
-                <p className="text-muted-foreground">
+                <div className="bg-gray-100 p-3 rounded-full mb-4">
+                  <FileText className="h-6 w-6 text-gray-500" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Dados não disponíveis</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
                   Complete pelo menos um teste para visualizar suas competências comportamentais.
                 </p>
               </div>
@@ -448,7 +436,7 @@ const ClientDashboard = () => {
               <AlertCircle className="h-4 w-4 text-blue-600" />
               <AlertTitle className="text-blue-600">Recomendação Personalizada</AlertTitle>
               <AlertDescription>
-                {testResults.length > 0 
+                {hasTestResults 
                   ? `Com base em seu perfil ${dominantProfile}, sugerimos o treinamento "Liderança Situacional" para potencializar sua carreira.`
                   : "Complete testes comportamentais para receber recomendações personalizadas para seu desenvolvimento."}
                 <Button variant="link" className="p-0 h-auto text-blue-600 ml-2">
@@ -459,41 +447,53 @@ const ClientDashboard = () => {
           </TabsContent>
           
           <TabsContent value="calendar">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-blue-500" />
-                  Próximos Eventos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="bg-purple-100 p-2 rounded-md">
-                      <Calendar className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Workshop de Inteligência Emocional</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')} - Online - 14:00
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="bg-purple-100 p-2 rounded-md">
-                      <Calendar className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Feedback trimestral</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')} - Sala de Reuniões - 10:00
-                      </p>
-                    </div>
-                  </div>
+            {!hasTestResults ? (
+              <div className="text-center py-6 bg-white rounded-lg shadow-sm border">
+                <div className="bg-gray-100 inline-flex rounded-full p-3 mb-4">
+                  <Calendar className="h-6 w-6 text-gray-500" />
                 </div>
-              </CardContent>
-            </Card>
+                <h3 className="text-lg font-medium mb-2">Agenda não disponível</h3>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Complete pelo menos um teste para ter acesso à sua agenda personalizada.
+                </p>
+              </div>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                    Próximos Eventos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="bg-purple-100 p-2 rounded-md">
+                        <Calendar className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Workshop de Inteligência Emocional</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')} - Online - 14:00
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="bg-purple-100 p-2 rounded-md">
+                        <Calendar className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Feedback trimestral</p>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')} - Sala de Reuniões - 10:00
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>

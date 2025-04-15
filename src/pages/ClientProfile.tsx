@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import ClientLayout from "@/components/client/ClientLayout";
@@ -26,6 +27,7 @@ const ClientProfile = () => {
   const { data: testResults = [], isLoading, isError } = useTestResults(userId || undefined);
   
   const latestTest = testResults.length > 0 ? testResults[0] : null;
+  const hasTestData = !!latestTest;
   
   if (isLoading) {
     return (
@@ -57,7 +59,7 @@ const ClientProfile = () => {
     );
   }
 
-  if (!latestTest) {
+  if (!hasTestData) {
     return (
       <ClientLayout title="Perfil Comportamental">
         <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -68,6 +70,9 @@ const ClientProfile = () => {
           <p className="text-muted-foreground max-w-md mx-auto">
             Complete pelo menos um teste comportamental para visualizar seu perfil detalhado.
           </p>
+          <Button className="mt-6" onClick={() => window.location.href = "/client/tests"}>
+            Realizar testes
+          </Button>
         </div>
       </ClientLayout>
     );

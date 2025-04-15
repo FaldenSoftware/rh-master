@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin } from "@/lib/auth";
+import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin, updateUserProfile } from "@/lib/auth";
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<AuthUser | null>;
@@ -17,6 +18,14 @@ interface AuthContextType extends AuthState {
   ) => Promise<AuthUser | null>;
   logout: () => Promise<void>;
   isDevMode: boolean;
+  updateProfile: (profileData: Partial<{
+    name: string;
+    phone: string;
+    position: string;
+    company: string;
+    bio: string;
+    avatar_url: string;
+  }>) => Promise<AuthUser | null>;
 }
 
 const initialState: AuthState = {
@@ -33,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => null,
   logout: async () => {},
   isDevMode: false,
+  updateProfile: async () => null,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -194,6 +204,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (profileData: Partial<{
+    name: string;
+    phone: string;
+    position: string;
+    company: string;
+    bio: string;
+    avatar_url: string;
+  }>): Promise<AuthUser | null> => {
+    if (!state.user) {
+      throw new Error("User not authenticated");
+    }
+    
+    setState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      const updatedUser = await updateUserProfile(state.user.id, profileData);
+      
+      setState({
+        user: updatedUser,
+        isAuthenticated: !!updatedUser,
+        isLoading: false,
+        error: null,
+      });
+      
+      return updatedUser;
+    } catch (error) {
+      console.error("Erro ao atualizar perfil (AuthContext):", error);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : "Erro ao atualizar perfil",
+      }));
+      throw error;
+    }
+  };
+
   const logout = async (): Promise<void> => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
@@ -216,7 +262,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, devLogin, register, logout, isDevMode }}>
+    <AuthContext.Provider value={{ 
+      ...state, 
+      login, 
+      devLogin, 
+      register, 
+      logout, 
+      isDevMode,
+      updateProfile 
+    }}>
       {children}
     </AuthContext.Provider>
   );

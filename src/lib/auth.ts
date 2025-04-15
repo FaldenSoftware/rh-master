@@ -6,7 +6,8 @@ import {
   loginUser,
   logoutUser,
   getCurrentUser,
-  devModeLogin
+  devModeLogin,
+  updateUserProfile
 } from "./authOperations";
 
 /**
@@ -29,5 +30,6 @@ export {
   loginUser,
   logoutUser,
   getCurrentUser,
-  devModeLogin
+  devModeLogin,
+  updateUserProfile
 };
