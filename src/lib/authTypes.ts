@@ -10,7 +10,6 @@ export interface AuthUser {
   bio?: string;
   avatar_url?: string;
   createdAt: string;
-  // Add missing fields that are used in the codebase
   mentor_id?: string;
   cnpj?: string;
   industry?: string;
