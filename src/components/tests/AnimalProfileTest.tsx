@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import AnimalProfile from '../AnimalProfile';
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -158,30 +157,28 @@ const AnimalProfileTest: React.FC = () => {
     return (
       <Card className="max-w-4xl mx-auto mt-8">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Animal Profile Test Results</CardTitle>
-          <CardDescription>See how compatible you are with Buddy</CardDescription>
+          <CardTitle className="text-2xl">Resultados do Perfil Comportamental</CardTitle>
+          <CardDescription>Veja sua compatibilidade com o perfil</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center">
-            <div className="text-6xl font-bold text-primary mb-2">{compatibility}%</div>
-            <p className="text-xl">Compatibility Score</p>
+            <div className="text-6xl font-bold text-brand-teal mb-2">{compatibility}%</div>
+            <p className="text-xl">Pontuação de Compatibilidade</p>
           </div>
 
-          <Alert variant={compatibility > 80 ? "default" : "destructive"} className="mt-4">
+          <Alert variant={compatibility > 80 ? "default" : "destructive"} className="mt-4 bg-brand-beige border-brand-gold text-brand-teal">
             {compatibility > 80 
-              ? "You'd make a great match for Buddy!" 
-              : "You might want to consider a different pet that better matches your lifestyle."}
+              ? "Você tem um perfil altamente compatível!" 
+              : "Você pode melhorar alguns aspectos do seu perfil comportamental."}
           </Alert>
-
-          <AnimalProfile animal={sampleAnimal} />
         </CardContent>
         <CardFooter>
-          <Button className="w-full" onClick={() => {
+          <Button className="w-full bg-brand-teal hover:bg-brand-teal/90" onClick={() => {
             setShowResults(false);
             setCurrentQuestion(0);
             setAnswers({});
           }}>
-            Take Test Again
+            Refazer Teste
           </Button>
         </CardFooter>
       </Card>
@@ -193,28 +190,24 @@ const AnimalProfileTest: React.FC = () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div className="space-y-1.5">
-            <CardTitle className="text-2xl">Animal Profile Test</CardTitle>
-            <CardDescription>Question {currentQuestion + 1} of {questions.length}</CardDescription>
+            <CardTitle className="text-2xl">Perfil Comportamental</CardTitle>
+            <CardDescription>Questão {currentQuestion + 1} de {questions.length}</CardDescription>
           </div>
           <div className="text-sm font-medium">
-            {Math.round(((currentQuestion) / questions.length) * 100)}% Complete
+            {Math.round(((currentQuestion) / questions.length) * 100)}% Completo
           </div>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(currentQuestion / questions.length) * 100}%` }}></div>
+          <div className="bg-brand-teal h-2.5 rounded-full" style={{ width: `${(currentQuestion / questions.length) * 100}%` }}></div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="mb-6">
-          <AnimalProfile animal={sampleAnimal} />
-        </div>
-        
+      <CardContent>        
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-4">{questions[currentQuestion].question}</h3>
           <RadioGroup value={currentAnswer || ""} onValueChange={setCurrentAnswer}>
             <div className="space-y-3">
               {questions[currentQuestion].options.map(option => (
-                <div key={option.id} className="flex items-center space-x-2">
+                <div key={option.id} className="flex items-center space-x-2 border border-gray-200 p-3 rounded-md hover:bg-gray-50">
                   <RadioGroupItem value={option.id} id={option.id} />
                   <Label htmlFor={option.id} className="cursor-pointer">{option.text}</Label>
                 </div>
@@ -225,11 +218,11 @@ const AnimalProfileTest: React.FC = () => {
       </CardContent>
       <CardFooter>
         <Button 
-          className="w-full" 
+          className="w-full bg-brand-teal hover:bg-brand-teal/90" 
           onClick={handleNext} 
           disabled={!currentAnswer}
         >
-          {currentQuestion === questions.length - 1 ? 'View Results' : 'Next Question'}
+          {currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
         </Button>
       </CardFooter>
     </Card>

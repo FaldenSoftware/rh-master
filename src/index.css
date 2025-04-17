@@ -16,24 +16,24 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 43 39% 54%; /* #c1a051 */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 262.1 83.3% 57.8%;
+    --secondary: 186 97% 20%; /* #015e68 */
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 34 10% 90%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 34 10% 90%;
+    --accent-foreground: 186 97% 20%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 43 39% 54%;
 
     --radius: 0.5rem;
   }
@@ -48,10 +48,10 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 43 39% 54%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 91.2% 59.8%;
+    --secondary: 186 97% 20%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 17.5%;
@@ -65,7 +65,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 43 39% 54%;
   }
 }
 
@@ -86,7 +86,7 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-brand-blue to-brand-purple text-transparent bg-clip-text;
+    @apply bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text;
   }
 
   .button-glow {
@@ -139,6 +139,6 @@
   }
 
   .testimonial-card {
-    @apply relative before:absolute before:content-['"'] before:text-7xl before:text-brand-blue/10 before:top-4 before:left-6 before:font-serif;
+    @apply relative before:absolute before:content-['"'] before:text-7xl before:text-brand-gold/10 before:top-4 before:left-6 before:font-serif;
   }
 }

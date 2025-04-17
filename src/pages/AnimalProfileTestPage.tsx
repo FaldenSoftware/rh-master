@@ -5,7 +5,7 @@ import AnimalProfileTest from "@/components/tests/AnimalProfileTest";
 
 const AnimalProfileTestPage = () => {
   return (
-    <ClientLayout title="Teste de Perfil - Animais">
+    <ClientLayout title="Perfil Comportamental">
       <div className="max-w-4xl mx-auto">
         <AnimalProfileTest />
       </div>

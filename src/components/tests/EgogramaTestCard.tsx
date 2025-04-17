@@ -8,13 +8,13 @@ import { Clock, CheckCircle, Brain, Loader2 } from "lucide-react";
 import { ClientTest } from "@/types/models";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface AnimalProfileTestCardProps {
+interface EgogramaTestCardProps {
   test: ClientTest;
   isStarting: boolean;
   onStartTest: (testId: string) => void;
 }
 
-const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileTestCardProps) => {
+const EgogramaTestCard = ({ test, isStarting, onStartTest }: EgogramaTestCardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
@@ -23,9 +23,9 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
     queryClient.invalidateQueries({ queryKey: ['clientTests'] });
     queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     queryClient.invalidateQueries({ queryKey: ['testResults'] });
-    queryClient.invalidateQueries({ queryKey: ['animalProfileResults'] });
+    queryClient.invalidateQueries({ queryKey: ['egogramaResults'] });
     
-    navigate(`/client/tests/animal-profile/results/latest`);
+    navigate(`/client/tests/egograma/results/latest`);
   };
   
   const completedDate = test.completed_at 
@@ -59,12 +59,12 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
         </div>
         <div className="flex items-start gap-3 mt-3">
           <div className="bg-purple-100 p-2 rounded-md">
-            <Brain className="h-6 w-6 text-purple-600" />
+            <Brain className="h-6 w-6 text-brand-teal" />
           </div>
           <div>
-            <CardTitle className="text-lg">Perfil Comportamental</CardTitle>
+            <CardTitle className="text-lg">Egograma</CardTitle>
             <CardDescription className="mt-1">
-              Descubra seu perfil comportamental através de nossa metáfora de animais.
+              Descubra como se distribuem os estados de ego em sua personalidade.
             </CardDescription>
           </div>
         </div>
@@ -86,7 +86,7 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
               <Clock className="h-4 w-4 mr-1" />
               <span>Tempo estimado: 10 minutos</span>
             </div>
-            <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+            <Badge variant="outline" className="bg-purple-50 text-brand-teal border-brand-teal/20">
               comportamental
             </Badge>
           </div>
@@ -99,7 +99,7 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
           </Button>
         ) : (
           <Button 
-            className="w-full bg-brand-teal hover:bg-brand-teal/80" 
+            className="w-full bg-brand-teal hover:bg-brand-teal/90" 
             onClick={() => onStartTest(test.id)}
             disabled={isStarting}
           >
@@ -116,4 +116,4 @@ const AnimalProfileTestCard = ({ test, isStarting, onStartTest }: AnimalProfileT
   );
 };
 
-export default AnimalProfileTestCard;
+export default EgogramaTestCard;

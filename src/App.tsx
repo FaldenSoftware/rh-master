@@ -27,6 +27,8 @@ import ClientRegister from "./pages/ClientRegister";
 import Register from "./pages/Register";
 import AnimalProfileTestPage from "./pages/AnimalProfileTestPage";
 import AnimalProfileResultsPage from "./pages/AnimalProfileResultsPage";
+import EgogramaTestPage from "./pages/EgogramaTestPage";
+import ProactivityTestPage from "./pages/ProactivityTestPage";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +135,22 @@ const App = () => {
                   element={
                     <ProtectedRoute requiredRole="client">
                       <AnimalProfileResultsPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/tests/egograma" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <EgogramaTestPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/tests/proactivity" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <ProactivityTestPage />
                     </ProtectedRoute>
                   } 
                 />

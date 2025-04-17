@@ -24,23 +24,26 @@ const Header = () => {
     }`}>
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-blue to-brand-purple text-transparent bg-clip-text">
-            RH Mentor
-          </h1>
+          <div className="flex items-center gap-2">
+            <img src="/lovable-uploads/ef00ce90-f820-4932-b421-290ef57dbd65.png" alt="RH Master Logo" className="h-10" />
+            <span className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
+              RH Master
+            </span>
+          </div>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <a href="#funcionalidades" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#funcionalidades" className="text-sm font-semibold text-gray-700 hover:text-brand-teal transition-colors">
             Funcionalidades
           </a>
-          <a href="#planos" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#planos" className="text-sm font-semibold text-gray-700 hover:text-brand-teal transition-colors">
             Planos
           </a>
-          <a href="#depoimentos" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#depoimentos" className="text-sm font-semibold text-gray-700 hover:text-brand-teal transition-colors">
             Depoimentos
           </a>
-          <a href="#contato" className="text-sm font-semibold text-gray-700 hover:text-brand-blue transition-colors">
+          <a href="#contato" className="text-sm font-semibold text-gray-700 hover:text-brand-teal transition-colors">
             Contato
           </a>
           <Link to="/client/login">
@@ -49,7 +52,7 @@ const Header = () => {
             </Button>
           </Link>
           <Link to="/register">
-            <Button className="text-sm font-medium bg-brand-blue hover:bg-brand-blue/90 shadow-md shadow-brand-blue/20 button-glow">
+            <Button className="text-sm font-medium bg-brand-teal hover:bg-brand-teal/90 shadow-md shadow-brand-teal/20 button-glow">
               Começar grátis
             </Button>
           </Link>
@@ -76,28 +79,28 @@ const Header = () => {
             <div className="space-y-6 flex-1">
               <a 
                 href="#funcionalidades" 
-                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                className="block text-xl font-medium text-gray-700 hover:text-brand-teal transition-colors py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Funcionalidades
               </a>
               <a 
                 href="#planos" 
-                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                className="block text-xl font-medium text-gray-700 hover:text-brand-teal transition-colors py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Planos
               </a>
               <a 
                 href="#depoimentos" 
-                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                className="block text-xl font-medium text-gray-700 hover:text-brand-teal transition-colors py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Depoimentos
               </a>
               <a 
                 href="#contato" 
-                className="block text-xl font-medium text-gray-700 hover:text-brand-blue transition-colors py-2"
+                className="block text-xl font-medium text-gray-700 hover:text-brand-teal transition-colors py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contato
@@ -110,7 +113,7 @@ const Header = () => {
                 </Button>
               </Link>
               <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                <Button className="w-full justify-center h-14 text-base bg-brand-blue hover:bg-brand-blue/90 shadow-md">
+                <Button className="w-full justify-center h-14 text-base bg-brand-teal hover:bg-brand-teal/90 shadow-md">
                   Começar grátis
                 </Button>
               </Link>
