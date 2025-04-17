@@ -48,10 +48,11 @@ import {
 } from "@/lib/animalProfileService";
 import { generateAnimalProfilePDF } from "@/lib/pdfGenerator";
 
-import loboIcon from "/public/lovable-uploads/132cbcdf-964e-42ae-9313-be4df791d118.png";
-import tubaraoIcon from "/public/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png";
-import aguiaIcon from "/public/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png";
-import gatoIcon from "/public/lovable-uploads/fa1f3bb8-13ee-41f6-a1a5-a08a1b273fe5.png";
+// Corrigir importação para uso correto com Vite (acesso direto à public)
+const loboIcon = '/lovable-uploads/132cbcdf-964e-42ae-9313-be4df791d118.png';
+const tubaraoIcon = '/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png';
+const aguiaIcon = '/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png';
+const gatoIcon = '/lovable-uploads/fa1f3bb8-13ee-41f6-a1a5-a08a1b273fe5.png';
 
 interface AnimalProfileResultsProps {
   resultId?: string | null;
@@ -147,6 +148,13 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
     );
   }
 
+  // Cálculo dos percentuais conforme documento do teste
+  // Cada resposta marcada multiplica por 4 para obter a porcentagem (25 perguntas)
+  const percentAguia = result.score_aguia * 4;
+  const percentGato = result.score_gato * 4;
+  const percentLobo = result.score_lobo * 4;
+  const percentTuba = result.score_tubarao * 4;
+
   const animalType = result.animal_predominante;
   const animalProfile = animalProfiles[animalType as keyof typeof animalProfiles];
   
@@ -204,23 +212,45 @@ const AnimalProfileResults = ({ resultId }: AnimalProfileResultsProps = {}) => {
               Concluído em: {new Date(result.completed_at).toLocaleDateString('pt-BR')}
             </div>
           </div>
-          
-          <div className="flex flex-col md:flex-row items-center gap-6 mt-4">
-            <div className="h-28 w-28 rounded-full bg-white p-0 overflow-hidden border-4 border-white shadow-lg flex items-center justify-center">
-              <img 
-                src={animalIconSrc} 
-                alt={animalProfile.name} 
-                className="w-full h-full object-cover"
-              />
+          {/* Tabela de percentuais dos perfis */}
+          <div className="mt-4 flex flex-wrap gap-4 justify-center">
+            <div className="bg-white/70 rounded-lg px-4 py-2 shadow text-purple-900 font-semibold min-w-[120px] text-center">
+              Águia: <span className="text-lg font-bold">{percentAguia}%</span>
             </div>
-            
-            <div>
-              <CardTitle className="text-2xl md:text-3xl font-bold">
+            <div className="bg-white/70 rounded-lg px-4 py-2 shadow text-purple-900 font-semibold min-w-[120px] text-center">
+              Gato: <span className="text-lg font-bold">{percentGato}%</span>
+            </div>
+            <div className="bg-white/70 rounded-lg px-4 py-2 shadow text-purple-900 font-semibold min-w-[120px] text-center">
+              Lobo: <span className="text-lg font-bold">{percentLobo}%</span>
+            </div>
+            <div className="bg-white/70 rounded-lg px-4 py-2 shadow text-purple-900 font-semibold min-w-[120px] text-center">
+              Tubarão: <span className="text-lg font-bold">{percentTuba}%</span>
+            </div>
+          </div>
+          {/* Header do resultado: layout responsivo e centralizado para melhor apresentação */}
+          <div className="w-full grid grid-cols-1 md:grid-cols-[auto_1fr] items-center gap-6 mt-6 md:mt-8 md:gap-10 text-center md:text-left">
+            <div className="flex justify-center md:justify-end">
+              <div className="h-40 w-40 rounded-full overflow-hidden flex items-center justify-center shadow-lg">
+                <img
+                  src={animalIconSrc}
+                  alt={animalProfile.name}
+                  className="w-full h-full object-cover"
+                  style={{ imageRendering: 'auto' }}
+                  loading="lazy"
+                  onError={e => {
+                    // Fallback visual em caso de erro de carregamento
+                    (e.target as HTMLImageElement).src = '/placeholder-avatar.png';
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <CardTitle className="text-3xl font-bold">
                 Seu perfil é: {animalProfile.name}
               </CardTitle>
-              <CardDescription className="text-purple-100 mt-2 text-lg">
+              <span className="text-lg md:text-xl font-medium text-purple-100">
                 {animalProfile.title}
-              </CardDescription>
+              </span>
             </div>
           </div>
         </CardHeader>
