@@ -1,4 +1,3 @@
-
 import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Twitter, ArrowUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -24,7 +23,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 mb-6">
-              <img src="/lovable-uploads/ef00ce90-f820-4932-b421-290ef57dbd65.png" alt="RH Master Logo" className="h-10" />
+              <img src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" alt="RH Master Logo" className="h-12" />
               <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
                 RH Master
               </h3>
@@ -122,7 +121,6 @@ const Footer = () => {
         </div>
       </div>
       
-      {/* Scroll to top button */}
       {showScrollTop && (
         <button 
           onClick={scrollToTop} 
