@@ -1,8 +1,13 @@
 
 import { supabase } from './client';
 
+// Define available table names as a type
+type TableName = 'profiles' | 'invitation_codes' | 'invites' | 'mentors' | 'tests' | 
+                'test_results' | 'client_tests' | 'user_roles' | 'animal_profile_answers' | 
+                'animal_profile_questions' | 'animal_profile_results';
+
 export const SupabaseAPI = {
-  getById: async (table: string, id: string) => {
+  getById: async <T>(table: TableName, id: string): Promise<T> => {
     const { data, error } = await supabase
       .from(table)
       .select('*')
@@ -10,15 +15,15 @@ export const SupabaseAPI = {
       .single();
       
     if (error) throw error;
-    return data;
+    return data as T;
   },
   
-  getMany: async (table: string, options?: {
+  getMany: async <T>(table: TableName, options?: {
     select?: string;
     filters?: Record<string, unknown>;
     order?: { column: string; ascending?: boolean };
     limit?: number;
-  }) => {
+  }): Promise<T[]> => {
     let query = supabase.from(table).select(options?.select || '*');
     
     if (options?.filters) {
@@ -41,10 +46,10 @@ export const SupabaseAPI = {
     
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data || []) as T[];
   },
   
-  insert: async (table: string, data: Record<string, unknown>) => {
+  insert: async <T>(table: TableName, data: Record<string, unknown>): Promise<T> => {
     const { data: result, error } = await supabase
       .from(table)
       .insert(data)
@@ -52,10 +57,10 @@ export const SupabaseAPI = {
       .single();
       
     if (error) throw error;
-    return result;
+    return result as T;
   },
   
-  update: async (table: string, id: string, data: Record<string, unknown>) => {
+  update: async <T>(table: TableName, id: string, data: Record<string, unknown>): Promise<T> => {
     const { data: result, error } = await supabase
       .from(table)
       .update(data)
@@ -64,10 +69,10 @@ export const SupabaseAPI = {
       .single();
       
     if (error) throw error;
-    return result;
+    return result as T;
   },
   
-  delete: async (table: string, id: string) => {
+  delete: async (table: TableName, id: string): Promise<boolean> => {
     const { error } = await supabase
       .from(table)
       .delete()
@@ -77,12 +82,12 @@ export const SupabaseAPI = {
     return true;
   },
   
-  invokeFunction: async (functionName: string, payload?: unknown) => {
+  invokeFunction: async <T>(functionName: string, payload?: unknown): Promise<T> => {
     const { data, error } = await supabase.functions.invoke(functionName, {
       body: payload
     });
     
     if (error) throw error;
-    return data;
+    return data as T;
   }
 };

@@ -7,6 +7,8 @@ import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { sendInviteEmail } from "@/services/invitations";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { cn } from "@/lib/utils";
+
 import {
   Card,
   CardHeader,
