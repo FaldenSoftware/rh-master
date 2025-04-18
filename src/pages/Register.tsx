@@ -139,7 +139,15 @@ const Register = () => {
         return;
       }
       
-      console.log("Registrando mentor com todos os campos:", { company, phone, position, bio });
+      console.log("Registrando mentor com dados:", { 
+        email: email.trim(),
+        name: name.trim(), 
+        role: "mentor", 
+        company: company.trim(),
+        phone: phone.trim(),
+        position: position.trim(),
+        bio: bio.trim()
+      });
       
       const user = await register(
         email.trim(), 

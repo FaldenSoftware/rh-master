@@ -17,6 +17,13 @@ export const registerUser = async (
   bio?: string
 ): Promise<AuthUser | null> => {
   try {
+    console.log("Registering user with data:", { email, name, role, company, phone, position, bio });
+    
+    // For mentors, company is required
+    if (role === "mentor" && (!company || company.trim() === "")) {
+      throw new Error("Company is required for mentors");
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -33,13 +40,16 @@ export const registerUser = async (
     });
 
     if (error) {
+      console.error("Supabase signup error:", error);
       throw new Error(error.message);
     }
 
     if (!data.user) {
+      console.error("User data not returned from signup");
       return null;
     }
 
+    console.log("User registered successfully, fetching profile");
     return await getUserProfile(data.user.id);
   } catch (error) {
     console.error("Error registering user:", error);
