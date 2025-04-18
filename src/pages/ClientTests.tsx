@@ -1,12 +1,8 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ClipboardCheck, Clock, CheckCircle, Brain, Loader2, Heart, LineChart } from "lucide-react";
+import { Brain, LineChart } from "lucide-react";
 import ClientLayout from "@/components/client/ClientLayout";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -14,29 +10,17 @@ import { supabase } from "@/integrations/supabase/client";
 import AnimalProfileTestCard from "@/components/tests/AnimalProfileTestCard";
 import EgogramaTestCard from "@/components/tests/EgogramaTestCard";
 import ProactivityTestCard from "@/components/tests/ProactivityTestCard";
-import { ClientTest } from "@/types/models";
+import GenericTestCard from "@/components/tests/GenericTestCard";
+import LoadingTests from "@/components/tests/LoadingTests";
+import EmptyTestState from "@/components/tests/EmptyTestState";
 import { assignAnimalProfileTestToClient } from "@/lib/animalProfileService";
+import { TestData } from "@/types/models";
 
-interface TestData {
-  id: string;
-  client_test_id: string;
-  title: string;
-  description: string | null;
-  icon: any;
-  timeEstimate: string;
-  status: "pendente" | "concluído";
-  category: string;
-  dueDate?: string;
-  completedDate?: string;
-  startedAt?: string | null;
-  completedAt?: string | null;
-}
-
-const iconMap: Record<string, any> = {
+const iconMap = {
   "brain": Brain,
-  "heart": Heart,
-  "users": Heart,
-  "clipboard": ClipboardCheck,
+  "heart": Brain,
+  "users": Brain,
+  "clipboard": Brain,
   "chart": LineChart
 };
 
@@ -53,10 +37,8 @@ const ClientTests = () => {
         throw new Error("Usuário não autenticado");
       }
 
-      // Garantir que o teste de perfil animal esteja atribuído ao cliente
       await assignAnimalProfileTestToClient(session.user.id);
       
-      // Buscar os testes do cliente
       try {
         console.log("Buscando testes para o usuário:", session.user.id);
         const { data: clientTests, error: clientTestsError } = await supabase
@@ -66,7 +48,7 @@ const ClientTests = () => {
         
         if (clientTestsError) {
           console.error("Erro ao buscar testes do cliente:", clientTestsError);
-          return getDummyTestData(); // Retornar dados fictícios em caso de erro
+          return getDummyTestData();
         }
         
         console.log("Testes encontrados:", clientTests?.length || 0);
@@ -76,7 +58,6 @@ const ClientTests = () => {
           return getDummyTestData();
         }
         
-        // Buscar informações dos testes
         const { data: testsInfo, error: testsInfoError } = await supabase
           .from('tests')
           .select('*')
@@ -148,25 +129,21 @@ const ClientTests = () => {
     console.log("Formatando dados de testes:", { clientTests, testsInfo });
     const formattedTests: TestData[] = [];
     
-    // Verificar se existe o teste de perfil comportamental (animal)
     const hasAnimalTest = clientTests.some(test => {
       const testInfo = testsInfo.find(t => t.id === test.test_id);
       return testInfo && testInfo.title === "Perfil Comportamental";
     });
     
-    // Verificar se existe o teste de egograma
     const hasEgogramTest = clientTests.some(test => {
       const testInfo = testsInfo.find(t => t.id === test.test_id);
       return testInfo && testInfo.title === "Egograma";
     });
     
-    // Verificar se existe o teste de proatividade
     const hasProactivityTest = clientTests.some(test => {
       const testInfo = testsInfo.find(t => t.id === test.test_id);
       return testInfo && testInfo.title === "Formulário de Proatividade";
     });
     
-    // Se não existir o teste comportamental, adicionar manualmente
     if (!hasAnimalTest) {
       formattedTests.push({
         id: "dummy-animal-test-id",
@@ -183,7 +160,6 @@ const ClientTests = () => {
       });
     }
     
-    // Se não existir o teste de egograma, adicionar manualmente
     if (!hasEgogramTest) {
       formattedTests.push({
         id: "dummy-egogram-test-id",
@@ -200,7 +176,6 @@ const ClientTests = () => {
       });
     }
     
-    // Se não existir o teste de proatividade, adicionar manualmente
     if (!hasProactivityTest) {
       formattedTests.push({
         id: "dummy-proactivity-test-id",
@@ -217,7 +192,6 @@ const ClientTests = () => {
       });
     }
     
-    // Processar testes existentes do cliente
     clientTests.forEach(test => {
       const testInfo = testsInfo?.find(t => t.id === test.test_id);
       
@@ -232,7 +206,6 @@ const ClientTests = () => {
         const category = "comportamental"; 
         const iconKey = testInfo.title.includes("Proatividade") ? "chart" : "brain";
         
-        // Se não for um dos testes especiais que já tratamos acima
         if (
           testInfo.title !== "Perfil Comportamental" && 
           testInfo.title !== "Egograma" && 
@@ -360,15 +333,11 @@ const ClientTests = () => {
   if (isLoading) {
     return (
       <ClientLayout title="Meus Testes">
-        <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-brand-teal mb-4" />
-          <p className="text-muted-foreground">Carregando seus testes...</p>
-        </div>
+        <LoadingTests />
       </ClientLayout>
     );
   }
 
-  // Garantir que sempre temos os testes básicos
   const animalTest = testData.find(test => test.title === "Perfil Comportamental");
   const egogramTest = testData.find(test => test.title === "Egograma");
   const proactivityTest = testData.find(test => test.title === "Formulário de Proatividade");
@@ -489,80 +458,17 @@ const ClientTests = () => {
                        test.title !== "Egograma" && 
                        test.title !== "Formulário de Proatividade")
                 .map((test) => (
-                  <Card key={test.client_test_id} className="overflow-hidden">
-                    <CardHeader className="bg-gray-50 pb-4">
-                      <div className="flex justify-between items-start">
-                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
-                          Pendente
-                        </Badge>
-                        <div className="flex items-center text-amber-600">
-                          <Clock className="h-4 w-4 mr-1" />
-                          <span className="text-xs">Prazo: {test.dueDate}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 mt-3">
-                        <div className="bg-purple-100 p-2 rounded-md">
-                          <test.icon className="h-6 w-6 text-brand-teal" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{test.title}</CardTitle>
-                          <CardDescription className="mt-1">
-                            {test.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Progresso</span>
-                            <span className="font-medium">
-                              {test.startedAt ? "Iniciado" : "0%"}
-                            </span>
-                          </div>
-                          <Progress value={test.startedAt ? 30 : 0} className="h-2" />
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center text-muted-foreground">
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>Tempo estimado: {test.timeEstimate}</span>
-                          </div>
-                          <Badge variant="outline" className="bg-purple-50 text-brand-teal border-brand-teal/20">
-                            {test.category}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="border-t bg-gray-50 py-3">
-                      <Button 
-                        className="w-full bg-brand-teal hover:bg-brand-teal/80" 
-                        onClick={() => handleStartTest(test)}
-                        disabled={isStartingTest === test.client_test_id}
-                      >
-                        {isStartingTest === test.client_test_id ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Iniciando...
-                          </>
-                        ) : test.startedAt ? "Continuar Teste" : "Iniciar Teste"}
-                      </Button>
-                    </CardFooter>
-                  </Card>
+                  <GenericTestCard
+                    key={test.client_test_id}
+                    test={test}
+                    isStarting={isStartingTest === test.client_test_id}
+                    onStartTest={handleStartTest}
+                    onViewResults={handleViewResults}
+                  />
                 ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="bg-gray-100 inline-flex rounded-full p-3 mb-4">
-                <ClipboardCheck className="h-6 w-6 text-gray-500" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">Nenhum teste pendente</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Você não tem nenhum teste pendente no momento. Todos os seus testes
-                serão exibidos aqui quando estiverem disponíveis.
-              </p>
-            </div>
+            <EmptyTestState type="pending" />
           )}
         </TabsContent>
         
@@ -626,69 +532,17 @@ const ClientTests = () => {
                        test.title !== "Egograma" && 
                        test.title !== "Formulário de Proatividade")
                 .map((test) => (
-                  <Card key={test.client_test_id} className="overflow-hidden">
-                    <CardHeader className="bg-gray-50 pb-4">
-                      <div className="flex justify-between items-start">
-                        <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                          Concluído
-                        </Badge>
-                        <div className="flex items-center text-green-600">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          <span className="text-xs">Realizado: {test.completedDate}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 mt-3">
-                        <div className="bg-purple-100 p-2 rounded-md">
-                          <test.icon className="h-6 w-6 text-brand-teal" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{test.title}</CardTitle>
-                          <CardDescription className="mt-1">
-                            {test.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-4">
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="text-muted-foreground">Progresso</span>
-                            <span className="font-medium">100%</span>
-                          </div>
-                          <Progress value={100} className="h-2" />
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center text-muted-foreground">
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>Tempo estimado: {test.timeEstimate}</span>
-                          </div>
-                          <Badge variant="outline" className="bg-purple-50 text-brand-teal border-brand-teal/20">
-                            {test.category}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="border-t bg-gray-50 py-3">
-                      <Button variant="outline" className="w-full" onClick={() => handleViewResults(test.id)}>
-                        Ver Resultados
-                      </Button>
-                    </CardFooter>
-                  </Card>
+                  <GenericTestCard
+                    key={test.client_test_id}
+                    test={test}
+                    isStarting={isStartingTest === test.client_test_id}
+                    onStartTest={handleStartTest}
+                    onViewResults={handleViewResults}
+                  />
                 ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <div className="bg-gray-100 inline-flex rounded-full p-3 mb-4">
-                <CheckCircle className="h-6 w-6 text-gray-500" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">Nenhum teste concluído</h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Você ainda não concluiu nenhum teste. Após concluir seus testes, 
-                eles serão exibidos aqui com seus resultados.
-              </p>
-            </div>
+            <EmptyTestState type="completed" />
           )}
         </TabsContent>
       </Tabs>

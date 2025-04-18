@@ -1,4 +1,3 @@
-
 export interface Profile {
   id: string;
   name: string;
@@ -61,4 +60,19 @@ export interface InvitationCode {
   used_by?: string;
   created_at: string;
   expires_at: string;
+}
+
+export interface TestData {
+  id: string;
+  client_test_id: string;
+  title: string;
+  description: string | null;
+  icon: any;
+  timeEstimate: string;
+  status: "pendente" | "concluído";
+  category: string;
+  dueDate?: string;
+  completedDate?: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
 }
