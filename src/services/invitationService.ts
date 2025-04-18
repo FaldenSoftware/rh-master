@@ -1,5 +1,4 @@
-
-import { SupabaseAPI } from '@/lib/supabase/api';
+import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from './errorService';
 import { z } from 'zod';
 import { addDays } from 'date-fns';
@@ -12,7 +11,6 @@ export const inviteSchema = z.object({
 });
 
 export type InviteData = z.infer<typeof inviteSchema>;
-
 export interface InvitationResult {
   success: boolean;
   error?: string;
@@ -35,8 +33,9 @@ type InvitationCode = Database['public']['Tables']['invitation_codes']['Row'] & 
 export class InvitationService {
   static async checkEmailConfig(): Promise<{ configured: boolean; error?: string }> {
     try {
-      const result = await SupabaseAPI.invokeFunction<{ configured: boolean; error?: string }>('check-email-config');
-      return result;
+      const { data, error } = await supabase.functions.invoke<{ configured: boolean; error?: string }>('check-email-config');
+      if (error) throw error;
+      return data;
     } catch (error) {
       ErrorService.logError('function_error', error, { function: 'check-email-config' });
       return { configured: false, error: ErrorService.getUserFriendlyMessage(error) };
@@ -49,7 +48,7 @@ export class InvitationService {
     mentor: AuthUser | null
   ): Promise<InvitationResult> {
     try {
-      if (!mentor || !mentor.id) {
+      if (!mentor?.id) {
         throw new Error('Mentor não autenticado');
       }
       
@@ -59,33 +58,47 @@ export class InvitationService {
         mentor_id: mentor.id
       });
       
-      const existingInvites = await SupabaseAPI.getMany<InvitationCode>('invitation_codes', {
-        filters: {
-          email: validatedData.email,
-          mentor_id: validatedData.mentor_id
-        },
-        limit: 1
-      });
+      const { data: existingInvites, error: checkError } = await supabase
+        .from('invitation_codes')
+        .select()
+        .eq('email', validatedData.email)
+        .eq('mentor_id', validatedData.mentor_id)
+        .limit(1);
+        
+      if (checkError) throw checkError;
       
       const expirationDate = addDays(new Date(), 7).toISOString();
       let inviteId: string;
       
-      if (existingInvites.length > 0) {
+      if (existingInvites && existingInvites.length > 0) {
         const existingInvite = existingInvites[0];
-        await SupabaseAPI.update<InvitationCode>('invitation_codes', existingInvite.id, {
-          is_used: false,
-          expires_at: expirationDate
-        });
+        const { error: updateError } = await supabase
+          .from('invitation_codes')
+          .update({
+            is_used: false,
+            expires_at: expirationDate
+          })
+          .eq('id', existingInvite.id);
+          
+        if (updateError) throw updateError;
         inviteId = existingInvite.id;
       } else {
         const code = Math.random().toString(36).substring(2, 10);
-        const newInvite = await SupabaseAPI.insert<InvitationCode>('invitation_codes', {
-          code,
-          mentor_id: validatedData.mentor_id,
-          email: validatedData.email,
-          is_used: false,
-          expires_at: expirationDate
-        });
+        const { data: newInvite, error: insertError } = await supabase
+          .from('invitation_codes')
+          .insert({
+            code,
+            mentor_id: validatedData.mentor_id,
+            email: validatedData.email,
+            is_used: false,
+            expires_at: expirationDate
+          })
+          .select()
+          .single();
+          
+        if (insertError) throw insertError;
+        if (!newInvite) throw new Error('Falha ao criar convite');
+        
         inviteId = newInvite.id;
       }
       
@@ -188,7 +201,7 @@ export class InvitationService {
     isDomainError?: boolean;
   }> {
     try {
-      const result = await SupabaseAPI.invokeFunction<{
+      const { data, error } = await supabase.functions.invoke<{
         success: boolean;
         error?: string;
         isTestMode?: boolean;
@@ -199,14 +212,17 @@ export class InvitationService {
         isApiKeyError?: boolean;
         isDomainError?: boolean;
       }>('send-invite-email', {
-        email: clientEmail,
-        clientName: clientName || 'Cliente',
-        mentorName: mentorName || 'Mentor',
-        mentorCompany: 'RH Mentor Mastery',
-        registerUrl: `https://rh-mentor-mastery.vercel.app/register?type=client&email=${encodeURIComponent(clientEmail)}`
+        body: {
+          email: clientEmail,
+          clientName: clientName || 'Cliente',
+          mentorName: mentorName || 'Mentor',
+          mentorCompany: 'RH Mentor Mastery',
+          registerUrl: `https://rh-mentor-mastery.vercel.app/register?type=client&email=${encodeURIComponent(clientEmail)}`
+        }
       });
       
-      return result;
+      if (error) throw error;
+      return data;
     } catch (error) {
       ErrorService.logError('function_error', error, {
         function: 'send-invite-email',
@@ -225,10 +241,14 @@ export class InvitationService {
 
   static async getInvitationsByMentor(mentorId: string): Promise<InvitationCode[]> {
     try {
-      return await SupabaseAPI.getMany<InvitationCode>('invitation_codes', {
-        filters: { mentor_id: mentorId },
-        order: { column: 'created_at', ascending: false }
-      });
+      const { data, error } = await supabase
+        .from('invitation_codes')
+        .select('*')
+        .eq('mentor_id', mentorId)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
     } catch (error) {
       ErrorService.logError('database_error', error, { mentorId });
       throw error;
@@ -240,15 +260,14 @@ export class InvitationService {
     mentorId: string
   ): Promise<InvitationResult> {
     try {
-      const invites = await SupabaseAPI.getMany<InvitationCode>('invitation_codes', {
-        filters: {
-          id: inviteId,
-          mentor_id: mentorId
-        },
-        select: '*, mentor:mentor_id(name)'
-      });
+      const { data: invites, error: fetchError } = await supabase
+        .from('invitation_codes')
+        .select('*, mentor:mentor_id(name)')
+        .eq('id', inviteId)
+        .eq('mentor_id', mentorId);
       
-      if (invites.length === 0) {
+      if (fetchError) throw fetchError;
+      if (!invites || invites.length === 0) {
         return {
           success: false,
           error: 'Convite não encontrado ou sem permissão'
@@ -257,10 +276,15 @@ export class InvitationService {
       
       const invite = invites[0];
       
-      await SupabaseAPI.update('invitation_codes', inviteId, {
-        expires_at: addDays(new Date(), 7).toISOString(),
-        is_used: false
-      });
+      const { error: updateError } = await supabase
+        .from('invitation_codes')
+        .update({
+          expires_at: addDays(new Date(), 7).toISOString(),
+          is_used: false
+        })
+        .eq('id', inviteId);
+        
+      if (updateError) throw updateError;
       
       const emailResult = await this.sendInviteEmail(
         invite.email,
