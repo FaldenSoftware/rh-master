@@ -9,16 +9,20 @@ export const sendWithGoDaddy = async (
   smtpPassword: string
 ) => {
   console.log('Tentando enviar email via GoDaddy SMTP...');
+  console.log(`Configuração: Host=smtpout.secureserver.net, Port=465, SSL=true, Username=${smtpUsername.substring(0, 3)}...`);
   
-  const client = new SMTPClient({
-    user: smtpUsername,
-    password: smtpPassword,
-    host: "smtpout.secureserver.net",
-    port: 465,
-    ssl: true
-  });
-
   try {
+    const client = new SMTPClient({
+      user: smtpUsername,
+      password: smtpPassword,
+      host: "smtpout.secureserver.net",
+      port: 465,
+      ssl: true,
+      timeout: 10000 // aumentando o timeout para 10 segundos
+    });
+
+    console.log('Cliente SMTP criado com sucesso, tentando enviar email');
+    
     const message = await client.sendAsync({
       from: "RH Mentor Mastery <contato@rhmaster.space>",
       to: email,
@@ -29,7 +33,7 @@ export const sendWithGoDaddy = async (
       ]
     });
     
-    console.log('Email enviado com sucesso via GoDaddy');
+    console.log('Email enviado com sucesso via GoDaddy:', message.header["message-id"]);
     return {
       success: true,
       id: message.header["message-id"],
@@ -37,7 +41,13 @@ export const sendWithGoDaddy = async (
     };
     
   } catch (error) {
-    console.error('Erro ao enviar email via GoDaddy:', error);
+    console.error('Erro detalhado ao enviar email via GoDaddy:', JSON.stringify({
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      stack: error.stack
+    }));
+    
     return {
       success: false,
       error: error

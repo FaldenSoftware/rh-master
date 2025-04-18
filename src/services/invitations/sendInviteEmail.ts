@@ -13,8 +13,11 @@ export const sendInviteEmail = async (
   error?: string; 
   isTestMode?: boolean; 
   actualRecipient?: string;
+  errorDetails?: any;
 }> => {
   try {
+    console.log(`Iniciando envio de email para ${clientEmail}`);
+    
     // Chamar a Edge Function para enviar o email
     const { data, error } = await supabase.functions.invoke('send-invite-email', {
       body: {
@@ -29,14 +32,24 @@ export const sendInviteEmail = async (
     
     if (error) {
       console.error("Erro na edge function:", error);
-      return { success: false, error: "Erro ao enviar email: " + error.message };
+      return { 
+        success: false, 
+        error: "Erro ao enviar email: " + error.message,
+        errorDetails: error
+      };
     }
     
     if (!data || !data.success) {
       const errorMsg = data?.error || "Resposta inválida do servidor";
       console.error("Erro detalhado:", data?.details || "Sem detalhes adicionais");
-      return { success: false, error: errorMsg };
+      return { 
+        success: false, 
+        error: errorMsg,
+        errorDetails: data?.details
+      };
     }
+    
+    console.log("Email enviado com sucesso:", data);
     
     // Include optional test mode properties if they exist in the response
     return { 
@@ -46,6 +59,10 @@ export const sendInviteEmail = async (
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
-    return { success: false, error: "Erro interno ao enviar email" };
+    return { 
+      success: false, 
+      error: "Erro interno ao enviar email",
+      errorDetails: error
+    };
   }
 };

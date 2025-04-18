@@ -20,8 +20,10 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     success?: boolean;
     message?: string;
     error?: string;
+    errorDetails?: any;
     isApiKeyError?: boolean;
     isDomainError?: boolean;
+    isSmtpError?: boolean;
     isTestMode?: boolean;
     actualRecipient?: string;
     intendedRecipient?: string;
@@ -71,16 +73,27 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
                               result.error.includes("verify") ||
                               result.error.includes("verification")));
         
+        // Check if this is an SMTP error
+        const isSmtpError = result.error && (
+          result.error.includes("SMTP") || 
+          result.error.includes("smtp") ||
+          result.error.includes("email") ||
+          result.error.includes("Email") ||
+          result.error.includes("connection")
+        );
+        
         // Exibir mensagem de erro mais detalhada
         const errorMsg = result.error || "Erro ao enviar convite";
         toast.error(errorMsg);
         setInviteStatus({
           success: false,
           error: errorMsg,
+          errorDetails: result.errorDetails,
           isApiKeyError: isApiKeyError,
-          isDomainError: isDomainError
+          isDomainError: isDomainError,
+          isSmtpError: isSmtpError
         });
-        console.error("Falha ao enviar convite:", errorMsg);
+        console.error("Falha ao enviar convite:", errorMsg, result.errorDetails);
         return;
       }
       
@@ -103,7 +116,8 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       toast.error(errorMessage);
       setInviteStatus({
         success: false,
-        error: errorMessage
+        error: errorMessage,
+        errorDetails: error
       });
     } finally {
       setIsSubmitting(false);
@@ -153,8 +167,10 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       {inviteStatus?.success === false && (
         <InviteErrorAlert 
           error={inviteStatus.error}
+          errorDetails={inviteStatus.errorDetails}
           isApiKeyError={inviteStatus.isApiKeyError}
           isDomainError={inviteStatus.isDomainError}
+          isSmtpError={inviteStatus.isSmtpError}
         />
       )}
     </div>

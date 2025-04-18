@@ -32,14 +32,22 @@ export const handleInviteEmailRequest = async (req: Request): Promise<Response> 
       return createErrorResponse(errorMsg, rawData);
     }
 
+    // Verificar as credenciais SMTP
     const smtpUsername = Deno.env.get('SMTP_USERNAME');
     const smtpPassword = Deno.env.get('SMTP_PASSWORD');
+    
+    console.log("Verificação de credenciais SMTP:", {
+      usernameExiste: Boolean(smtpUsername),
+      passwordExiste: Boolean(smtpPassword),
+      usernameLength: smtpUsername ? smtpUsername.length : 0,
+      passwordLength: smtpPassword ? smtpPassword.length : 0
+    });
     
     if (!smtpUsername || !smtpPassword) {
       console.error('Credenciais SMTP não configuradas nas variáveis de ambiente');
       return createErrorResponse(
         'Configuração de e-mail ausente. Contate o administrador do sistema.',
-        null
+        { smtpMissing: !smtpUsername ? 'username' : 'password' }
       );
     }
     
@@ -48,6 +56,7 @@ export const handleInviteEmailRequest = async (req: Request): Promise<Response> 
     console.log(`Enviando e-mail para ${data.email}`);
     
     try {
+      console.log("Iniciando envio via GoDaddy SMTP");
       const emailResult = await sendWithGoDaddy(
         data.email, 
         `Convite para RH Mentor Mastery de ${data.mentorCompany}`,
@@ -56,9 +65,16 @@ export const handleInviteEmailRequest = async (req: Request): Promise<Response> 
         smtpPassword
       );
       
+      console.log("Resultado do envio de email:", JSON.stringify({
+        success: emailResult.success,
+        id: emailResult.id || '',
+        error: emailResult.error ? JSON.stringify(emailResult.error) : undefined
+      }));
+      
       if (emailResult.success) {
         return createSuccessResponse('GoDaddy', emailResult.id || '');
       } else {
+        console.error("Detalhes do erro de envio:", emailResult.error);
         return createErrorResponse(
           'Falha ao enviar e-mail.',
           emailResult.error
@@ -66,6 +82,7 @@ export const handleInviteEmailRequest = async (req: Request): Promise<Response> 
       }
     } catch (emailError) {
       console.error('Erro ao tentar enviar email:', emailError);
+      console.error('Detalhes do erro SMTP:', JSON.stringify(emailError));
       return createErrorResponse(
         'Erro ao processar envio de email',
         emailError.message || 'Erro desconhecido'
