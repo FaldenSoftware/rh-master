@@ -75,4 +75,3 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
     return null;
   }
 };
-
