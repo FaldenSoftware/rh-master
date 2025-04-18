@@ -244,7 +244,7 @@ export class InvitationService {
     try {
       const { data, error } = await supabase
         .from('invitation_codes')
-        .select('*, mentor:mentor_id(name)')
+        .select('*, mentor:profiles!invitation_codes_mentor_id_fkey(name)')
         .eq('mentor_id', mentorId)
         .order('created_at', { ascending: false });
         
@@ -261,7 +261,7 @@ export class InvitationService {
     mentorId: string
   ): Promise<InvitationResult> {
     try {
-      // Update the query to use explicit column naming for the join
+      // Explicitly specify the foreign key relationship in the query
       const { data: invites, error: fetchError } = await supabase
         .from('invitation_codes')
         .select('*, mentor:profiles!invitation_codes_mentor_id_fkey(name)')
