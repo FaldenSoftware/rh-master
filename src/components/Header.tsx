@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
@@ -23,10 +24,11 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
-            <img src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" alt="RH Master Logo" className="h-12" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
-              RH Master
-            </span>
+            <img 
+              src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" 
+              alt="RH Master Logo" 
+              className="h-10 w-auto object-contain" 
+            />
           </div>
         </div>
 

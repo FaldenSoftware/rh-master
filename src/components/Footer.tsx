@@ -23,11 +23,13 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 mb-6">
-              <img src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" alt="RH Master Logo" className="h-12" />
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
-                RH Master
-              </h3>
+              <img 
+                src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" 
+                alt="RH Master Logo" 
+                className="h-10 w-auto object-contain" 
+              />
             </div>
+            
             <p className="text-gray-600 mb-6">
               Transformando líderes comuns em profissionais de alta performance através de ciência comportamental e tecnologia de ponta.
             </p>
@@ -46,6 +48,7 @@ const Footer = () => {
               </a>
             </div>
           </div>
+
           
           <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <h4 className="font-bold text-lg mb-6">Links Rápidos</h4>
