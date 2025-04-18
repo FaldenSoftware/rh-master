@@ -26,7 +26,7 @@ const Footer = () => {
               <img 
                 src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" 
                 alt="Logo" 
-                className="h-16 w-auto object-contain" 
+                className="h-full max-h-16 w-auto object-contain" 
               />
             </div>
             
