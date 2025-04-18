@@ -22,6 +22,17 @@ const sampleAnimal = {
 
 // Questions for the animal profile test
 const questions = [
+  // Exemplo de estrutura correta para cada pergunta:
+  // {
+  //   id: 'q1',
+  //   text: 'Exemplo de pergunta',
+  //   options: [
+  //     { id: 'q1o1', text: 'Opção 1', traits: { dinâmico: 2, expressivo: 1 } },
+  //     { id: 'q1o2', text: 'Opção 2', traits: { analítico: 2, preciso: 1 } },
+  //     { id: 'q1o3', text: 'Opção 3', traits: { amigável: 2, estável: 1 } }
+  //   ]
+  // },
+
   {
     id: 'q1',
     question: "What type of home environment would be best for Buddy?",
@@ -86,40 +97,40 @@ const questions = [
     id: 'q7',
     question: "What special care might Buddy need?",
     options: [
-      { id: 'a', text: 'Regular grooming for his coat' },
-      { id: 'b', text: 'Special dietary considerations' },
-      { id: 'c', text: 'Extra attention for separation anxiety' },
-      { id: 'd', text: 'Minimal special care needed' }
+      { id: 'a', text: 'Regular grooming for his coat', traits: { dinâmico: 1, expressivo: 0, analítico: 2, preciso: 2, amigável: 0, estável: 0, cauteloso: 1 } },
+      { id: 'b', text: 'Special dietary considerations', traits: { dinâmico: 0, expressivo: 0, analítico: 2, preciso: 2, amigável: 0, estável: 1, cauteloso: 1 } },
+      { id: 'c', text: 'Extra attention for separation anxiety', traits: { dinâmico: 0, expressivo: 2, analítico: 0, preciso: 0, amigável: 2, estável: 2, cauteloso: 1 } },
+      { id: 'd', text: 'Minimal special care needed', traits: { dinâmico: 2, expressivo: 1, analítico: 1, preciso: 1, amigável: 1, estável: 1, cauteloso: 0 } }
     ]
   },
   {
     id: 'q8',
     question: "How easily would Buddy adapt to new environments?",
     options: [
-      { id: 'a', text: 'Very easily - adaptable and flexible' },
-      { id: 'b', text: 'Slowly - needs time to adjust' },
-      { id: 'c', text: 'Difficulty adapting to change' },
-      { id: 'd', text: 'Depends on the presence of familiar objects' }
+      { id: 'a', text: 'Very easily - adaptable and flexible', traits: { dinâmico: 2, expressivo: 2, analítico: 0, preciso: 0, amigável: 1, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Slowly - needs time to adjust', traits: { dinâmico: 0, expressivo: 0, analítico: 1, preciso: 2, amigável: 0, estável: 2, cauteloso: 2 } },
+      { id: 'c', text: 'Difficulty adapting to change', traits: { dinâmico: 0, expressivo: 0, analítico: 2, preciso: 1, amigável: 0, estável: 2, cauteloso: 2 } },
+      { id: 'd', text: 'Depends on the presence of familiar objects', traits: { dinâmico: 1, expressivo: 1, analítico: 1, preciso: 1, amigável: 1, estável: 2, cauteloso: 1 } }
     ]
   },
   {
     id: 'q9',
     question: "What would be Buddy's ideal daily routine?",
     options: [
-      { id: 'a', text: 'Structured with consistent activities' },
-      { id: 'b', text: 'Flexible with plenty of downtime' },
-      { id: 'c', text: 'Active mornings and evenings with rest mid-day' },
-      { id: 'd', text: 'No particular routine needed' }
+      { id: 'a', text: 'Structured with consistent activities', traits: { dinâmico: 1, expressivo: 0, analítico: 2, preciso: 2, amigável: 0, estável: 2, cauteloso: 1 } },
+      { id: 'b', text: 'Flexible with plenty of downtime', traits: { dinâmico: 1, expressivo: 1, analítico: 1, preciso: 1, amigável: 2, estável: 2, cauteloso: 0 } },
+      { id: 'c', text: 'Active mornings and evenings with rest mid-day', traits: { dinâmico: 2, expressivo: 2, analítico: 0, preciso: 1, amigável: 1, estável: 1, cauteloso: 0 } },
+      { id: 'd', text: 'No particular routine needed', traits: { dinâmico: 2, expressivo: 1, analítico: 0, preciso: 0, amigável: 1, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q10',
     question: "What type of enrichment would Buddy enjoy most?",
     options: [
-      { id: 'a', text: 'Interactive toys and puzzles' },
-      { id: 'b', text: 'Running and outdoor activities' },
-      { id: 'c', text: 'Social interaction with other dogs' },
-      { id: 'd', text: 'Quiet time with human companions' }
+      { id: 'a', text: 'Interactive toys and puzzles', traits: { dinâmico: 2, expressivo: 1, analítico: 2, preciso: 1, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Running and outdoor activities', traits: { dinâmico: 2, expressivo: 2, analítico: 0, preciso: 0, amigável: 1, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'Social interaction with other dogs', traits: { dinâmico: 1, expressivo: 2, analítico: 0, preciso: 0, amigável: 2, estável: 1, cauteloso: 0 } },
+      { id: 'd', text: 'Quiet time with human companions', traits: { dinâmico: 0, expressivo: 0, analítico: 1, preciso: 1, amigável: 2, estável: 2, cauteloso: 1 } }
     ]
   }
 ];
@@ -146,11 +157,157 @@ const AnimalProfileTest: React.FC = () => {
     }
   };
 
-  const calculateCompatibility = () => {
-    // Simple algorithm - each answer has a compatibility score
-    // In a real app, this would be more sophisticated
-    return Math.floor(Math.random() * 40) + 60; // Returns 60-99% compatibility
+  // Novo cálculo preciso do Perfil Comportamental
+  // Cálculo preciso do Perfil Comportamental
+  // Função de cálculo precisa do Perfil Comportamental
+  const calculateProfile = () => {
+    const traits = {
+      dinâmico: 0,
+      expressivo: 0,
+      analítico: 0,
+      preciso: 0,
+      amigável: 0,
+      estável: 0,
+      cauteloso: 0
+    };
+    let totalPoints = 0;
+    Object.entries(answers).forEach(([questionId, answerId]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option && option.traits) {
+          Object.entries(option.traits).forEach(([trait, score]) => {
+            traits[trait as keyof typeof traits] += score as number;
+            totalPoints += score as number;
+          });
+        }
+      }
+    });
+    const profileScores = {
+      águia: (traits.dinâmico + traits.expressivo) / 2,
+      lobo: (traits.analítico + traits.preciso) / 2,
+      golfinho: (traits.expressivo + traits.amigável) / 2,
+      coruja: (traits.estável + traits.cauteloso) / 2
+    };
+    let dominantProfile = Object.entries(profileScores).reduce(
+      (max, [profile, score]) => score > max.score ? { profile, score } : max,
+      { profile: '', score: 0 }
+    );
+    const maxPossibleScore = Object.values(traits).length * 3 * (Object.keys(answers).length / Object.values(traits).length); // 3 pontos máx por trait por pergunta
+    const percentageScore = Math.round((totalPoints / maxPossibleScore) * 100);
+    const sortedProfiles = Object.entries(profileScores)
+      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+      .map(([profile, score]) => ({
+        profile,
+        score,
+        percentage: Math.round((score / (Object.values(profileScores).reduce((a, b) => a + b, 0))) * 100)
+      }));
+    return {
+      dominantProfile: dominantProfile.profile,
+      percentageScore: Math.min(percentageScore, 100),
+      profileScores: sortedProfiles,
+      traits
+    };
   };
+
+    const traits = {
+      dinâmico: 0,
+      expressivo: 0,
+      analítico: 0,
+      preciso: 0,
+      amigável: 0,
+      estável: 0,
+      cauteloso: 0
+    };
+    let totalPoints = 0;
+    Object.entries(answers).forEach(([questionId, answerId]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option && option.traits) {
+          Object.entries(option.traits).forEach(([trait, score]) => {
+            traits[trait as keyof typeof traits] += score as number;
+            totalPoints += score as number;
+          });
+        }
+      }
+    });
+    const profileScores = {
+      águia: (traits.dinâmico + traits.expressivo) / 2,
+      lobo: (traits.analítico + traits.preciso) / 2,
+      golfinho: (traits.expressivo + traits.amigável) / 2,
+      coruja: (traits.estável + traits.cauteloso) / 2
+    };
+    let dominantProfile = Object.entries(profileScores).reduce(
+      (max, [profile, score]) => score > max.score ? { profile, score } : max,
+      { profile: '', score: 0 }
+    );
+    const maxPossibleScore = Object.values(traits).length * 3 * (Object.keys(answers).length / Object.values(traits).length); // 3 pontos máx por trait por pergunta
+    const percentageScore = Math.round((totalPoints / maxPossibleScore) * 100);
+    const sortedProfiles = Object.entries(profileScores)
+      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+      .map(([profile, score]) => ({
+        profile,
+        score,
+        percentage: Math.round((score / (Object.values(profileScores).reduce((a, b) => a + b, 0))) * 100)
+      }));
+    return {
+      dominantProfile: dominantProfile.profile,
+      percentageScore: Math.min(percentageScore, 100),
+      profileScores: sortedProfiles,
+      traits
+    };
+  };
+
+    const traits = {
+      dinâmico: 0,
+      expressivo: 0,
+      analítico: 0,
+      preciso: 0,
+      amigável: 0,
+      estável: 0,
+      cauteloso: 0
+    };
+    let totalPoints = 0;
+    Object.entries(answers).forEach(([questionId, answerId]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option && option.traits) {
+          Object.entries(option.traits).forEach(([trait, score]) => {
+            traits[trait as keyof typeof traits] += score as number;
+            totalPoints += score as number;
+          });
+        }
+      }
+    });
+    const profileScores = {
+      águia: (traits.dinâmico + traits.expressivo) / 2,
+      lobo: (traits.analítico + traits.preciso) / 2,
+      golfinho: (traits.expressivo + traits.amigável) / 2,
+      coruja: (traits.estável + traits.cauteloso) / 2
+    };
+    let dominantProfile = Object.entries(profileScores).reduce(
+      (max, [profile, score]) => score > max.score ? { profile, score } : max,
+      { profile: '', score: 0 }
+    );
+    const maxPossibleScore = 30; // Considerando 10 perguntas com média de 3 pontos cada
+    const percentageScore = Math.round((totalPoints / maxPossibleScore) * 100);
+    const sortedProfiles = Object.entries(profileScores)
+      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+      .map(([profile, score]) => ({
+        profile,
+        score,
+        percentage: Math.round((score / (Object.values(profileScores).reduce((a, b) => a + b, 0))) * 100)
+      }));
+    return {
+      dominantProfile: dominantProfile.profile,
+      percentageScore: Math.min(percentageScore, 100),
+      profileScores: sortedProfiles,
+      traits
+    };
+  };
+
 
   if (showResults) {
     const compatibility = calculateCompatibility();

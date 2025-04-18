@@ -21,6 +21,23 @@ export const sendInviteEmail = async (
   try {
     console.log(`Iniciando envio de email para ${clientEmail}`);
     
+    // Obter a URL base do ambiente atual
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : 'https://rh-mentor-mastery.vercel.app';
+
+    // Verificar configurações de email antes de tentar enviar
+    const { data: configCheck, error: configError } = await supabase.functions.invoke('check-email-config');
+    if (configError || !configCheck?.configured) {
+      console.error("Configurações de email não disponíveis:", configError || configCheck?.message);
+      return { 
+        success: false, 
+        error: "Configurações de email não disponíveis. Verifique as variáveis de ambiente SMTP no Supabase.",
+        errorDetails: configError || configCheck,
+        isSmtpError: true
+      };
+    }
+
     // Chamar a Edge Function para enviar o email
     const { data, error } = await supabase.functions.invoke('send-invite-email', {
       body: {
@@ -28,8 +45,8 @@ export const sendInviteEmail = async (
         clientName: clientName || 'Cliente',
         mentorName: mentorName || 'Mentor',
         mentorCompany: 'RH Mentor Mastery',
-        // Adicionamos um token de convite para maior segurança e incluímos o email na URL
-        registerUrl: `${window.location.origin}/client/register?email=${encodeURIComponent(clientEmail)}`
+        // URL dinâmica baseada no ambiente atual
+        registerUrl: `${baseUrl}/register?type=client&email=${encodeURIComponent(clientEmail)}`
       }
     });
     

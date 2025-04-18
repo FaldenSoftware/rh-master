@@ -14,6 +14,7 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sendTimeout, setSendTimeout] = useState<NodeJS.Timeout | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [configStatus, setConfigStatus] = useState<'checking' | 'configured' | 'not_configured'>('checking');
   
@@ -44,15 +45,20 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (configStatus !== 'configured') {
       notify.error('Sistema de email não configurado. Contate o administrador.');
       return;
     }
-    
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrorMessage(null);
-    
+
+    // Timeout para evitar botão travado
+    const timeout = setTimeout(() => {
+      setIsSubmitting(false);
+      notify.error('O envio do convite demorou muito. Verifique sua conexão e tente novamente.');
+    }, 15000);
+    setSendTimeout(timeout);
     try {
       const result = await createClientInvitation(clientEmail, clientName, user);
       
@@ -77,6 +83,10 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
       setErrorMessage('Erro interno ao processar convite');
       notify.error('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
+      if (sendTimeout) {
+        clearTimeout(sendTimeout);
+        setSendTimeout(null);
+      }
       setIsSubmitting(false);
     }
   };
@@ -133,12 +143,15 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
           </Button>
           <Button 
             type="submit" 
+            className="w-full"
             disabled={isSubmitting || configStatus !== 'configured'}
           >
-            {isSubmitting && (
-              <>Enviando...</>
-            )}
-            {!isSubmitting && "Enviar Convite"}
+            {isSubmitting ? (
+              <>
+                <span className="mr-2 h-4 w-4 animate-spin inline-block align-middle">🔄</span>
+                Enviando...
+              </>
+            ) : "Enviar Convite"}
           </Button>
         </div>
       </form>

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { getMentorClients } from "@/lib/batchQueries";
+import { getMentorClients } from "@/services/clientService";
 
 interface Client {
   id: string;
@@ -54,29 +54,72 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
     }
   }, [user]);
 
-  // Function to fetch clients using our new security definer functions
+  // Função para buscar clientes
   const fetchClients = async () => {
     try {
       if (!user || !user.id) {
         throw new Error("Usuário não autenticado");
       }
-
-      // Fetch clients using our utility function
+      // Buscar clientes usando nosso serviço
       const data = await getMentorClients(user.id);
-      
-      // If we don't have data, return an empty array
       if (!data || data.length === 0) {
         return [];
       }
-      
-      // Format the data
-      const formattedClients = (data || []).map((profile: Profile) => ({
+      // Formatar os dados
+      const formattedClients = data.map((profile: Profile) => ({
         id: profile.id,
-        name: profile.name,
+        name: profile.name || 'Nome não disponível',
         email: profile.email || 'Email não disponível',
-        company: profile.company
+        company: profile.company || ''
       }));
-      
+      return formattedClients;
+    } catch (error) {
+      console.error("Erro ao buscar clientes:", error);
+      throw error;
+    }
+  };
+
+  // Função para buscar clientes com retry
+  const fetchClientsData = async (retryCount = 0) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const clientsData = await fetchClients();
+      setClients(clientsData as Client[]);
+    } catch (error: any) {
+      console.error("Erro ao carregar clientes:", error);
+      // Tentar novamente até 3 vezes em caso de erro de rede
+      if (retryCount < 3 && error.message?.includes('network')) {
+        setTimeout(() => fetchClientsData(retryCount + 1), 1000);
+        return;
+      }
+      setError(error.message || "Ocorreu um erro ao carregar a lista de clientes.");
+      toast({
+        title: "Erro ao carregar clientes",
+        description: error.message || "Ocorreu um erro ao carregar a lista de clientes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+    try {
+      if (!user || !user.id) {
+        throw new Error("Usuário não autenticado");
+      }
+      // Buscar clientes usando nosso serviço
+      const data = await getMentorClients(user.id);
+      if (!data || data.length === 0) {
+        return [];
+      }
+      // Formatar os dados
+      const formattedClients = data.map((profile: Profile) => ({
+        id: profile.id,
+        name: profile.name || 'Nome não disponível',
+        email: profile.email || 'Email não disponível',
+        company: profile.company || ''
+      }));
       return formattedClients;
     } catch (error) {
       console.error("Erro ao buscar clientes:", error);
@@ -117,7 +160,7 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
         <p className="font-medium">Erro ao carregar clientes</p>
         <p className="text-sm">{error}</p>
         <Button 
-          onClick={fetchClientsData} 
+          onClick={() => fetchClientsData()} 
           variant="outline" 
           size="sm" 
           className="mt-2"

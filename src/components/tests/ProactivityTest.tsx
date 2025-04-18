@@ -8,6 +8,17 @@ import { Label } from "@/components/ui/label";
 
 // Questions for the proactivity test
 const questions = [
+  // Exemplo de estrutura correta para cada pergunta:
+  // {
+  //   id: 'q1',
+  //   text: 'Exemplo de pergunta',
+  //   options: [
+  //     { id: 'q1o1', text: 'Nunca', value: 1 },
+  //     { id: 'q1o2', text: 'Às vezes', value: 2 },
+  //     { id: 'q1o3', text: 'Sempre', value: 3 }
+  //   ]
+  // },
+
   {
     id: 'q1',
     question: "Quando identifico um problema no trabalho, prefiro:",
@@ -82,30 +93,30 @@ const questions = [
     id: 'q8',
     question: "Quando recebo feedback negativo sobre meu trabalho:",
     options: [
-      { id: 'a', text: 'Aceito e busco imediatamente maneiras de melhorar' },
-      { id: 'b', text: 'Analiso cuidadosamente se o feedback é válido antes de agir' },
-      { id: 'c', text: 'Fico frustrado inicialmente, mas eventualmente trabalho nas melhorias' },
-      { id: 'd', text: 'Tendo a questionar a validade do feedback' }
+      { id: 'a', text: 'Aceito e busco imediatamente maneiras de melhorar', value: 3 },
+      { id: 'b', text: 'Analiso cuidadosamente se o feedback é válido antes de agir', value: 2 },
+      { id: 'c', text: 'Fico frustrado inicialmente, mas eventualmente trabalho nas melhorias', value: 1 },
+      { id: 'd', text: 'Tendo a questionar a validade do feedback', value: 0 }
     ]
   },
   {
     id: 'q9',
     question: "Em relação às minhas responsabilidades no trabalho:",
     options: [
-      { id: 'a', text: 'Frequentemente vou além do que é esperado da minha função' },
-      { id: 'b', text: 'Cumpro exatamente o que é esperado, nem mais nem menos' },
-      { id: 'c', text: 'Foco em fazer um trabalho excelente dentro das minhas atribuições definidas' },
-      { id: 'd', text: 'Priorizo as tarefas conforme orientação dos superiores' }
+      { id: 'a', text: 'Frequentemente vou além do que é esperado da minha função', value: 3 },
+      { id: 'b', text: 'Cumpro exatamente o que é esperado, nem mais nem menos', value: 2 },
+      { id: 'c', text: 'Foco em fazer um trabalho excelente dentro das minhas atribuições definidas', value: 1 },
+      { id: 'd', text: 'Priorizo as tarefas conforme orientação dos superiores', value: 0 }
     ]
   },
   {
     id: 'q10',
     question: "Quando enfrento um obstáculo no trabalho:",
     options: [
-      { id: 'a', text: 'Persisto até encontrar uma solução por conta própria' },
-      { id: 'b', text: 'Busco ajuda imediatamente de colegas ou superiores' },
-      { id: 'c', text: 'Tento algumas abordagens e, se não funcionarem, busco orientação' },
-      { id: 'd', text: 'Reavario se vale a pena continuar ou mudar para outra tarefa' }
+      { id: 'a', text: 'Persisto até encontrar uma solução por conta própria', value: 3 },
+      { id: 'b', text: 'Busco ajuda imediatamente de colegas ou superiores', value: 2 },
+      { id: 'c', text: 'Tento algumas abordagens e, se não funcionarem, busco orientação', value: 1 },
+      { id: 'd', text: 'Reavario se vale a pena continuar ou mudar para outra tarefa', value: 0 }
     ]
   }
 ];
@@ -132,54 +143,101 @@ const ProactivityTest: React.FC = () => {
     }
   };
 
+  // Novo cálculo preciso da Proatividade
+  // Cálculo preciso de Proatividade
+  // Função de cálculo precisa de Proatividade
   const calculateProactivityScore = () => {
-    // Simple scoring system - just an example
-    const proactivityMap: Record<string, Record<string, number>> = {
-      'q1': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 },
-      'q2': { 'a': 0, 'b': 3, 'c': 1, 'd': 2 },
-      'q3': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 },
-      'q4': { 'a': 1, 'b': 0, 'c': 3, 'd': 2 },
-      'q5': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 },
-      'q6': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 },
-      'q7': { 'a': 3, 'b': 0, 'c': 2, 'd': 1 },
-      'q8': { 'a': 3, 'b': 2, 'c': 1, 'd': 0 },
-      'q9': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 },
-      'q10': { 'a': 3, 'b': 1, 'c': 2, 'd': 0 }
-    };
-
     let totalScore = 0;
     let maxPossibleScore = 0;
-
     Object.entries(answers).forEach(([questionId, answerId]) => {
-      if (proactivityMap[questionId] && proactivityMap[questionId][answerId] !== undefined) {
-        totalScore += proactivityMap[questionId][answerId];
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option) {
+          totalScore += option.value;
+        }
       }
-      maxPossibleScore += 3; // 3 is the max score per question
+      maxPossibleScore += 3; // 3 é o valor máximo por pergunta
     });
-
     const percentScore = Math.round((totalScore / maxPossibleScore) * 100);
-    
-    // Determine proactivity level
-    let level;
-    if (percentScore >= 85) {
-      level = 'Altamente Proativo';
-    } else if (percentScore >= 70) {
-      level = 'Proativo';
-    } else if (percentScore >= 50) {
-      level = 'Moderadamente Proativo';
-    } else if (percentScore >= 30) {
-      level = 'Reativo';
-    } else {
-      level = 'Altamente Reativo';
-    }
-
+    const proactivityLevels = [
+      { min: 85, level: 'Altamente Proativo', description: 'Você é altamente proativo.' },
+      { min: 70, level: 'Proativo', description: 'Você é proativo.' },
+      { min: 50, level: 'Moderadamente Proativo', description: 'Você é moderadamente proativo.' },
+      { min: 30, level: 'Reativo', description: 'Você é reativo.' },
+      { min: 0, level: 'Altamente Reativo', description: 'Você é altamente reativo.' }
+    ];
+    const level = proactivityLevels.find(l => percentScore >= l.min) || proactivityLevels[proactivityLevels.length - 1];
     return {
       score: totalScore,
       maxScore: maxPossibleScore,
       percentage: percentScore,
-      level
+      level: level.level,
+      description: level.description
     };
   };
+
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+    Object.entries(answers).forEach(([questionId, answerId]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option) {
+          totalScore += option.value;
+        }
+      }
+      maxPossibleScore += 3; // 3 é o valor máximo por pergunta
+    });
+    const percentScore = Math.round((totalScore / maxPossibleScore) * 100);
+    const proactivityLevels = [
+      { min: 85, level: 'Altamente Proativo', description: 'Você é altamente proativo.' },
+      { min: 70, level: 'Proativo', description: 'Você é proativo.' },
+      { min: 50, level: 'Moderadamente Proativo', description: 'Você é moderadamente proativo.' },
+      { min: 30, level: 'Reativo', description: 'Você é reativo.' },
+      { min: 0, level: 'Altamente Reativo', description: 'Você é altamente reativo.' }
+    ];
+    const level = proactivityLevels.find(l => percentScore >= l.min) || proactivityLevels[proactivityLevels.length - 1];
+    return {
+      score: totalScore,
+      maxScore: maxPossibleScore,
+      percentage: percentScore,
+      level: level.level,
+      description: level.description
+    };
+  };
+
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+    Object.entries(answers).forEach(([questionId, answerId]) => {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        const option = question.options.find(o => o.id === answerId);
+        if (option) {
+          totalScore += option.value;
+        }
+      }
+      maxPossibleScore += 3; // 3 é a pontuação máxima por questão
+    });
+    const percentScore = Math.round((totalScore / maxPossibleScore) * 100);
+    // Definir níveis de proatividade
+    const proactivityLevels = [
+      { min: 85, level: 'Altamente Proativo', description: 'Você é altamente proativo.' },
+      { min: 70, level: 'Proativo', description: 'Você é proativo.' },
+      { min: 50, level: 'Moderadamente Proativo', description: 'Você é moderadamente proativo.' },
+      { min: 30, level: 'Reativo', description: 'Você é reativo.' },
+      { min: 0, level: 'Altamente Reativo', description: 'Você é altamente reativo.' }
+    ];
+    const level = proactivityLevels.find(l => percentScore >= l.min) || proactivityLevels[proactivityLevels.length - 1];
+    return {
+      score: totalScore,
+      maxScore: maxPossibleScore,
+      percentage: percentScore,
+      level: level.level,
+      description: level.description
+    };
+  };
+
 
   if (showResults) {
     const result = calculateProactivityScore();
