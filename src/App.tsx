@@ -44,7 +44,7 @@ const App = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/client/login" element={<ClientLogin />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/client/register" element={<Navigate to="/register?type=client" replace />} />
+                <Route path="/client/register" element={<ClientRegister />} />
                 
                 <Route 
                   path="/leader" 

@@ -21,6 +21,15 @@ interface InvitationResult {
 /**
  * Creates an invitation for a new client and sends an email
  */
+import { z } from "zod";
+
+// Schema de validação
+const inviteSchema = z.object({
+  email: z.string().email("Email inválido").toLowerCase(),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(100, "Nome muito longo"),
+  mentor_id: z.string().uuid("ID de mentor inválido")
+});
+
 export const createClientInvitation = async (
   clientEmail: string,
   clientName: string,
@@ -29,6 +38,24 @@ export const createClientInvitation = async (
   try {
     if (!mentor || !mentor.id) {
       throw new Error("Mentor não autenticado");
+    }
+
+    // Validar dados de entrada
+    try {
+      inviteSchema.parse({
+        email: clientEmail,
+        name: clientName,
+        mentor_id: mentor.id
+      });
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return {
+          success: false,
+          error: validationError.errors[0].message,
+          errorDetails: validationError
+        };
+      }
+      throw validationError;
     }
 
     // Gerar convite

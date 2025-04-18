@@ -1,5 +1,8 @@
 
 import React, { useState, useEffect } from "react";
+import { checkEmailConfig } from "@/services/emailConfigService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import LeaderLayout from "@/components/leader/LeaderLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ClientsList from "@/components/leader/ClientsList";
@@ -17,6 +20,30 @@ interface Client {
 }
 
 const LeaderClients = () => {
+  // Verificação de configuração SMTP
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
+  const [isCheckingConfig, setIsCheckingConfig] = useState(true);
+
+  const { toast } = useToast();
+  const location = useLocation();
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [activeTab, setActiveTab] = useState("list");
+
+  useEffect(() => {
+    const checkConfig = async () => {
+      setIsCheckingConfig(true);
+      try {
+        const result = await checkEmailConfig();
+        setIsConfigured(result.configured);
+      } catch (error) {
+        console.error("Erro ao verificar configuração:", error);
+        setIsConfigured(false);
+      } finally {
+        setIsCheckingConfig(false);
+      }
+    };
+    checkConfig();
+  }, []);
   const { toast } = useToast();
   const location = useLocation();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -56,6 +83,17 @@ const LeaderClients = () => {
     <LeaderLayout title="Gestão de Clientes">
       <div className="container mx-auto py-6">
         <h1 className="text-2xl font-bold mb-6">Gestão de Clientes</h1>
+
+        {/* Alerta de configuração SMTP */}
+        {!isCheckingConfig && isConfigured === false && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertTitle>Configuração Incompleta</AlertTitle>
+            <AlertDescription>
+              O sistema de email não está configurado. Contate o administrador para configurar as variáveis SMTP_USERNAME e SMTP_PASSWORD no Supabase.
+            </AlertDescription>
+          </Alert>
+        )}
         
         <Tabs defaultValue="list" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
