@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-<<<<<<< HEAD
 
 // Sample animal data
 const sampleAnimal = {
@@ -132,7 +131,6 @@ const questions = [
     ]
   }
 ];
-=======
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
@@ -140,7 +138,6 @@ import { cn } from "@/lib/utils";
 import { questions } from "./animalProfile/questions";
 import { profiles } from "./animalProfile/profiles";
 import { calculateAnimalProfile } from "./animalProfile/calculator";
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
 
 const AnimalProfileTest: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -169,7 +166,6 @@ const AnimalProfileTest: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   // Novo cálculo preciso do Perfil Comportamental
   // Cálculo preciso do Perfil Comportamental
   // Função de cálculo precisa do Perfil Comportamental
@@ -322,8 +318,6 @@ const AnimalProfileTest: React.FC = () => {
   };
 
 
-=======
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
   if (showResults) {
     const result = calculateAnimalProfile(answers, questions);
     const dominantProfile = profiles[result.dominantProfile];

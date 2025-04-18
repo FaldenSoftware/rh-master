@@ -25,7 +25,6 @@ const questions = [
 
   {
     id: 'q1',
-<<<<<<< HEAD
     category: 'a',
     question: "Quando tenho um problema, eu geralmente analiso todas as possibilidades antes de agir.",
     options: [
@@ -143,7 +142,6 @@ const questions = [
       { id: 'd', text: 'Discordo parcialmente', value: 0 },
       { id: 'e', text: 'Discordo totalmente', value: 0 }
     ]
-=======
     question: 'Possuo uma postura altiva, com queixo alto, mantendo uma certa distância.',
     options: [
       { id: 'nenhuma', text: 'Nenhuma', value: 0 },
@@ -416,7 +414,6 @@ const questions = [
       { id: 'muita', text: 'Muita', value: 3 }
     ],
     category: 'ca' // Criança Adaptada
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
   }
 ];
 
@@ -477,15 +474,12 @@ const EgogramaTest: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   // Novo cálculo preciso do Egograma
   // Cálculo preciso do Egograma
   // Função de cálculo precisa do Egograma
   const calculateEgogramScores = () => {
-=======
   const calculateEgogramScores = () => {
     // Inicializar contadores para cada categoria
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
     const scores = {
       pc: 0, // Pai Crítico
       pn: 0, // Pai Nutritivo
@@ -493,13 +487,11 @@ const EgogramaTest: React.FC = () => {
       cl: 0, // Criança Livre
       ca: 0  // Criança Adaptada
     };
-<<<<<<< HEAD
     Object.entries(answers).forEach(([questionId, answerId]) => {
       const question = questions.find(q => q.id === questionId);
       if (question) {
         const option = question.options.find(o => o.id === answerId);
         if (option && question.category) {
-=======
     
     // Calcular pontuação para cada resposta
     Object.entries(answers).forEach(([questionId, answerId]) => {
@@ -510,12 +502,10 @@ const EgogramaTest: React.FC = () => {
         const option = question.options.find(o => o.id === answerId);
         if (option) {
           // Adicionar pontos à categoria correspondente
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
           scores[question.category as keyof typeof scores] += option.value;
         }
       }
     });
-<<<<<<< HEAD
     // Normalizar para escala 0-10
     const normalizedScores = {
       pc: Math.round((scores.pc / (questions.filter(q => q.category === 'pc').length * 3)) * 10),
@@ -524,7 +514,6 @@ const EgogramaTest: React.FC = () => {
       cl: Math.round((scores.cl / (questions.filter(q => q.category === 'cl').length * 3)) * 10),
       ca: Math.round((scores.ca / (questions.filter(q => q.category === 'ca').length * 3)) * 10)
     };
-=======
     
     // Normalizar as pontuações para uma escala de 0-10
     const normalizedScores = {
@@ -536,31 +525,24 @@ const EgogramaTest: React.FC = () => {
     };
     
     // Encontrar o estado de ego dominante e o menos utilizado
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
     let dominantEgo = Object.entries(normalizedScores).reduce(
       (max, [ego, score]) => score > max.score ? { ego, score } : max,
       { ego: '', score: 0 }
     );
-<<<<<<< HEAD
-=======
     
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
     let leastUsedEgo = Object.entries(normalizedScores).reduce(
       (min, [ego, score]) => score < min.score ? { ego, score } : min,
       { ego: '', score: 10 }
     );
-<<<<<<< HEAD
     return {
       scores: normalizedScores,
       dominantEgo: dominantEgo.ego,
       leastUsedEgo: leastUsedEgo.ego
-=======
     
     return {
       scores: normalizedScores,
       dominantEgo: dominantEgo.ego as keyof typeof egoDescriptions,
       leastUsedEgo: leastUsedEgo.ego as keyof typeof egoDescriptions
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
     };
   };
 
@@ -646,7 +628,6 @@ const EgogramaTest: React.FC = () => {
 
   if (showResults) {
     const results = calculateEgogramScores();
-<<<<<<< HEAD
     const dominantLabel = {
       'pc': 'Pai Crítico',
       'pn': 'Pai Nutritivo',
@@ -655,8 +636,6 @@ const EgogramaTest: React.FC = () => {
       'ca': 'Criança Adaptada'
     }[results.dominantEgo] || 'Adulto';
 
-=======
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
     return (
       <Card className="max-w-4xl mx-auto mt-8">
         <CardHeader className="text-center">
