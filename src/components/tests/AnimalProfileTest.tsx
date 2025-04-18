@@ -1,134 +1,21 @@
-
-import React, { useState } from 'react';
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-
-// Sample animal data
-const sampleAnimal = {
-  id: '1',
-  name: 'Buddy',
-  species: 'Dog',
-  breed: 'Golden Retriever',
-  age: 3,
-  gender: 'Male',
-  description: 'A friendly and playful dog looking for a loving home.',
-  image_url: 'https://example.com/buddy.jpg',
-  is_adopted: false,
-  created_at: '2023-01-01T00:00:00.000Z',
-};
-
-// Questions for the animal profile test
-const questions = [
-  {
-    id: 'q1',
-    question: "What type of home environment would be best for Buddy?",
-    options: [
-      { id: 'a', text: 'A small apartment in the city' },
-      { id: 'b', text: 'A suburban home with a yard' },
-      { id: 'c', text: 'A rural farm with lots of space' },
-      { id: 'd', text: 'Any environment with loving owners' }
-    ]
-  },
-  {
-    id: 'q2',
-    question: "How much exercise does Buddy need daily?",
-    options: [
-      { id: 'a', text: 'Minimal exercise' },
-      { id: 'b', text: 'A short walk once a day' },
-      { id: 'c', text: 'Multiple walks and playtime' },
-      { id: 'd', text: 'Constant activity throughout the day' }
-    ]
-  },
-  {
-    id: 'q3',
-    question: "How would Buddy likely interact with other pets?",
-    options: [
-      { id: 'a', text: 'Would be aggressive toward other animals' },
-      { id: 'b', text: 'Would be fearful and hide' },
-      { id: 'c', text: 'Would be friendly and sociable' },
-      { id: 'd', text: 'Would be indifferent to other animals' }
-    ]
-  },
-  {
-    id: 'q4',
-    question: "What type of training would Buddy respond to best?",
-    options: [
-      { id: 'a', text: 'Strict, discipline-based training' },
-      { id: 'b', text: 'Reward-based positive reinforcement' },
-      { id: 'c', text: 'No training needed' },
-      { id: 'd', text: 'Professional training only' }
-    ]
-  },
-  {
-    id: 'q5',
-    question: "How would Buddy likely behave around children?",
-    options: [
-      { id: 'a', text: 'Would be cautious and reserved' },
-      { id: 'b', text: 'Would be playful but gentle' },
-      { id: 'c', text: 'Would be too energetic for small children' },
-      { id: 'd', text: 'Would prefer homes without children' }
-    ]
-  },
-  {
-    id: 'q6',
-    question: "What is Buddy's likely energy level?",
-    options: [
-      { id: 'a', text: 'Very low - prefers lounging all day' },
-      { id: 'b', text: 'Moderate - active but also enjoys relaxing' },
-      { id: 'c', text: 'High - needs constant stimulation' },
-      { id: 'd', text: 'Variable - energetic at times, calm at others' }
-    ]
-  },
-  {
-    id: 'q7',
-    question: "What special care might Buddy need?",
-    options: [
-      { id: 'a', text: 'Regular grooming for his coat' },
-      { id: 'b', text: 'Special dietary considerations' },
-      { id: 'c', text: 'Extra attention for separation anxiety' },
-      { id: 'd', text: 'Minimal special care needed' }
-    ]
-  },
-  {
-    id: 'q8',
-    question: "How easily would Buddy adapt to new environments?",
-    options: [
-      { id: 'a', text: 'Very easily - adaptable and flexible' },
-      { id: 'b', text: 'Slowly - needs time to adjust' },
-      { id: 'c', text: 'Difficulty adapting to change' },
-      { id: 'd', text: 'Depends on the presence of familiar objects' }
-    ]
-  },
-  {
-    id: 'q9',
-    question: "What would be Buddy's ideal daily routine?",
-    options: [
-      { id: 'a', text: 'Structured with consistent activities' },
-      { id: 'b', text: 'Flexible with plenty of downtime' },
-      { id: 'c', text: 'Active mornings and evenings with rest mid-day' },
-      { id: 'd', text: 'No particular routine needed' }
-    ]
-  },
-  {
-    id: 'q10',
-    question: "What type of enrichment would Buddy enjoy most?",
-    options: [
-      { id: 'a', text: 'Interactive toys and puzzles' },
-      { id: 'b', text: 'Running and outdoor activities' },
-      { id: 'c', text: 'Social interaction with other dogs' },
-      { id: 'd', text: 'Quiet time with human companions' }
-    ]
-  }
-];
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { questions } from "./animalProfile/questions";
+import { profiles } from "./animalProfile/profiles";
+import { calculateAnimalProfile } from "./animalProfile/calculator";
 
 const AnimalProfileTest: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = () => {
     if (currentAnswer) {
@@ -141,36 +28,62 @@ const AnimalProfileTest: React.FC = () => {
         setCurrentQuestion(prev => prev + 1);
         setCurrentAnswer(null);
       } else {
-        setShowResults(true);
+        setIsSubmitting(true);
+        setTimeout(() => {
+          setShowResults(true);
+          setIsSubmitting(false);
+        }, 1000);
       }
     }
   };
 
-  const calculateCompatibility = () => {
-    // Simple algorithm - each answer has a compatibility score
-    // In a real app, this would be more sophisticated
-    return Math.floor(Math.random() * 40) + 60; // Returns 60-99% compatibility
-  };
-
   if (showResults) {
-    const compatibility = calculateCompatibility();
+    const result = calculateAnimalProfile(answers, questions);
+    const dominantProfile = profiles[result.dominantProfile];
+    
     return (
       <Card className="max-w-4xl mx-auto mt-8">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Resultados do Perfil Comportamental</CardTitle>
-          <CardDescription>Veja sua compatibilidade com o perfil</CardDescription>
+          <CardDescription>Seu perfil comportamental dominante</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center">
-            <div className="text-6xl font-bold text-brand-teal mb-2">{compatibility}%</div>
-            <p className="text-xl">Pontuação de Compatibilidade</p>
+            <div className="text-3xl font-bold text-brand-teal mb-2">{dominantProfile.name}</div>
+            <div className="text-xl font-semibold text-brand-gold mb-4">{result.percentageScore}% de compatibilidade</div>
           </div>
-
-          <Alert variant={compatibility > 80 ? "default" : "destructive"} className="mt-4 bg-brand-beige border-brand-gold text-brand-teal">
-            {compatibility > 80 
-              ? "Você tem um perfil altamente compatível!" 
-              : "Você pode melhorar alguns aspectos do seu perfil comportamental."}
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className={cn("h-3 rounded-full", dominantProfile.color)} style={{ width: `${result.percentageScore}%` }}></div>
+          </div>
+          <Alert className="mt-4 bg-brand-beige border-brand-gold text-brand-teal">
+            <p>{dominantProfile.description}</p>
           </Alert>
+          
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3">Pontos fortes:</h3>
+            <p>{dominantProfile.strengths}</p>
+            
+            <h3 className="text-lg font-semibold mb-3 mt-4">Desafios:</h3>
+            <p>{dominantProfile.challenges}</p>
+          </div>
+          
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3">Distribuição do seu perfil:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {result.profileScores.map(({ profile, percentage }) => (
+                <div key={profile} className="border rounded-lg p-3">
+                  <div className="font-medium">{profiles[profile as keyof typeof profiles].name}</div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={cn("h-2 rounded-full", profiles[profile as keyof typeof profiles].color)} 
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">{percentage}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <Button className="w-full bg-brand-teal hover:bg-brand-teal/90" onClick={() => {
@@ -184,7 +97,7 @@ const AnimalProfileTest: React.FC = () => {
       </Card>
     );
   }
-
+  
   return (
     <Card className="max-w-4xl mx-auto mt-8">
       <CardHeader>
@@ -220,9 +133,14 @@ const AnimalProfileTest: React.FC = () => {
         <Button 
           className="w-full bg-brand-teal hover:bg-brand-teal/90" 
           onClick={handleNext} 
-          disabled={!currentAnswer}
+          disabled={!currentAnswer || isSubmitting}
         >
-          {currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
         </Button>
       </CardFooter>
     </Card>
