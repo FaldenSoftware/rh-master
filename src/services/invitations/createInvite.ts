@@ -4,6 +4,19 @@ import { AuthUser } from "@/lib/authTypes";
 import { addDays } from "date-fns";
 import { sendInviteEmail } from "./sendInviteEmail";
 
+interface InvitationResult {
+  success: boolean;
+  error?: string;
+  errorDetails?: any;
+  message?: string;
+  isApiKeyError?: boolean;
+  isDomainError?: boolean;
+  isSmtpError?: boolean;
+  isTestMode?: boolean;
+  actualRecipient?: string;
+  intendedRecipient?: string;
+}
+
 /**
  * Creates an invitation for a new client and sends an email
  */
@@ -11,7 +24,7 @@ export const createClientInvitation = async (
   clientEmail: string,
   clientName: string,
   mentor: AuthUser | null
-) => {
+): Promise<InvitationResult> => {
   try {
     if (!mentor || !mentor.id) {
       throw new Error("Mentor não autenticado");
@@ -30,7 +43,7 @@ export const createClientInvitation = async (
       
     if (checkError) {
       console.error("Erro ao verificar convite existente:", checkError);
-      return { success: false, error: "Erro ao verificar convite existente" };
+      return { success: false, error: "Erro ao verificar convite existente", errorDetails: checkError };
     }
     
     let inviteId;
@@ -47,7 +60,7 @@ export const createClientInvitation = async (
         
       if (updateError) {
         console.error("Erro ao atualizar convite:", updateError);
-        return { success: false, error: "Erro ao atualizar convite" };
+        return { success: false, error: "Erro ao atualizar convite", errorDetails: updateError };
       }
       
       inviteId = existingInvite.id;
@@ -68,7 +81,7 @@ export const createClientInvitation = async (
         
       if (error) {
         console.error("Erro ao criar convite:", error);
-        return { success: false, error: "Erro ao criar convite" };
+        return { success: false, error: "Erro ao criar convite", errorDetails: error };
       }
       
       inviteId = data.id;
@@ -88,7 +101,8 @@ export const createClientInvitation = async (
         return { 
           success: false, 
           error: "Configuração de email ausente. Contate o administrador do sistema para configurar a chave de API do Resend.",
-          isApiKeyError: true
+          isApiKeyError: true,
+          errorDetails: emailResult.errorDetails
         };
       }
       
@@ -100,11 +114,16 @@ export const createClientInvitation = async (
         return { 
           success: false, 
           error: "É necessário verificar um domínio no Resend para enviar emails. Acesse https://resend.com/domains",
-          isDomainError: true
+          isDomainError: true,
+          errorDetails: emailResult.errorDetails
         };
       }
       
-      return { success: false, error: emailResult.error || "Erro ao enviar email" };
+      return { 
+        success: false, 
+        error: emailResult.error || "Erro ao enviar email",
+        errorDetails: emailResult.errorDetails
+      };
     }
     
     // Check if in test mode and actual recipient is different from intended
@@ -114,17 +133,19 @@ export const createClientInvitation = async (
         message: "Convite criado com sucesso, mas o email foi enviado para o proprietário da conta Resend (modo de teste)",
         isTestMode: true,
         actualRecipient: emailResult.actualRecipient,
-        intendedRecipient: clientEmail
+        intendedRecipient: clientEmail,
+        errorDetails: null
       };
     }
     
     return { 
       success: true, 
-      message: "Convite enviado com sucesso" 
+      message: "Convite enviado com sucesso",
+      errorDetails: null
     };
     
   } catch (error) {
     console.error("Erro ao criar convite:", error);
-    return { success: false, error: "Erro interno ao criar convite" };
+    return { success: false, error: "Erro interno ao criar convite", errorDetails: error };
   }
 };

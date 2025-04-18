@@ -13,7 +13,7 @@ export const sendInviteEmail = async (
   error?: string; 
   isTestMode?: boolean; 
   actualRecipient?: string;
-  errorDetails?: any;
+  errorDetails?: any;  // Ensure errorDetails is consistently defined in return type
 }> => {
   try {
     console.log(`Iniciando envio de email para ${clientEmail}`);
@@ -55,7 +55,8 @@ export const sendInviteEmail = async (
     return { 
       success: true, 
       isTestMode: data.isTestMode, 
-      actualRecipient: data.actualRecipient 
+      actualRecipient: data.actualRecipient,
+      errorDetails: null // Adding errorDetails as null for successful responses
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
