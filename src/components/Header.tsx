@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
@@ -8,7 +7,6 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Detectar scroll para mudar a aparência do header
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -25,14 +23,13 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
-            <img src="/lovable-uploads/ef00ce90-f820-4932-b421-290ef57dbd65.png" alt="RH Master Logo" className="h-10" />
+            <img src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" alt="RH Master Logo" className="h-12" />
             <span className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
               RH Master
             </span>
           </div>
         </div>
 
-        {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <a href="#funcionalidades" className="text-sm font-semibold text-gray-700 hover:text-brand-teal transition-colors">
             Funcionalidades
@@ -58,7 +55,6 @@ const Header = () => {
           </Link>
         </nav>
 
-        {/* Mobile Menu Button */}
         <div className="md:hidden">
           <Button 
             variant="ghost" 
@@ -72,7 +68,6 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-white" style={{ paddingTop: '4rem' }}>
           <div className="container mx-auto py-8 px-4 flex flex-col h-full">

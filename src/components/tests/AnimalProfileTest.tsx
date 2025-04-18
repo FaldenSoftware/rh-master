@@ -1,10 +1,8 @@
-
-import React, { useState } from 'react';
-import { Alert } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+<<<<<<< HEAD
 
 // Sample animal data
 const sampleAnimal = {
@@ -134,12 +132,22 @@ const questions = [
     ]
   }
 ];
+=======
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { questions } from "./animalProfile/questions";
+import { profiles } from "./animalProfile/profiles";
+import { calculateAnimalProfile } from "./animalProfile/calculator";
+>>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
 
 const AnimalProfileTest: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = () => {
     if (currentAnswer) {
@@ -152,11 +160,16 @@ const AnimalProfileTest: React.FC = () => {
         setCurrentQuestion(prev => prev + 1);
         setCurrentAnswer(null);
       } else {
-        setShowResults(true);
+        setIsSubmitting(true);
+        setTimeout(() => {
+          setShowResults(true);
+          setIsSubmitting(false);
+        }, 1000);
       }
     }
   };
 
+<<<<<<< HEAD
   // Novo cálculo preciso do Perfil Comportamental
   // Cálculo preciso do Perfil Comportamental
   // Função de cálculo precisa do Perfil Comportamental
@@ -309,25 +322,55 @@ const AnimalProfileTest: React.FC = () => {
   };
 
 
+=======
+>>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
   if (showResults) {
-    const compatibility = calculateCompatibility();
+    const result = calculateAnimalProfile(answers, questions);
+    const dominantProfile = profiles[result.dominantProfile];
+    
     return (
       <Card className="max-w-4xl mx-auto mt-8">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Resultados do Perfil Comportamental</CardTitle>
-          <CardDescription>Veja sua compatibilidade com o perfil</CardDescription>
+          <CardDescription>Seu perfil comportamental dominante</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center">
-            <div className="text-6xl font-bold text-brand-teal mb-2">{compatibility}%</div>
-            <p className="text-xl">Pontuação de Compatibilidade</p>
+            <div className="text-3xl font-bold text-brand-teal mb-2">{dominantProfile.name}</div>
+            <div className="text-xl font-semibold text-brand-gold mb-4">{result.percentageScore}% de compatibilidade</div>
           </div>
-
-          <Alert variant={compatibility > 80 ? "default" : "destructive"} className="mt-4 bg-brand-beige border-brand-gold text-brand-teal">
-            {compatibility > 80 
-              ? "Você tem um perfil altamente compatível!" 
-              : "Você pode melhorar alguns aspectos do seu perfil comportamental."}
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className={cn("h-3 rounded-full", dominantProfile.color)} style={{ width: `${result.percentageScore}%` }}></div>
+          </div>
+          <Alert className="mt-4 bg-brand-beige border-brand-gold text-brand-teal">
+            <p>{dominantProfile.description}</p>
           </Alert>
+          
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3">Pontos fortes:</h3>
+            <p>{dominantProfile.strengths}</p>
+            
+            <h3 className="text-lg font-semibold mb-3 mt-4">Desafios:</h3>
+            <p>{dominantProfile.challenges}</p>
+          </div>
+          
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3">Distribuição do seu perfil:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {result.profileScores.map(({ profile, percentage }) => (
+                <div key={profile} className="border rounded-lg p-3">
+                  <div className="font-medium">{profiles[profile as keyof typeof profiles].name}</div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className={cn("h-2 rounded-full", profiles[profile as keyof typeof profiles].color)} 
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">{percentage}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </CardContent>
         <CardFooter>
           <Button className="w-full bg-brand-teal hover:bg-brand-teal/90" onClick={() => {
@@ -341,7 +384,7 @@ const AnimalProfileTest: React.FC = () => {
       </Card>
     );
   }
-
+  
   return (
     <Card className="max-w-4xl mx-auto mt-8">
       <CardHeader>
@@ -377,9 +420,14 @@ const AnimalProfileTest: React.FC = () => {
         <Button 
           className="w-full bg-brand-teal hover:bg-brand-teal/90" 
           onClick={handleNext} 
-          disabled={!currentAnswer}
+          disabled={!currentAnswer || isSubmitting}
         >
-          {currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processando...
+            </>
+          ) : currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
         </Button>
       </CardFooter>
     </Card>

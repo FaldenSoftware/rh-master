@@ -3,7 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase } from "@/lib/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { sendInviteEmail } from "@/services/invitations";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";

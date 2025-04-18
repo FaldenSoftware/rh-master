@@ -1,4 +1,5 @@
 
+<<<<<<< HEAD
 import React, { useState } from 'react';
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -120,29 +121,42 @@ const questions = [
     ]
   }
 ];
+=======
+import React, { useState } from "react";
+import { questions } from './proactivity/questions';
+import { calculateProactivityScore } from './proactivity/ScoreCalculator';
+import QuestionCard from './proactivity/QuestionCard';
+import ResultsCard from './proactivity/ResultsCard';
+>>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
 
 const ProactivityTest: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [currentAnswer, setCurrentAnswer] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = () => {
-    if (currentAnswer) {
-      setAnswers(prev => ({
-        ...prev,
-        [questions[currentQuestion].id]: currentAnswer
-      }));
-      
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion(prev => prev + 1);
-        setCurrentAnswer(null);
-      } else {
+    if (!currentAnswer) return;
+    
+    setAnswers(prev => ({
+      ...prev,
+      [questions[currentQuestion].id]: currentAnswer
+    }));
+    
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+      setCurrentAnswer(null);
+    } else {
+      setIsSubmitting(true);
+      setTimeout(() => {
         setShowResults(true);
-      }
+        setIsSubmitting(false);
+      }, 1000);
     }
   };
 
+<<<<<<< HEAD
   // Novo cálculo preciso da Proatividade
   // Cálculo preciso de Proatividade
   // Função de cálculo precisa de Proatividade
@@ -175,6 +189,12 @@ const ProactivityTest: React.FC = () => {
       level: level.level,
       description: level.description
     };
+=======
+  const handleRetake = () => {
+    setShowResults(false);
+    setCurrentQuestion(0);
+    setAnswers({});
+>>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
   };
 
     let totalScore = 0;
@@ -240,89 +260,27 @@ const ProactivityTest: React.FC = () => {
 
 
   if (showResults) {
-    const result = calculateProactivityScore();
-
+    const result = calculateProactivityScore(answers, questions);
     return (
-      <Card className="max-w-4xl mx-auto mt-8">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Resultados do Formulário de Proatividade</CardTitle>
-          <CardDescription>Avaliação do seu perfil de proatividade</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex flex-col items-center">
-            <div className="text-6xl font-bold text-brand-teal mb-2">{result.percentage}%</div>
-            <p className="text-xl">Pontuação de Proatividade</p>
-            <p className="mt-2 text-lg font-semibold text-brand-gold">{result.level}</p>
-          </div>
-
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div className="bg-brand-teal h-3 rounded-full" style={{ width: `${result.percentage}%` }}></div>
-          </div>
-
-          <Alert className="bg-brand-beige border-brand-gold text-brand-teal mt-4">
-            <p>
-              {result.level === 'Altamente Proativo' && 'Você demonstra níveis excepcionais de iniciativa e proatividade. Continua buscando oportunidades para melhorar e inovar, frequentemente liderando mudanças.'}
-              {result.level === 'Proativo' && 'Você demonstra boa iniciativa na maioria das situações, identificando oportunidades e agindo sem necessidade de incentivo constante.'}
-              {result.level === 'Moderadamente Proativo' && 'Você demonstra iniciativa em algumas áreas, mas pode esperar por orientação ou aprovação em outras situações antes de agir.'}
-              {result.level === 'Reativo' && 'Você tende a responder a situações em vez de antecipá-las, geralmente esperando por direcionamento antes de tomar ações.'}
-              {result.level === 'Altamente Reativo' && 'Você geralmente espera por instruções claras e direcionamento antes de agir, preferindo seguir estruturas estabelecidas.'}
-            </p>
-          </Alert>
-        </CardContent>
-        <CardFooter>
-          <Button className="w-full bg-brand-teal hover:bg-brand-teal/80" onClick={() => {
-            setShowResults(false);
-            setCurrentQuestion(0);
-            setAnswers({});
-          }}>
-            Refazer Teste
-          </Button>
-        </CardFooter>
-      </Card>
+      <ResultsCard
+        result={result}
+        totalQuestions={questions.length}
+        answeredQuestions={Object.keys(answers).length}
+        onRetake={handleRetake}
+      />
     );
   }
 
   return (
-    <Card className="max-w-4xl mx-auto mt-8">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div className="space-y-1.5">
-            <CardTitle className="text-2xl">Formulário de Proatividade</CardTitle>
-            <CardDescription>Questão {currentQuestion + 1} de {questions.length}</CardDescription>
-          </div>
-          <div className="text-sm font-medium">
-            {Math.round(((currentQuestion) / questions.length) * 100)}% Completo
-          </div>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
-          <div className="bg-brand-teal h-2.5 rounded-full" style={{ width: `${(currentQuestion / questions.length) * 100}%` }}></div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">{questions[currentQuestion].question}</h3>
-          <RadioGroup value={currentAnswer || ""} onValueChange={setCurrentAnswer} className="mt-4">
-            <div className="space-y-3">
-              {questions[currentQuestion].options.map(option => (
-                <div key={option.id} className="flex items-center space-x-2 border border-gray-200 p-3 rounded-md hover:bg-gray-50">
-                  <RadioGroupItem value={option.id} id={option.id} />
-                  <Label htmlFor={option.id} className="flex-grow cursor-pointer">{option.text}</Label>
-                </div>
-              ))}
-            </div>
-          </RadioGroup>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          className="w-full bg-brand-teal hover:bg-brand-teal/80" 
-          onClick={handleNext} 
-          disabled={!currentAnswer}
-        >
-          {currentQuestion === questions.length - 1 ? 'Ver Resultados' : 'Próxima Questão'}
-        </Button>
-      </CardFooter>
-    </Card>
+    <QuestionCard
+      currentQuestion={currentQuestion}
+      totalQuestions={questions.length}
+      question={questions[currentQuestion]}
+      currentAnswer={currentAnswer}
+      isSubmitting={isSubmitting}
+      onAnswer={setCurrentAnswer}
+      onNext={handleNext}
+    />
   );
 };
 
