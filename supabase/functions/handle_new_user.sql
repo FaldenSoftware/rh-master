@@ -39,28 +39,35 @@ BEGIN
   END IF;
 
   -- Insert profile with all necessary fields
-  INSERT INTO public.profiles (
-    id, 
-    name, 
-    role,
-    company,
-    phone,
-    position,
-    bio,
-    email
-  )
-  VALUES (
-    NEW.id, 
-    COALESCE(name_value, 'Usuário'),
-    COALESCE(role_value, 'client'),
-    company_value,
-    phone_value,
-    position_value,
-    bio_value,
-    email_value
-  );
-  
-  RAISE LOG 'handle_new_user: Successfully created profile for user %', NEW.id;
+  BEGIN
+    INSERT INTO public.profiles (
+      id, 
+      name, 
+      role,
+      company,
+      phone,
+      position,
+      bio,
+      email
+    )
+    VALUES (
+      NEW.id, 
+      COALESCE(name_value, 'Usuário'),
+      COALESCE(role_value, 'client'),
+      company_value,
+      phone_value,
+      position_value,
+      bio_value,
+      email_value
+    );
+    
+    RAISE LOG 'handle_new_user: Successfully created profile for user %', NEW.id;
+  EXCEPTION 
+    WHEN unique_violation THEN
+      RAISE LOG 'handle_new_user: Duplicate key violation for user %, ignoring', NEW.id;
+      -- Se houve violação de chave única, significa que o perfil já existe
+      -- Não precisamos fazer nada, apenas retornar NEW
+  END;
   
   RETURN NEW;
 EXCEPTION
@@ -69,4 +76,3 @@ EXCEPTION
     RAISE EXCEPTION 'Database error saving user profile: %', SQLERRM;
 END;
 $$;
-

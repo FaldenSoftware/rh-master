@@ -6,12 +6,15 @@ export const getUserProfile = async (userId: string): Promise<AuthUser | null> =
   try {
     console.log("Buscando perfil para usuário:", userId);
     
+    // Aguardar um pequeno tempo para dar chance ao trigger de executar
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     // Try direct query approach first
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle(); // Usando maybeSingle em vez de single para evitar erros
       
     if (profileError) {
       console.error("Erro ao buscar perfil diretamente:", profileError);

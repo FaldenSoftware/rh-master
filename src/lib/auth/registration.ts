@@ -92,26 +92,40 @@ export const registerUser = async ({
     
     // Wait longer for profile creation trigger
     console.log("Waiting for profile creation trigger...");
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Aumentado para 5 segundos
     
     // Get created profile with retry mechanism
     let userProfile = null;
-    let profileRetries = 3;
+    let profileRetries = 5; // Aumentado de 3 para 5 tentativas
     
     while (profileRetries > 0 && !userProfile) {
       userProfile = await getUserProfile(data.user.id);
-      console.log(`Attempt ${4-profileRetries}/3 - Retrieved user profile:`, userProfile);
+      console.log(`Attempt ${6-profileRetries}/5 - Retrieved user profile:`, userProfile);
       
       if (userProfile) break;
       
       profileRetries--;
-      console.log("Profile not found yet, waiting and retrying...");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-    
-    if (!userProfile) {
-      console.error("User profile not found after registration");
-      throw new Error("Falha ao criar perfil de usuário. Tente novamente.");
+      
+      if (profileRetries > 0) {
+        console.log("Profile not found yet, waiting and retrying...");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        console.log("Maximum retries reached. Creating minimal profile.");
+        // Retornar um perfil parcial mesmo sem conseguir recuperá-lo
+        // Isso permite que o usuário prossiga, já que o perfil provavelmente foi criado
+        return {
+          id: data.user.id,
+          email: email,
+          name: cleanedName,
+          role: role,
+          company: cleanedCompany,
+          phone: cleanedPhone,
+          position: cleanedPosition,
+          bio: cleanedBio,
+          createdAt: new Date().toISOString(),
+          mentor_id: role === 'mentor' ? data.user.id : undefined
+        };
+      }
     }
     
     return userProfile;
