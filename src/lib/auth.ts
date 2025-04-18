@@ -1,14 +1,14 @@
 
 import { AuthUser, AuthState } from "./authTypes";
-import { getUserProfile } from "./userProfile";
 import { 
   registerUser,
   loginUser,
   logoutUser,
   getCurrentUser,
   devModeLogin,
-  updateUserProfile
-} from "./authOperations";
+  updateUserProfile,
+  getUserProfile 
+} from "./auth";
 
 /**
  * Checks if a user has access based on role
@@ -22,7 +22,6 @@ export const hasAccess = (user: AuthUser | null, requiredRole: "mentor" | "clien
 };
 
 // Re-export everything needed from the auth module
-// Use 'export type' for type exports when isolatedModules is enabled
 export type { AuthUser, AuthState };
 export {
   getUserProfile,
@@ -33,3 +32,4 @@ export {
   devModeLogin,
   updateUserProfile
 };
+
