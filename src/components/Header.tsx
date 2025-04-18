@@ -26,8 +26,8 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <img 
               src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" 
-              alt="RH Master Logo" 
-              className="h-10 w-auto object-contain" 
+              alt="Logo" 
+              className="h-14 w-auto object-contain" 
             />
           </div>
         </div>
