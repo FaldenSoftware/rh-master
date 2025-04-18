@@ -7,17 +7,14 @@ type TableNames = keyof Database['public']['Tables'];
 type TableRow<T extends TableNames> = Database['public']['Tables'][T]['Row'];
 
 export class SupabaseAPI {
-  static async getById<T>(table: TableNames, id: string): Promise<T | null> {
+  static async getById<T = any>(table: TableNames, id: string): Promise<T | null> {
     try {
       const { data, error } = await supabase
         .from(table)
         .select('*')
         .eq('id', id)
         .single();
-      if (error) {
-        ErrorService.logError('database_error', error, { table, id });
-        throw error;
-      }
+      if (error) throw error;
       return data as T;
     } catch (error) {
       ErrorService.logError('database_error', error, { table, id });
@@ -36,6 +33,7 @@ export class SupabaseAPI {
   ): Promise<T[]> {
     try {
       let query = supabase.from(table).select(options?.select || '*');
+      
       if (options?.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
           if (value !== undefined) {
@@ -43,18 +41,19 @@ export class SupabaseAPI {
           }
         });
       }
+      
       if (options?.order) {
         query = query.order(options.order.column, { ascending: options.order.ascending ?? true });
       }
+      
       if (options?.limit) {
         query = query.limit(options.limit);
       }
-      const { data, error } = await query;
-      if (error) {
-        ErrorService.logError('database_error', error, { table, options });
-        throw error;
-      }
-      return data as T[];
+      
+      const { data: result, error } = await query;
+      
+      if (error) throw error;
+      return result as T[];
     } catch (error) {
       ErrorService.logError('database_error', error, { table, options });
       throw error;
@@ -65,13 +64,11 @@ export class SupabaseAPI {
     try {
       const { data: result, error } = await supabase
         .from(table)
-        .insert(data)
+        .insert(data as any)
         .select()
         .single();
-      if (error) {
-        ErrorService.logError('database_error', error, { table, data });
-        throw error;
-      }
+        
+      if (error) throw error;
       return result as T;
     } catch (error) {
       ErrorService.logError('database_error', error, { table, data });
@@ -83,14 +80,12 @@ export class SupabaseAPI {
     try {
       const { data: result, error } = await supabase
         .from(table)
-        .update(data)
+        .update(data as any)
         .eq('id', id)
         .select()
         .single();
-      if (error) {
-        ErrorService.logError('database_error', error, { table, id, data });
-        throw error;
-      }
+        
+      if (error) throw error;
       return result as T;
     } catch (error) {
       ErrorService.logError('database_error', error, { table, id, data });
@@ -104,10 +99,8 @@ export class SupabaseAPI {
         .from(table)
         .delete()
         .eq('id', id);
-      if (error) {
-        ErrorService.logError('database_error', error, { table, id });
-        throw error;
-      }
+        
+      if (error) throw error;
       return true;
     } catch (error) {
       ErrorService.logError('database_error', error, { table, id });
@@ -120,10 +113,8 @@ export class SupabaseAPI {
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: payload
       });
-      if (error) {
-        ErrorService.logError('function_error', error, { functionName, payload });
-        throw error;
-      }
+      
+      if (error) throw error;
       return data as T;
     } catch (error) {
       ErrorService.logError('function_error', error, { functionName, payload });
@@ -131,3 +122,4 @@ export class SupabaseAPI {
     }
   }
 }
+

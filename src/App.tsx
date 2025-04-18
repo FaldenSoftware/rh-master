@@ -40,144 +40,146 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/client/login" element={<ClientLogin />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/client/register" element={<ClientRegister />} />
-                
-                <Route 
-                  path="/leader" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderDashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/clients" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderClients />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/results" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderResults />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/rankings" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderRankings />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/reports" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderReports />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/subscription" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderSubscription />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/leader/settings" 
-                  element={
-                    <ProtectedRoute requiredRole="mentor">
-                      <LeaderSettings />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="/client" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ClientDashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/tests" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ClientTests />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/tests/animal-profile" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <AnimalProfileTestPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/tests/animal-profile/results/:resultId" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <AnimalProfileResultsPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/tests/egograma" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <EgogramaTestPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/tests/proactivity" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ProactivityTestPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/results" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ClientResults />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/profile" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ClientProfile />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/account" 
-                  element={
-                    <ProtectedRoute requiredRole="client">
-                      <ClientAccount />
-                    </ProtectedRoute>
-                  } 
-                />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <ToastProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/client/login" element={<ClientLogin />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/client/register" element={<ClientRegister />} />
+                  
+                  <Route 
+                    path="/leader" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/clients" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderClients />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/results" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderResults />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/rankings" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderRankings />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/reports" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderReports />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/subscription" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderSubscription />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/leader/settings" 
+                    element={
+                      <ProtectedRoute requiredRole="mentor">
+                        <LeaderSettings />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/client" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ClientDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/tests" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ClientTests />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/tests/animal-profile" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <AnimalProfileTestPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/tests/animal-profile/results/:resultId" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <AnimalProfileResultsPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/tests/egograma" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <EgogramaTestPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/tests/proactivity" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ProactivityTestPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/results" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ClientResults />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/profile" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ClientProfile />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/account" 
+                    element={
+                      <ProtectedRoute requiredRole="client">
+                        <ClientAccount />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ToastProvider>
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>
