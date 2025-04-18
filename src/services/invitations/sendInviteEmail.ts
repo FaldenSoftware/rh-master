@@ -15,6 +15,7 @@ export const sendInviteEmail = async (
   actualRecipient?: string;
   errorDetails?: any;
   service?: string;
+  isSmtpError?: boolean;
 }> => {
   try {
     console.log(`Iniciando envio de email para ${clientEmail}`);
@@ -50,6 +51,7 @@ export const sendInviteEmail = async (
           success: false,
           error: "Erro de conexão SMTP. Verifique as credenciais de email.",
           errorDetails: data?.details,
+          isSmtpError: true,
           isTestMode: data?.isTestMode
         };
       }
