@@ -1,3 +1,9 @@
 
 [functions.check-email-config]
 verify_jwt = true
+
+[functions.resend-invitation]
+verify_jwt = true
+
+[functions.send-invite-email]
+verify_jwt = true

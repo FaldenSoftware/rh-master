@@ -1,8 +1,13 @@
+
 import { supabase } from './client';
 import { ErrorService } from '@/services/errorService';
+import { Database } from '@/integrations/supabase/types';
+
+// Define valid table names type to avoid type errors
+type TableNames = keyof Database['public']['Tables'];
 
 export class SupabaseAPI {
-  static async getById<T>(table: string, id: string): Promise<T | null> {
+  static async getById<T>(table: TableNames, id: string): Promise<T | null> {
     try {
       const { data, error } = await supabase
         .from(table)
@@ -21,7 +26,7 @@ export class SupabaseAPI {
   }
 
   static async getMany<T>(
-    table: string,
+    table: TableNames,
     options?: {
       select?: string;
       filters?: Record<string, any>;
@@ -54,7 +59,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async insert<T>(table: string, data: Partial<T>): Promise<T> {
+  static async insert<T>(table: TableNames, data: any): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)
@@ -72,7 +77,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async update<T>(table: string, id: string, data: Partial<T>): Promise<T> {
+  static async update<T>(table: TableNames, id: string, data: any): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)
@@ -91,7 +96,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async delete(table: string, id: string): Promise<boolean> {
+  static async delete(table: TableNames, id: string): Promise<boolean> {
     try {
       const { error } = await supabase
         .from(table)

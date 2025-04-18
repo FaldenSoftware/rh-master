@@ -1,9 +1,14 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../send-invite-email/types.ts";
 import { buildInviteEmailHtml } from "../send-invite-email/emailBuilder.ts";
 import { sendWithGoDaddy } from "../send-invite-email/emailServices.ts";
+
+// Define corsHeaders directly in this file rather than importing
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";

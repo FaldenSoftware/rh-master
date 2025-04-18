@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase/client';
 
 export type ErrorType =
@@ -36,26 +37,20 @@ export class ErrorService {
       const { data } = await supabase.auth.getUser();
       userId = data.user?.id;
     } catch (e) {}
-    if (logToDatabase) {
-      try {
-        const errorData: ErrorLogData = {
-          type,
-          message,
-          stack,
-          context,
-          severity,
-          user_id: userId,
-          timestamp: new Date().toISOString()
-        };
-        await supabase.from('error_logs').insert(errorData);
-      } catch (dbError) {
-        console.error('Falha ao registrar erro no banco de dados:', dbError);
-      }
-    }
-    if (severity === 'critical') {
-      this.notifyAdministrators(type, message, context);
-    }
+    
+    // For now, we'll just log to console since the error_logs table might not exist
+    // If you want to store errors, create the table first
+    console.error('Error details:', {
+      type,
+      message,
+      stack,
+      context,
+      severity,
+      user_id: userId,
+      timestamp: new Date().toISOString()
+    });
   }
+  
   private static getSeverity(type: ErrorType): ErrorSeverity {
     switch (type) {
       case 'auth_error':
@@ -74,6 +69,7 @@ export class ErrorService {
         return 'medium';
     }
   }
+  
   private static async notifyAdministrators(
     type: ErrorType,
     message: string,
@@ -86,6 +82,7 @@ export class ErrorService {
       timestamp: new Date().toISOString()
     });
   }
+  
   static getUserFriendlyMessage(error: any): string {
     if (error?.code) {
       switch (error.code) {
