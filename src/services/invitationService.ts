@@ -27,18 +27,10 @@ export interface InvitationResult {
   service?: string;
 }
 
-interface InvitationCode {
-  id: string;
-  email: string;
-  mentor_id: string;
-  is_used: boolean;
-  expires_at: string;
-  created_at: string;
-  name?: string;
-  mentor?: {
-    name?: string;
-  };
-}
+import type { Database } from '@/integrations/supabase/types';
+type InvitationCode = Database['public']['Tables']['invitation_codes']['Row'] & {
+  mentor?: { name?: string }
+};
 
 export class InvitationService {
   static async checkEmailConfig(): Promise<{ configured: boolean; error?: string }> {
