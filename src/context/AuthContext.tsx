@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, AuthState, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin, updateUserProfile } from "@/lib/auth";
@@ -54,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check for dev mode first
         if (localStorage.getItem('devModeActive') === 'true') {
           const devModeUser = localStorage.getItem('devModeUser');
           if (devModeUser) {
@@ -71,7 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Regular authentication setup
         const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log("Auth state changed:", event, session?.user?.id);
           

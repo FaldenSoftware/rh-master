@@ -12,10 +12,12 @@ export const hasAccess = (user: AuthUser | null, requiredRole: "mentor" | "clien
   return user.role === requiredRole;
 };
 
+// Export types
+export type { AuthUser, AuthState };
+
 // Re-export everything from auth module
 export * from "./auth/types";
 export * from "./auth/authentication";
 export * from "./auth/registration";
 export * from "./auth/userProfile";
 export * from "./auth/devMode";
-
