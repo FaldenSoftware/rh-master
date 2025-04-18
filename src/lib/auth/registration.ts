@@ -18,7 +18,7 @@ export const registerUser = async ({
     console.log("Registering user with data:", { email, name, role, company, phone, position, bio });
     
     if (role === "mentor" && (!company || company.trim() === "")) {
-      throw new Error("Company is required for mentors");
+      throw new Error("Empresa é obrigatória para mentores");
     }
     
     // Clean input data
@@ -47,6 +47,7 @@ export const registerUser = async ({
     if (error) {
       console.error("Supabase signup error:", error);
       
+      // Melhorando a mensagem de erro para usuários que já existem
       if (error.message.includes("User already registered")) {
         throw new Error("Este email já está registrado. Tente fazer login.");
       }
@@ -61,6 +62,9 @@ export const registerUser = async ({
 
     console.log("User registered successfully with ID:", data.user.id);
     
+    // Adicionando mais logs para diagnóstico
+    console.log("Complete auth response:", data);
+    
     // Add user role with retry mechanism
     if (role === "mentor") {
       let retries = 3;
@@ -72,7 +76,10 @@ export const registerUser = async ({
             role: 'mentor'
           }]);
 
-        if (!roleError) break;
+        if (!roleError) {
+          console.log("Successfully added mentor role");
+          break;
+        }
 
         console.error(`Error adding mentor role (attempt ${4-retries}/3):`, roleError);
         retries--;
@@ -80,12 +87,18 @@ export const registerUser = async ({
       }
     }
     
-    // Wait for profile creation trigger
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait longer for profile creation trigger
+    console.log("Waiting for profile creation trigger...");
+    await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Get created profile
     const userProfile = await getUserProfile(data.user.id);
     console.log("Retrieved user profile:", userProfile);
+    
+    if (!userProfile) {
+      console.error("User profile not found after registration");
+      throw new Error("Falha ao criar perfil de usuário. Tente novamente.");
+    }
     
     return userProfile;
   } catch (error) {
@@ -93,4 +106,3 @@ export const registerUser = async ({
     throw error;
   }
 };
-

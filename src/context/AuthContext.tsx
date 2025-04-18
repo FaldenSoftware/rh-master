@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser, AuthState, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin, updateUserProfile } from "@/lib/auth";
@@ -220,7 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     avatar_url: string;
   }>): Promise<AuthUser | null> => {
     if (!state.user) {
-      throw new Error("User not authenticated");
+      throw new Error("Usuário não autenticado");
     }
     
     setState(prev => ({ ...prev, isLoading: true }));

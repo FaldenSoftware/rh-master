@@ -11,6 +11,7 @@ DECLARE
   phone_value TEXT;
   position_value TEXT;
   bio_value TEXT;
+  email_value TEXT;
 BEGIN
   -- Extract values from metadata safely with better logging
   RAISE LOG 'handle_new_user: Processing new user with metadata: %', NEW.raw_user_meta_data;
@@ -21,9 +22,10 @@ BEGIN
   phone_value := NEW.raw_user_meta_data->>'phone';
   position_value := NEW.raw_user_meta_data->>'position';
   bio_value := NEW.raw_user_meta_data->>'bio';
+  email_value := NEW.email;
   
-  RAISE LOG 'handle_new_user: Extracted values - name: %, role: %, company: %', 
-    name_value, role_value, company_value;
+  RAISE LOG 'handle_new_user: Extracted values - name: %, role: %, company: %, email: %', 
+    name_value, role_value, company_value, email_value;
   
   -- For mentors, company is required
   IF role_value = 'mentor' AND (company_value IS NULL OR company_value = '') THEN
@@ -38,7 +40,8 @@ BEGIN
     company,
     phone,
     position,
-    bio
+    bio,
+    email
   )
   VALUES (
     NEW.id, 
@@ -47,7 +50,8 @@ BEGIN
     company_value,
     phone_value,
     position_value,
-    bio_value
+    bio_value,
+    email_value
   );
   
   RAISE LOG 'handle_new_user: Successfully created profile for user %', NEW.id;
