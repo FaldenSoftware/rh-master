@@ -1,5 +1,6 @@
 
 import { supabase } from './client';
+import type { Database } from '@/integrations/supabase/types';
 
 // Define available table names as a type
 type TableName = 'profiles' | 'invitation_codes' | 'invites' | 'mentors' | 'tests' | 
@@ -52,7 +53,7 @@ export const SupabaseAPI = {
   insert: async <T>(table: TableName, data: Record<string, unknown>): Promise<T> => {
     const { data: result, error } = await supabase
       .from(table)
-      .insert(data)
+      .insert(data as any)
       .select()
       .single();
       
@@ -63,7 +64,7 @@ export const SupabaseAPI = {
   update: async <T>(table: TableName, id: string, data: Record<string, unknown>): Promise<T> => {
     const { data: result, error } = await supabase
       .from(table)
-      .update(data)
+      .update(data as any)
       .eq('id', id)
       .select()
       .single();
