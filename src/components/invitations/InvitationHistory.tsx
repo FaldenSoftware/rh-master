@@ -119,9 +119,10 @@ export function InvitationHistory() {
     if (invitation.is_used) {
       return {
         label: "Aceito",
-        variant: "success" as const,
+        variant: "default" as const,
         icon: CheckCircle,
         description: "O convite foi aceito e a conta foi criada",
+        className: "bg-green-100 text-green-800 hover:bg-green-200"
       };
     }
     
@@ -130,15 +131,15 @@ export function InvitationHistory() {
         label: "Expirado",
         variant: "destructive" as const,
         icon: XCircle,
-        description: "O convite expirou e não pode mais ser usado",
+        description: "O convite expirou e não pode mais ser usado"
       };
     }
     
     return {
       label: "Pendente",
-      variant: "outline" as const,
+      variant: "secondary" as const,
       icon: Clock,
-      description: "O convite foi enviado e está aguardando aceitação",
+      description: "O convite foi enviado e está aguardando aceitação"
     };
   };
   
@@ -199,7 +200,10 @@ export function InvitationHistory() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center">
-                                <Badge variant={status.variant} className="flex items-center">
+                                <Badge 
+                                  variant={status.variant} 
+                                  className={cn("flex items-center", status.className)}
+                                >
                                   <StatusIcon className="h-3 w-3 mr-1" />
                                   {status.label}
                                 </Badge>
