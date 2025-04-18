@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { createClientInvitation } from "@/services/invitations";
 import useNotifications from "@/hooks/useNotifications";
@@ -7,14 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { AlertCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
 
-interface ClientInviteFormProps {
-  onCancel: () => void;
-}
-
-const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
+const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,14 +135,10 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
             type="submit" 
             disabled={isSubmitting || configStatus !== 'configured'}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              "Enviar Convite"
+            {isSubmitting && (
+              <>Enviando...</>
             )}
+            {!isSubmitting && "Enviar Convite"}
           </Button>
         </div>
       </form>
