@@ -1,7 +1,8 @@
 
 export const buildInviteEmailHtml = (clientName: string | undefined, mentorName: string, mentorCompany: string) => {
   const clientNameText = clientName ? `Olá ${clientName},` : 'Olá,';
-  const registerUrl = `https://rh-mentor-mastery.vercel.app/client/register`;
+  // Importante: atualizando a URL de registro para o caminho correto que existe na aplicação
+  const registerUrl = `https://rh-mentor-mastery.vercel.app/register?type=client`;
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -26,4 +27,3 @@ export const buildInviteEmailHtml = (clientName: string | undefined, mentorName:
     </div>
   `;
 };
-

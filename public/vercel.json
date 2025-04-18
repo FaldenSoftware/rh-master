@@ -1,0 +1,10 @@
+
+{
+  "redirects": [
+    {
+      "source": "/client/register",
+      "destination": "/register?type=client",
+      "permanent": true
+    }
+  ]
+}
