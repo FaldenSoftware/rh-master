@@ -19,22 +19,6 @@ export const registerUser = async (
       throw new Error("Company is required for mentors");
     }
     
-    // Verify if email exists in Auth (more reliable than checking profiles)
-    const { data: authUser, error: authCheckError } = await supabase.auth.admin.listUsers({
-      filter: {
-        email: email,
-      },
-    });
-
-    if (authCheckError) {
-      console.error("Error checking existing user:", authCheckError);
-      throw new Error("Error validating email");
-    }
-
-    if (authUser?.users?.length > 0) {
-      throw new Error("Este email já está cadastrado. Tente fazer login.");
-    }
-    
     // Clean input data
     const cleanedName = name.trim();
     const cleanedCompany = company?.trim() || "";
