@@ -40,7 +40,7 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <ToastProvider>
+              <>
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/client/login" element={<ClientLogin />} />
@@ -179,7 +179,8 @@ const App = () => {
                   
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </ToastProvider>
+              <Toaster />
+              </>
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>

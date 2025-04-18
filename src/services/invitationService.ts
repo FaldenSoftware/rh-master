@@ -264,7 +264,7 @@ export class InvitationService {
       
       const emailResult = await this.sendInviteEmail(
         invite.email,
-        invite.name || 'Cliente',
+        'Cliente',
         invite.mentor?.name
       );
       
