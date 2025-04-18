@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   name: string;
@@ -63,6 +64,10 @@ export interface InvitationCode {
   used_by?: string | null;
   created_at: string;
   expires_at: string;
+  name?: string;
+  mentor?: {
+    name?: string;
+  };
 }
 
 export interface TestData {

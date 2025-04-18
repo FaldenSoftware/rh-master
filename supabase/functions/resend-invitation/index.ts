@@ -1,214 +1,134 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { buildInviteEmailHtml } from "./emailBuilder.ts";
 import { sendWithGoDaddy } from "./emailServices.ts";
 
-// Define corsHeaders directly in this file rather than importing
+// Define CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+// Get environment variables
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const smtpUsername = Deno.env.get('SMTP_USERNAME') || '';
+const smtpPassword = Deno.env.get('SMTP_PASSWORD') || '';
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Create a Supabase client
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function handleRequest(req: Request): Promise<Response> {
+// Define handler function
+serve(async (req: Request) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verificar credenciais SMTP
-    const smtpUsername = Deno.env.get("SMTP_USERNAME");
-    const smtpPassword = Deno.env.get("SMTP_PASSWORD");
-    
     if (!smtpUsername || !smtpPassword) {
-      console.error("Credenciais SMTP não configuradas");
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Configuração de e-mail ausente. Contate o administrador do sistema."
+          error: 'Configuração de SMTP não definida',
+          errorDetails: { isSmtpError: true }
         }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 500 }
       );
     }
 
-    // Obter ID do convite a ser reenviado
     const { inviteId } = await req.json();
-    
+
     if (!inviteId) {
       return new Response(
-        JSON.stringify({ success: false, error: "ID do convite não fornecido" }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
+        JSON.stringify({ success: false, error: 'ID do convite não fornecido' }),
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 400 }
       );
     }
-    
-    // Buscar informações do convite e mentor
-    const { data: inviteData, error: inviteError } = await supabase
-      .from("invitation_codes")
-      .select(`
-        *,
-        mentor:profiles!invitation_codes_mentor_id_fkey(name, company)
-      `)
-      .eq("id", inviteId)
+
+    // Get invitation details
+    const { data: invite, error: getError } = await supabase
+      .from('invitation_codes')
+      .select('*, mentor:mentor_id(name)')
+      .eq('id', inviteId)
       .single();
-    
-    if (inviteError || !inviteData) {
-      console.error("Erro ao buscar convite:", inviteError);
+
+    if (getError || !invite) {
+      console.error("Erro ao buscar convite:", getError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Convite não encontrado",
-          details: inviteError
-        }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
+        JSON.stringify({ success: false, error: getError?.message || 'Convite não encontrado' }),
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 404 }
       );
     }
-    
-    // Atualizar data de expiração do convite (7 dias a partir de agora)
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + 7);
+
+    // Update expiration date
+    const newExpirationDate = new Date();
+    newExpirationDate.setDate(newExpirationDate.getDate() + 7);
     
     const { error: updateError } = await supabase
-      .from("invitation_codes")
+      .from('invitation_codes')
       .update({
         is_used: false,
-        expires_at: expirationDate.toISOString()
+        expires_at: newExpirationDate.toISOString()
       })
-      .eq("id", inviteId);
-    
+      .eq('id', inviteId);
+
     if (updateError) {
       console.error("Erro ao atualizar convite:", updateError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Erro ao atualizar convite",
-          details: updateError
-        }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
+        JSON.stringify({ success: false, error: updateError.message }),
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 500 }
       );
     }
+
+    // Send email
+    const clientName = invite.name || '';
+    const mentorName = invite.mentor?.name || 'Mentor';
+    const mentorCompany = 'RH Mentor Mastery'; // Default company name
     
-    // Preparar e-mail de convite
-    const email = inviteData.email;
-    const clientName = email.split('@')[0]; // Caso não tenhamos nome do cliente, usar parte do email
-    const mentorName = inviteData.mentor?.name || "Mentor";
-    const mentorCompany = inviteData.mentor?.company || "RH Mentor Mastery";
+    const emailHtml = buildInviteEmailHtml(clientName, mentorName, mentorCompany);
     
-    const htmlContent = buildInviteEmailHtml(
-      clientName,
-      mentorName,
-      mentorCompany
+    const emailResult = await sendWithGoDaddy(
+      invite.email,
+      'Convite para a RH Mentor Mastery',
+      emailHtml,
+      smtpUsername,
+      smtpPassword
     );
-    
-    const subject = `Convite para plataforma ${mentorCompany}`;
-    
-    // Enviar e-mail de convite
-    try {
-      const emailResult = await sendWithGoDaddy(
-        email,
-        subject,
-        htmlContent,
-        smtpUsername,
-        smtpPassword
-      );
-      
-      if (!emailResult.success) {
-        console.error("Erro ao enviar e-mail:", emailResult.errorMessage);
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: "Falha ao enviar e-mail",
-            details: emailResult.errorMessage,
-            isSmtpError: true
-          }),
-          { 
-            status: 200, 
-            headers: {
-              ...corsHeaders,
-              "Content-Type": "application/json"
-            }
-          }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: `E-mail de convite reenviado para ${email}`,
-          service: "GoDaddy"
-        }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-    } catch (emailError) {
-      console.error("Exceção ao enviar e-mail:", emailError);
+
+    if (!emailResult.success) {
+      console.error("Erro ao enviar email:", emailResult);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Erro ao processar envio de e-mail",
-          details: emailError.message,
-          isSmtpError: true
+          error: 'Erro ao enviar email',
+          errorDetails: emailResult,
+          isSmtpError: true,
+          service: emailResult.service
         }),
-        { 
-          status: 200, 
-          headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json"
-          }
-        }
+        { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 500 }
       );
     }
-  } catch (error) {
-    console.error("Erro na função resend-invitation:", error);
+
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: "Erro interno no servidor",
-        details: error.message
+      JSON.stringify({
+        success: true,
+        message: 'Convite reenviado com sucesso',
+        service: emailResult.service
       }),
-      { 
-        status: 200, 
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/json"
-        }
-      }
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+    );
+
+  } catch (error) {
+    console.error("Erro não tratado:", error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Erro interno do servidor',
+        errorDetails: error
+      }),
+      { headers: { 'Content-Type': 'application/json', ...corsHeaders }, status: 500 }
     );
   }
-}
-
-serve(handleRequest);
+});

@@ -6,8 +6,11 @@ import { Database } from '@/integrations/supabase/types';
 // Define valid table names type to avoid type errors
 type TableNames = keyof Database['public']['Tables'];
 
+// Create a type for all table row types from the Database type
+type TableRow<T extends TableNames> = Database['public']['Tables'][T]['Row'];
+
 export class SupabaseAPI {
-  static async getById<T>(table: TableNames, id: string): Promise<T | null> {
+  static async getById<T extends TableRow<TableNames>>(table: TableNames, id: string): Promise<T | null> {
     try {
       const { data, error } = await supabase
         .from(table)
@@ -25,7 +28,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async getMany<T>(
+  static async getMany<T extends TableRow<TableNames>>(
     table: TableNames,
     options?: {
       select?: string;
@@ -61,7 +64,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async insert<T extends Record<string, any>>(table: TableNames, data: T): Promise<T> {
+  static async insert<T extends Record<string, any>>(table: TableNames, data: any): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)
@@ -79,7 +82,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async update<T extends Record<string, any>>(table: TableNames, id: string, data: Partial<T>): Promise<T> {
+  static async update<T extends Record<string, any>>(table: TableNames, id: string, data: any): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)
