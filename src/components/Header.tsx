@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
@@ -18,17 +17,16 @@ const Header = () => {
   }, []);
 
   return (
-    <header className={`sticky top-0 w-full py-2 px-4 md:px-6 lg:px-8 z-50 transition-all duration-300 ${
+    <header className={`sticky top-0 w-full py-4 px-4 md:px-6 lg:px-8 z-50 transition-all duration-300 ${
       isScrolled ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
     }`}>
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center">
           <div className="flex items-center gap-2">
-            <img 
-              src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" 
-              alt="Logo" 
-              className="h-full max-h-12 w-auto object-contain" 
-            />
+            <img src="/lovable-uploads/bf811017-0b0d-4522-85c1-87f3ff294221.png" alt="RH Master Logo" className="h-12" />
+            <span className="text-2xl font-bold bg-gradient-to-r from-brand-teal to-brand-gold text-transparent bg-clip-text">
+              RH Master
+            </span>
           </div>
         </div>
 
