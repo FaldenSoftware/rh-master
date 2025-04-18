@@ -38,7 +38,9 @@ export class SupabaseAPI {
       let query = supabase.from(table).select(options?.select || '*');
       if (options?.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
-          query = query.eq(key, value);
+          if (value !== undefined) {
+            query = query.eq(key, value);
+          }
         });
       }
       if (options?.order) {
@@ -59,7 +61,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async insert<T>(table: TableNames, data: any): Promise<T> {
+  static async insert<T extends Record<string, any>>(table: TableNames, data: T): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)
@@ -77,7 +79,7 @@ export class SupabaseAPI {
     }
   }
 
-  static async update<T>(table: TableNames, id: string, data: any): Promise<T> {
+  static async update<T extends Record<string, any>>(table: TableNames, id: string, data: Partial<T>): Promise<T> {
     try {
       const { data: result, error } = await supabase
         .from(table)

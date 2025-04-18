@@ -60,11 +60,13 @@ export class InvitationService {
       if (!mentor || !mentor.id) {
         throw new Error('Mentor não autenticado');
       }
+      
       const validatedData = inviteSchema.parse({
         email: clientEmail,
         name: clientName,
         mentor_id: mentor.id
       });
+      
       const existingInvites = await SupabaseAPI.getMany<InvitationCode>('invitation_codes', {
         filters: {
           email: validatedData.email,
@@ -72,8 +74,10 @@ export class InvitationService {
         },
         limit: 1
       });
+      
       const expirationDate = addDays(new Date(), 7).toISOString();
       let inviteId: string;
+      
       if (existingInvites.length > 0) {
         const existingInvite = existingInvites[0];
         await SupabaseAPI.update<InvitationCode>('invitation_codes', existingInvite.id, {
@@ -92,16 +96,19 @@ export class InvitationService {
         });
         inviteId = newInvite.id;
       }
+      
       const emailResult = await this.sendInviteEmail(
         validatedData.email,
         validatedData.name,
         mentor.name
       );
+      
       if (!emailResult.success) {
         ErrorService.logError('function_error', emailResult.errorDetails || emailResult.error, {
           function: 'send-invite-email',
           email: validatedData.email
         });
+        
         if (emailResult.isApiKeyError) {
           return {
             success: false,
@@ -110,6 +117,7 @@ export class InvitationService {
             errorDetails: emailResult.errorDetails
           };
         }
+        
         if (emailResult.isDomainError) {
           return {
             success: false,
@@ -118,6 +126,7 @@ export class InvitationService {
             errorDetails: emailResult.errorDetails
           };
         }
+        
         return {
           success: false,
           error: emailResult.error || 'Erro ao enviar email',
@@ -126,6 +135,7 @@ export class InvitationService {
           service: emailResult.service
         };
       }
+      
       if (emailResult.isTestMode && emailResult.actualRecipient !== validatedData.email) {
         return {
           success: true,
@@ -136,6 +146,7 @@ export class InvitationService {
           service: emailResult.service
         };
       }
+      
       return {
         success: true,
         message: 'Convite enviado com sucesso',
@@ -154,11 +165,13 @@ export class InvitationService {
           error: validationError.message
         };
       }
+      
       ErrorService.logError('unknown_error', error, {
         clientEmail,
         clientName,
         mentorId: mentor?.id
       });
+      
       return {
         success: false,
         error: ErrorService.getUserFriendlyMessage(error),
@@ -200,6 +213,7 @@ export class InvitationService {
         mentorCompany: 'RH Mentor Mastery',
         registerUrl: `https://rh-mentor-mastery.vercel.app/register?type=client&email=${encodeURIComponent(clientEmail)}`
       });
+      
       return result;
     } catch (error) {
       ErrorService.logError('function_error', error, {
@@ -207,6 +221,7 @@ export class InvitationService {
         clientEmail,
         clientName
       });
+      
       return {
         success: false,
         error: 'Erro interno ao enviar email',
@@ -216,7 +231,7 @@ export class InvitationService {
     }
   }
 
-  static async getInvitationsByMentor(mentorId: string): Promise<any[]> {
+  static async getInvitationsByMentor(mentorId: string): Promise<InvitationCode[]> {
     try {
       return await SupabaseAPI.getMany<InvitationCode>('invitation_codes', {
         filters: { mentor_id: mentorId },
@@ -240,22 +255,27 @@ export class InvitationService {
         },
         select: '*, mentor:mentor_id(name)'
       });
+      
       if (invites.length === 0) {
         return {
           success: false,
           error: 'Convite não encontrado ou sem permissão'
         };
       }
+      
       const invite = invites[0];
+      
       await SupabaseAPI.update('invitation_codes', inviteId, {
         expires_at: addDays(new Date(), 7).toISOString(),
         is_used: false
       });
+      
       const emailResult = await this.sendInviteEmail(
         invite.email,
         invite.name || 'Cliente',
         invite.mentor?.name
       );
+      
       if (!emailResult.success) {
         return {
           success: false,
@@ -264,6 +284,7 @@ export class InvitationService {
           isSmtpError: emailResult.isSmtpError
         };
       }
+      
       return {
         success: true,
         message: 'Convite reenviado com sucesso'

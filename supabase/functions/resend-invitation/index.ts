@@ -1,8 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { buildInviteEmailHtml } from "../send-invite-email/emailBuilder.ts";
-import { sendWithGoDaddy } from "../send-invite-email/emailServices.ts";
+import { buildInviteEmailHtml } from "./emailBuilder.ts";
+import { sendWithGoDaddy } from "./emailServices.ts";
 
 // Define corsHeaders directly in this file rather than importing
 const corsHeaders = {
