@@ -1,7 +1,8 @@
 
 import React from "react";
-import { CheckCircle, Info } from "lucide-react";
+import { CheckCircle2, InfoIcon } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 interface InviteSuccessAlertProps {
   message?: string;
@@ -9,50 +10,42 @@ interface InviteSuccessAlertProps {
   actualRecipient?: string;
   intendedRecipient?: string;
   clientEmail: string;
+  serviceName?: string;
 }
 
-const InviteSuccessAlert: React.FC<InviteSuccessAlertProps> = ({
-  message,
-  isTestMode,
-  actualRecipient,
+const InviteSuccessAlert: React.FC<InviteSuccessAlertProps> = ({ 
+  message, 
+  isTestMode, 
+  actualRecipient, 
   intendedRecipient,
-  clientEmail
+  clientEmail,
+  serviceName
 }) => {
   return (
-    <div className="space-y-4">
-      <Alert className="bg-green-50 text-green-800 border-green-200">
-        <CheckCircle className="h-4 w-4 mr-2" />
-        <AlertTitle>Convite enviado com sucesso</AlertTitle>
-        <AlertDescription>
-          {isTestMode ? (
-            <>
-              Um email foi enviado para <strong>{actualRecipient}</strong> (modo de teste).<br/>
-              <span className="text-amber-600">
-                Nota: O email deveria ter sido enviado para {intendedRecipient},
-                mas como você está em modo de teste, foi enviado para o proprietário da conta Resend.
-              </span>
-            </>
-          ) : (
-            <>Um email foi enviado para {clientEmail} com as instruções para registro.</>
-          )}
-        </AlertDescription>
-      </Alert>
-      
-      {isTestMode && (
-        <Alert className="bg-amber-50 text-amber-800 border-amber-200">
-          <Info className="h-4 w-4 mr-2" />
-          <AlertTitle>Modo de Teste do Resend</AlertTitle>
-          <AlertDescription>
-            <p>Para enviar emails para outros destinatários, você precisa verificar um domínio no Resend:</p>
-            <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Acesse <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline">https://resend.com/domains</a></li>
-              <li>Adicione e verifique seu domínio</li>
-              <li>Atualize a configuração da função Edge no arquivo supabase/functions/send-invite-email/index.ts</li>
-            </ol>
-          </AlertDescription>
-        </Alert>
-      )}
-    </div>
+    <Alert className="bg-green-50 text-green-800 border-green-200">
+      <CheckCircle2 className="h-4 w-4 mr-2" />
+      <AlertTitle className="flex items-center gap-2">
+        Convite enviado com sucesso!
+        {serviceName && (
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs">
+            via {serviceName}
+          </Badge>
+        )}
+      </AlertTitle>
+      <AlertDescription>
+        <p className="mt-2">{message || `O convite foi enviado para ${clientEmail} com sucesso.`}</p>
+        
+        {isTestMode && (
+          <div className="mt-2 text-sm bg-amber-50 border-l-4 border-amber-300 p-3 rounded">
+            <div className="flex items-center mb-1">
+              <InfoIcon className="h-4 w-4 mr-1 text-amber-500" />
+              <span className="font-medium text-amber-700">Modo de teste</span>
+            </div>
+            <p>O sistema está em modo de teste. O email foi enviado para <span className="font-medium">{actualRecipient}</span> ao invés de <span className="font-medium">{intendedRecipient || clientEmail}</span>.</p>
+          </div>
+        )}
+      </AlertDescription>
+    </Alert>
   );
 };
 

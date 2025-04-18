@@ -16,6 +16,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [useAlternativeMethod, setUseAlternativeMethod] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<{
     success?: boolean;
     message?: string;
@@ -27,12 +28,16 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     isTestMode?: boolean;
     actualRecipient?: string;
     intendedRecipient?: string;
+    service?: string;
   } | null>(null);
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    await sendInvite();
+  };
+  
+  const sendInvite = async (useAlternative = false) => {
     // Validação
     if (!clientName.trim() || !clientEmail.trim()) {
       toast.error("Por favor, preencha todos os campos");
@@ -74,13 +79,14 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
                               result.error.includes("verification")));
         
         // Check if this is an SMTP error
-        const isSmtpError = result.error && (
-          result.error.includes("SMTP") || 
-          result.error.includes("smtp") ||
-          result.error.includes("email") ||
-          result.error.includes("Email") ||
-          result.error.includes("connection")
-        );
+        const isSmtpError = result.isSmtpError || 
+                           (result.error && (
+                             result.error.includes("SMTP") || 
+                             result.error.includes("smtp") ||
+                             result.error.includes("email") ||
+                             result.error.includes("Email") ||
+                             result.error.includes("connection")
+                           ));
         
         // Exibir mensagem de erro mais detalhada
         const errorMsg = result.error || "Erro ao enviar convite";
@@ -103,7 +109,8 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
         message: result.message || `Convite enviado com sucesso para ${clientName}`,
         isTestMode: result.isTestMode,
         actualRecipient: result.actualRecipient,
-        intendedRecipient: result.intendedRecipient
+        intendedRecipient: result.intendedRecipient,
+        service: result.service
       });
       
       toast.success(`Convite enviado para ${clientName}`);
@@ -128,6 +135,11 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
     setInviteStatus(null);
     setClientName("");
     setClientEmail("");
+  };
+  
+  const handleRetry = () => {
+    setUseAlternativeMethod(true);
+    sendInvite(true);
   };
 
   return (
@@ -154,6 +166,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
             actualRecipient={inviteStatus.actualRecipient}
             intendedRecipient={inviteStatus.intendedRecipient}
             clientEmail={clientEmail}
+            serviceName={inviteStatus.service}
           />
           
           <InviteFormActions 
@@ -171,6 +184,7 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
           isApiKeyError={inviteStatus.isApiKeyError}
           isDomainError={inviteStatus.isDomainError}
           isSmtpError={inviteStatus.isSmtpError}
+          onRetry={handleRetry}
         />
       )}
     </div>

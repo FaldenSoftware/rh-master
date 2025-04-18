@@ -40,6 +40,22 @@ export const createSuccessResponse = (
   );
 };
 
+export const responseWithCORS = (response: Response): Response => {
+  const headers = new Headers(response.headers);
+  
+  // Add CORS headers to the response
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+  
+  // Return a new response with the CORS headers
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+};
+
 export const createDomainErrorResponse = (errorMessage: string): Response => {
   return new Response(
     JSON.stringify({ 

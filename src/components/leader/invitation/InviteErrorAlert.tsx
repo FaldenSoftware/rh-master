@@ -2,6 +2,7 @@
 import React from "react";
 import { XCircle, AlertTriangle, Wifi } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface InviteErrorAlertProps {
   error?: string;
@@ -9,6 +10,7 @@ interface InviteErrorAlertProps {
   isApiKeyError?: boolean;
   isDomainError?: boolean;
   isSmtpError?: boolean;
+  onRetry?: () => void;
 }
 
 const InviteErrorAlert: React.FC<InviteErrorAlertProps> = ({ 
@@ -16,7 +18,8 @@ const InviteErrorAlert: React.FC<InviteErrorAlertProps> = ({
   errorDetails,
   isApiKeyError, 
   isDomainError,
-  isSmtpError
+  isSmtpError,
+  onRetry
 }) => {
   if (!error) return null;
   
@@ -42,7 +45,7 @@ const InviteErrorAlert: React.FC<InviteErrorAlertProps> = ({
          isSmtpError ? 'Erro de conexão SMTP' :
          'Erro ao enviar convite'}
       </AlertTitle>
-      <AlertDescription>
+      <AlertDescription className="space-y-4">
         {isDomainError ? (
           <>
             {error}
@@ -64,7 +67,9 @@ const InviteErrorAlert: React.FC<InviteErrorAlertProps> = ({
           </>
         ) : isSmtpError ? (
           <>
-            {error}
+            <p className="font-medium">
+              Erro ao enviar email: Failed to send a request to the Edge Function
+            </p>
             <p className="mt-2 text-sm">
               Ocorreu um erro na conexão com o servidor SMTP. Verifique se as credenciais SMTP estão corretas nas variáveis de ambiente do Supabase.
             </p>
@@ -77,6 +82,22 @@ const InviteErrorAlert: React.FC<InviteErrorAlertProps> = ({
                 <li>Problemas de rede</li>
               </ul>
             </p>
+            
+            {onRetry && (
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onRetry}
+                  className="bg-orange-100 hover:bg-orange-200 border-orange-300"
+                >
+                  Tentar novamente (modo alternativo)
+                </Button>
+                <p className="text-xs mt-1 text-orange-700">
+                  Tentaremos enviar usando um método alternativo.
+                </p>
+              </div>
+            )}
           </>
         ) : (
           error

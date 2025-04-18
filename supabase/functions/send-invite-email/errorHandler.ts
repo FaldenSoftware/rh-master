@@ -10,13 +10,15 @@ export interface ErrorResponse {
   action?: string;
   isDomainError?: boolean;
   isApiKeyError?: boolean;
+  isSmtpError?: boolean;
 }
 
 export const createErrorResponse = (
   error: string | Error, 
   details?: any,
   isDomainError = false,
-  isApiKeyError = false
+  isApiKeyError = false,
+  isSmtpError = false
 ): Response => {
   const errorMessage = error instanceof Error ? error.message : error;
   console.error(`Error response: ${errorMessage}`, details ? { details } : "");
@@ -37,6 +39,11 @@ export const createErrorResponse = (
     responseBody.isApiKeyError = true;
     responseBody.message = "Configuração de e-mail ausente. Contate o administrador do sistema";
   }
+  // Add SMTP error details
+  else if (isSmtpError) {
+    responseBody.isSmtpError = true;
+    responseBody.message = "Erro de conexão com o servidor SMTP";
+  }
   
   // Include error details if provided
   if (details) {
@@ -46,6 +53,30 @@ export const createErrorResponse = (
   return new Response(
     JSON.stringify(responseBody),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+};
+
+export const errorResponse = (
+  message: string,
+  details?: any
+): Response => {
+  const isSmtpError = 
+    message.includes('SMTP') ||
+    message.includes('email') ||
+    message.includes('connection') ||
+    (details?.isSmtpError);
+
+  const isApiKeyError =
+    message.includes('API key') ||
+    message.includes('Configuração de e-mail') ||
+    message.includes('ausente');
+
+  return createErrorResponse(
+    message, 
+    details, 
+    false, 
+    isApiKeyError,
+    isSmtpError
   );
 };
 

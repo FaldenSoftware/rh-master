@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { errorResponse } from "./errorHandler.ts";
 import { responseWithCORS } from "./responseFormatter.ts";
 import { buildInviteEmailHtml } from "./emailBuilder.ts";
-import { sendWithGoDaddy } from "./emailServices.ts";
+import { sendWithGoDaddy, sendWithMailtrap } from "./emailServices.ts";
 import { EmailRequestBody } from "./types.ts";
 
 async function handleRequest(req: Request): Promise<Response> {
@@ -14,7 +14,10 @@ async function handleRequest(req: Request): Promise<Response> {
     
     // Verificar se as configurações de email estão presentes
     if (!smtpUsername || !smtpPassword) {
-      console.error("Configuração de email ausente. Verifique as variáveis de ambiente.");
+      console.error("Configuração de email ausente. Verificando variáveis de ambiente:", {
+        usernameExists: Boolean(smtpUsername),
+        passwordExists: Boolean(smtpPassword)
+      });
       return errorResponse("Configuração de email ausente. Verifique as variáveis de ambiente.");
     }
     
@@ -37,10 +40,11 @@ async function handleRequest(req: Request): Promise<Response> {
     
     const companyName = mentorCompany || "RH Mentor Mastery";
     const mentorDisplayName = mentorName || "Mentor";
+    const clientDisplayName = clientName || "Cliente";
     
     // Construir o conteúdo do email
     const subject = `Convite para participar da plataforma ${companyName}`;
-    const htmlContent = buildInviteEmailHtml(clientName, mentorDisplayName, companyName);
+    const htmlContent = buildInviteEmailHtml(clientDisplayName, mentorDisplayName, companyName);
     
     console.log(`Tentando enviar email para ${email}`);
     
@@ -52,8 +56,13 @@ async function handleRequest(req: Request): Promise<Response> {
       console.log("MODO DE TESTE: Email será enviado para", actualRecipient, "em vez de", email);
     }
     
-    // Enviar email através do serviço GoDaddy
-    const result = await sendWithGoDaddy(
+    // Diferenciar entre cliente e mentor com base no email ou outro campo
+    const isClientEmail = requestData.email && !requestData.email.includes("@mentor");
+    
+    console.log(`Tipo de destinatário: ${isClientEmail ? 'Cliente' : 'Mentor'}`);
+    
+    // PASSO 1: Tentar enviar via GoDaddy
+    let result = await sendWithGoDaddy(
       actualRecipient,
       subject,
       htmlContent,
@@ -61,9 +70,31 @@ async function handleRequest(req: Request): Promise<Response> {
       smtpPassword
     );
     
+    // PASSO 2: Se falhou (especialmente para clientes) e é um cliente, tentar método alternativo
+    if (!result.success && isClientEmail) {
+      console.log("Primeiro método falhou, tentando método alternativo para cliente");
+      
+      result = await sendWithMailtrap(
+        actualRecipient,
+        subject,
+        htmlContent
+      );
+    }
+    
     if (!result.success) {
-      console.error("Erro no serviço de email:", result.error);
-      return errorResponse("Falha ao enviar email. Tente novamente mais tarde.", { details: result.error });
+      const errorDetails = {
+        mainError: result.errorMessage || "Erro desconhecido",
+        errorCode: result.errorCode || "UNKNOWN",
+        timestamp: new Date().toISOString(),
+        recipient: actualRecipient,
+        isSmtpError: true
+      };
+      
+      console.error("Erro no serviço de email:", errorDetails);
+      return errorResponse("Falha ao enviar email. Tente novamente mais tarde.", { 
+        details: errorDetails,
+        isSmtpError: true
+      });
     }
     
     // Resposta de sucesso
@@ -71,10 +102,11 @@ async function handleRequest(req: Request): Promise<Response> {
       new Response(
         JSON.stringify({
           success: true,
-          message: `Email enviado com sucesso para ${email}`,
+          message: `Email enviado com sucesso para ${email} via ${result.service}`,
           isTestMode,
           actualRecipient: isTestMode ? actualRecipient : undefined,
-          intendedRecipient: isTestMode ? email : undefined
+          intendedRecipient: isTestMode ? email : undefined,
+          service: result.service
         }),
         { status: 200 }
       )

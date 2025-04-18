@@ -13,7 +13,8 @@ export const sendInviteEmail = async (
   error?: string; 
   isTestMode?: boolean; 
   actualRecipient?: string;
-  errorDetails?: any;  // Ensure errorDetails is consistently defined in return type
+  errorDetails?: any;
+  service?: string;
 }> => {
   try {
     console.log(`Iniciando envio de email para ${clientEmail}`);
@@ -42,6 +43,17 @@ export const sendInviteEmail = async (
     if (!data || !data.success) {
       const errorMsg = data?.error || "Resposta inválida do servidor";
       console.error("Erro detalhado:", data?.details || "Sem detalhes adicionais");
+      
+      // Se for um erro de SMTP, encaminhar detalhes específicos
+      if (data?.details?.isSmtpError) {
+        return {
+          success: false,
+          error: "Erro de conexão SMTP. Verifique as credenciais de email.",
+          errorDetails: data?.details,
+          isTestMode: data?.isTestMode
+        };
+      }
+      
       return { 
         success: false, 
         error: errorMsg,
@@ -56,7 +68,8 @@ export const sendInviteEmail = async (
       success: true, 
       isTestMode: data.isTestMode, 
       actualRecipient: data.actualRecipient,
-      errorDetails: null // Adding errorDetails as null for successful responses
+      errorDetails: null, // Adding errorDetails as null for successful responses
+      service: data.service
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
