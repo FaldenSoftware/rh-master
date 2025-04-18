@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { ErrorService } from './errorService';
 import { z } from 'zod';
@@ -243,7 +244,7 @@ export class InvitationService {
     try {
       const { data, error } = await supabase
         .from('invitation_codes')
-        .select('*')
+        .select('*, mentor:mentor_id(name)')
         .eq('mentor_id', mentorId)
         .order('created_at', { ascending: false });
         
@@ -260,9 +261,10 @@ export class InvitationService {
     mentorId: string
   ): Promise<InvitationResult> {
     try {
+      // Update the query to use explicit column naming for the join
       const { data: invites, error: fetchError } = await supabase
         .from('invitation_codes')
-        .select('*, mentor:mentor_id(name)')
+        .select('*, mentor:profiles!invitation_codes_mentor_id_fkey(name)')
         .eq('id', inviteId)
         .eq('mentor_id', mentorId);
       
