@@ -37,7 +37,8 @@ export const sendInviteEmail = async (
       return { 
         success: false, 
         error: "Erro ao enviar email: " + error.message,
-        errorDetails: error
+        errorDetails: error,
+        isSmtpError: false // Adicionando explicitamente como false para consistência
       };
     }
     
@@ -59,7 +60,8 @@ export const sendInviteEmail = async (
       return { 
         success: false, 
         error: errorMsg,
-        errorDetails: data?.details
+        errorDetails: data?.details,
+        isSmtpError: false // Adicionando explicitamente como false
       };
     }
     
@@ -71,14 +73,16 @@ export const sendInviteEmail = async (
       isTestMode: data.isTestMode, 
       actualRecipient: data.actualRecipient,
       errorDetails: null, // Adding errorDetails as null for successful responses
-      service: data.service
+      service: data.service,
+      isSmtpError: false // Adicionando explicitamente como false para consistência
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
     return { 
       success: false, 
       error: "Erro interno ao enviar email",
-      errorDetails: error
+      errorDetails: error,
+      isSmtpError: false // Adicionando explicitamente como false para consistência
     };
   }
 };

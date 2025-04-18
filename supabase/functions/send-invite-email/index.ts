@@ -18,7 +18,9 @@ async function handleRequest(req: Request): Promise<Response> {
         usernameExists: Boolean(smtpUsername),
         passwordExists: Boolean(smtpPassword)
       });
-      return errorResponse("Configuração de email ausente. Verifique as variáveis de ambiente.");
+      return errorResponse("Configuração de email ausente. Verifique as variáveis de ambiente.", {
+        isSmtpError: true
+      });
     }
     
     if (req.method === "OPTIONS") {
@@ -101,7 +103,7 @@ async function handleRequest(req: Request): Promise<Response> {
     );
   } catch (error) {
     console.error("Erro inesperado:", error);
-    return errorResponse("Erro interno do servidor", { error });
+    return errorResponse("Erro interno do servidor", { error, isSmtpError: false });
   }
 }
 

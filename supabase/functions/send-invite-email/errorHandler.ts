@@ -61,10 +61,10 @@ export const errorResponse = (
   details?: any
 ): Response => {
   const isSmtpError = 
+    details?.isSmtpError || 
     message.includes('SMTP') ||
     message.includes('email') ||
-    message.includes('connection') ||
-    (details?.isSmtpError);
+    message.includes('connection');
 
   const isApiKeyError =
     message.includes('API key') ||
