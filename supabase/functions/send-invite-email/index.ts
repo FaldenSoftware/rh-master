@@ -59,48 +59,53 @@ async function handleRequest(req: Request): Promise<Response> {
     }
     
     // Envio principal via GoDaddy para todos os emails
-    let result = await sendWithGoDaddy(
-      actualRecipient,
-      subject,
-      htmlContent,
-      smtpUsername,
-      smtpPassword
-    );
-    
-    // Não usar fallback automático (conforme pedido pelo cliente)
-    // Retornar resultado direto do GoDaddy, seja sucesso ou erro
-    
-    if (!result.success) {
-      const errorDetails = {
-        mainError: result.errorMessage || "Erro desconhecido",
-        errorCode: result.errorCode || "UNKNOWN",
-        timestamp: new Date().toISOString(),
-        recipient: actualRecipient,
-        isSmtpError: true,
-        provider: "GoDaddy"
-      };
+    try {
+      const result = await sendWithGoDaddy(
+        actualRecipient,
+        subject,
+        htmlContent,
+        smtpUsername,
+        smtpPassword
+      );
       
-      console.error("Erro no serviço de email (GoDaddy):", errorDetails);
-      return errorResponse("Falha ao enviar email via GoDaddy. Verificar configuração SMTP.", { 
-        details: errorDetails,
+      if (!result.success) {
+        const errorDetails = {
+          mainError: result.errorMessage || "Erro desconhecido",
+          errorCode: result.errorCode || "UNKNOWN",
+          timestamp: new Date().toISOString(),
+          recipient: actualRecipient,
+          isSmtpError: true,
+          provider: "GoDaddy"
+        };
+        
+        console.error("Erro no serviço de email (GoDaddy):", errorDetails);
+        return errorResponse("Falha ao enviar email via GoDaddy. Verificar configuração SMTP.", { 
+          details: errorDetails,
+          isSmtpError: true
+        });
+      }
+      
+      // Resposta de sucesso
+      return responseWithCORS(
+        new Response(
+          JSON.stringify({
+            success: true,
+            message: `Email enviado com sucesso para ${email} via ${result.service}`,
+            isTestMode,
+            actualRecipient: isTestMode ? actualRecipient : undefined,
+            intendedRecipient: isTestMode ? email : undefined,
+            service: result.service
+          }),
+          { status: 200 }
+        )
+      );
+    } catch (emailError) {
+      console.error("Erro no envio de email:", emailError);
+      return errorResponse("Erro ao processar o envio de email", {
+        error: emailError,
         isSmtpError: true
       });
     }
-    
-    // Resposta de sucesso
-    return responseWithCORS(
-      new Response(
-        JSON.stringify({
-          success: true,
-          message: `Email enviado com sucesso para ${email} via ${result.service}`,
-          isTestMode,
-          actualRecipient: isTestMode ? actualRecipient : undefined,
-          intendedRecipient: isTestMode ? email : undefined,
-          service: result.service
-        }),
-        { status: 200 }
-      )
-    );
   } catch (error) {
     console.error("Erro inesperado:", error);
     return errorResponse("Erro interno do servidor", { error, isSmtpError: false });

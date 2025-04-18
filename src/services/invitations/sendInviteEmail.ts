@@ -38,16 +38,26 @@ export const sendInviteEmail = async (
         success: false, 
         error: "Erro ao enviar email: " + error.message,
         errorDetails: error,
-        isSmtpError: false // Adicionando explicitamente como false para consistência
+        isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email'))
       };
     }
     
-    if (!data || !data.success) {
+    if (!data) {
+      console.error("Resposta inválida da Edge Function (sem dados)");
+      return {
+        success: false,
+        error: "Resposta inválida do servidor (sem dados de retorno)",
+        errorDetails: { invalidResponse: true },
+        isSmtpError: false
+      };
+    }
+
+    if (!data.success) {
       const errorMsg = data?.error || "Resposta inválida do servidor";
       console.error("Erro detalhado:", data?.details || "Sem detalhes adicionais");
       
       // Se for um erro de SMTP, encaminhar detalhes específicos
-      if (data?.details?.isSmtpError) {
+      if (data?.details?.isSmtpError || data?.isSmtpError) {
         return {
           success: false,
           error: "Erro de conexão SMTP. Verifique as credenciais de email.",
@@ -61,7 +71,7 @@ export const sendInviteEmail = async (
         success: false, 
         error: errorMsg,
         errorDetails: data?.details,
-        isSmtpError: false // Adicionando explicitamente como false
+        isSmtpError: Boolean(data?.isSmtpError)
       };
     }
     
@@ -72,9 +82,9 @@ export const sendInviteEmail = async (
       success: true, 
       isTestMode: data.isTestMode, 
       actualRecipient: data.actualRecipient,
-      errorDetails: null, // Adding errorDetails as null for successful responses
+      errorDetails: null, 
       service: data.service,
-      isSmtpError: false // Adicionando explicitamente como false para consistência
+      isSmtpError: false
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
@@ -82,7 +92,7 @@ export const sendInviteEmail = async (
       success: false, 
       error: "Erro interno ao enviar email",
       errorDetails: error,
-      isSmtpError: false // Adicionando explicitamente como false para consistência
+      isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email'))
     };
   }
 };

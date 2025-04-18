@@ -92,7 +92,7 @@ export const createClientInvitation = async (
     const emailResult = await sendInviteEmail(clientEmail, clientName, mentor.name);
     
     if (!emailResult.success) {
-      console.error("Erro ao enviar email:", emailResult.error);
+      console.error("Erro ao enviar email:", emailResult);
       
       // Return a more specific error message about API keys if that's the issue
       if (emailResult.error && 

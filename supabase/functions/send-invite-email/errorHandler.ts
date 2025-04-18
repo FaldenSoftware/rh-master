@@ -60,8 +60,9 @@ export const errorResponse = (
   message: string,
   details?: any
 ): Response => {
+  // Check if details explicitly has isSmtpError flag
   const isSmtpError = 
-    details?.isSmtpError || 
+    Boolean(details?.isSmtpError) || 
     message.includes('SMTP') ||
     message.includes('email') ||
     message.includes('connection');
