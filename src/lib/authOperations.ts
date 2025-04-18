@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "./authTypes";
 import { getUserProfile } from "./userProfile";
@@ -16,34 +15,34 @@ export const registerUser = async (
   try {
     console.log("Registering user with data:", { email, name, role, company, phone, position, bio });
     
-    // Validações adicionais
     if (role === "mentor" && (!company || company.trim() === "")) {
       throw new Error("Company is required for mentors");
     }
     
-    // Verificar se o email já existe
-    const { data: existingUser, error: existingUserError } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', email)
-      .single();
+    // Verify if email exists in Auth (more reliable than checking profiles)
+    const { data: authUser, error: authCheckError } = await supabase.auth.admin.listUsers({
+      filter: {
+        email: email,
+      },
+    });
 
-    if (existingUser) {
-      throw new Error("Este email já está cadastrado");
+    if (authCheckError) {
+      console.error("Error checking existing user:", authCheckError);
+      throw new Error("Error validating email");
     }
 
-    if (existingUserError && existingUserError.code !== 'PGRST116') {
-      throw existingUserError;
+    if (authUser?.users?.length > 0) {
+      throw new Error("Este email já está cadastrado. Tente fazer login.");
     }
     
-    // Limpar dados
+    // Clean input data
     const cleanedName = name.trim();
     const cleanedCompany = company?.trim() || "";
     const cleanedPhone = phone?.trim() || "";
     const cleanedPosition = position?.trim() || "";
     const cleanedBio = bio?.trim() || "";
     
-    // Registrar usuário
+    // Register user with metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -62,12 +61,11 @@ export const registerUser = async (
     if (error) {
       console.error("Supabase signup error:", error);
       
-      // Tratar erros específicos
-      if (error.message.includes("User already exists")) {
+      if (error.message.includes("User already registered")) {
         throw new Error("Este email já está registrado. Tente fazer login.");
       }
       
-      throw new Error(error.message);
+      throw new Error(`Erro ao registrar: ${error.message}`);
     }
 
     if (!data.user) {
@@ -77,25 +75,29 @@ export const registerUser = async (
 
     console.log("User registered successfully with ID:", data.user.id);
     
-    // Tentar adicionar função de usuário
+    // Add user role with retry mechanism
     if (role === "mentor") {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
-          user_id: data.user.id,
-          role: 'mentor'
-        }]);
+      let retries = 3;
+      while (retries > 0) {
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert([{
+            user_id: data.user.id,
+            role: 'mentor'
+          }]);
 
-      if (roleError) {
-        console.error("Error adding mentor role:", roleError);
-        // Não lançamos erro aqui para não interromper o registro
+        if (!roleError) break;
+
+        console.error(`Error adding mentor role (attempt ${4-retries}/3):`, roleError);
+        retries--;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
-    // Aguardar um momento para garantir que a trigger tenha tempo de criar o perfil
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for profile creation trigger
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Buscar o perfil criado
+    // Get created profile
     const userProfile = await getUserProfile(data.user.id);
     console.log("Retrieved user profile:", userProfile);
     
