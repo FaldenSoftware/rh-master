@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search, UserPlus, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 import {
   Card,
@@ -46,7 +47,6 @@ export function ClientsList() {
     
     setIsLoading(true);
     try {
-      // Buscar clientes associados a este mentor
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -128,7 +128,7 @@ export function ClientsList() {
         
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <LoadingSpinner className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-2">Carregando clientes...</span>
           </div>
         ) : filteredClients.length === 0 ? (

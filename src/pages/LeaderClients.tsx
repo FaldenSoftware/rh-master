@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InviteClientForm } from "@/components/invitations/InviteClientForm";
-import { InvitationHistory } from "@/components/leader/InvitationHistory";
+import { InvitationHistory } from "@/components/invitations/InvitationHistory";
 import { ClientsList } from "@/components/clients/ClientsList";
 
 export default function LeaderClients() {
