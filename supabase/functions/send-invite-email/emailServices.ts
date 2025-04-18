@@ -18,7 +18,7 @@ export const sendWithGoDaddy = async (
       host: "smtpout.secureserver.net",
       port: 465,
       ssl: true,
-      timeout: 30000 // aumentando o timeout para 30 segundos para lidar com possíveis lentidões
+      timeout: 45000 // aumentando o timeout para 45 segundos para lidar com possíveis lentidões
     });
 
     console.log('Cliente SMTP criado com sucesso, tentando enviar email');
@@ -48,22 +48,33 @@ export const sendWithGoDaddy = async (
       stack: error.stack
     }));
     
+    // Incluir mais detalhes sobre possíveis causas
+    let detailedMessage = error.message || 'Erro desconhecido';
+    
+    if (error.code === 'EAUTH') {
+      detailedMessage = 'Erro de autenticação SMTP. Verifique as credenciais do usuário e senha.';
+    } else if (error.code === 'ESOCKET') {
+      detailedMessage = 'Erro de conexão com o servidor SMTP. Verifique configurações de porta/SSL.';
+    } else if (error.code === 'ETIMEDOUT') {
+      detailedMessage = 'Tempo de conexão esgotado ao conectar ao servidor SMTP.';
+    }
+    
     return {
       success: false,
       error: error,
       errorCode: error.code || 'UNKNOWN',
-      errorMessage: error.message || 'Erro desconhecido'
+      errorMessage: detailedMessage
     };
   }
 }
 
-// Implementar método de fallback usando mailtrap como alternativa
+// Método Mailtrap disponível como alternativa manual (não usado automaticamente)
 export const sendWithMailtrap = async (
   email: string,
   subject: string,
   htmlContent: string
 ) => {
-  console.log('Tentando enviar email via Mailtrap (fallback)...');
+  console.log('Tentando enviar email via Mailtrap (método alternativo)...');
   
   try {
     // Credenciais sandbox mailtrap (seguras para teste)
@@ -110,3 +121,45 @@ export const sendWithMailtrap = async (
     };
   }
 }
+
+// Adiciona nova função para envio manual via Mailtrap
+export const manualSendWithMailtrap = async (
+  req: Request
+): Promise<Response> => {
+  try {
+    const { email, subject, htmlContent } = await req.json();
+    
+    if (!email || !subject || !htmlContent) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Dados incompletos para envio de email"
+        }),
+        { status: 400 }
+      );
+    }
+    
+    const result = await sendWithMailtrap(email, subject, htmlContent);
+    
+    return new Response(
+      JSON.stringify({
+        success: result.success,
+        id: result.id,
+        service: 'Mailtrap',
+        error: result.success ? undefined : result.errorMessage
+      }),
+      { 
+        status: result.success ? 200 : 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Erro interno ao processar envio via Mailtrap"
+      }),
+      { status: 500 }
+    );
+  }
+};

@@ -56,12 +56,7 @@ async function handleRequest(req: Request): Promise<Response> {
       console.log("MODO DE TESTE: Email será enviado para", actualRecipient, "em vez de", email);
     }
     
-    // Diferenciar entre cliente e mentor com base no email ou outro campo
-    const isClientEmail = requestData.email && !requestData.email.includes("@mentor");
-    
-    console.log(`Tipo de destinatário: ${isClientEmail ? 'Cliente' : 'Mentor'}`);
-    
-    // PASSO 1: Tentar enviar via GoDaddy
+    // Envio principal via GoDaddy para todos os emails
     let result = await sendWithGoDaddy(
       actualRecipient,
       subject,
@@ -70,16 +65,8 @@ async function handleRequest(req: Request): Promise<Response> {
       smtpPassword
     );
     
-    // PASSO 2: Se falhou (especialmente para clientes) e é um cliente, tentar método alternativo
-    if (!result.success && isClientEmail) {
-      console.log("Primeiro método falhou, tentando método alternativo para cliente");
-      
-      result = await sendWithMailtrap(
-        actualRecipient,
-        subject,
-        htmlContent
-      );
-    }
+    // Não usar fallback automático (conforme pedido pelo cliente)
+    // Retornar resultado direto do GoDaddy, seja sucesso ou erro
     
     if (!result.success) {
       const errorDetails = {
@@ -87,11 +74,12 @@ async function handleRequest(req: Request): Promise<Response> {
         errorCode: result.errorCode || "UNKNOWN",
         timestamp: new Date().toISOString(),
         recipient: actualRecipient,
-        isSmtpError: true
+        isSmtpError: true,
+        provider: "GoDaddy"
       };
       
-      console.error("Erro no serviço de email:", errorDetails);
-      return errorResponse("Falha ao enviar email. Tente novamente mais tarde.", { 
+      console.error("Erro no serviço de email (GoDaddy):", errorDetails);
+      return errorResponse("Falha ao enviar email via GoDaddy. Verificar configuração SMTP.", { 
         details: errorDetails,
         isSmtpError: true
       });

@@ -97,7 +97,8 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
           errorDetails: result.errorDetails,
           isApiKeyError: isApiKeyError,
           isDomainError: isDomainError,
-          isSmtpError: isSmtpError
+          isSmtpError: isSmtpError,
+          service: result.service
         });
         console.error("Falha ao enviar convite:", errorMsg, result.errorDetails);
         return;

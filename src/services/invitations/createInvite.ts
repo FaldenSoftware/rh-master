@@ -15,6 +15,7 @@ interface InvitationResult {
   isTestMode?: boolean;
   actualRecipient?: string;
   intendedRecipient?: string;
+  service?: string;
 }
 
 /**
@@ -122,7 +123,9 @@ export const createClientInvitation = async (
       return { 
         success: false, 
         error: emailResult.error || "Erro ao enviar email",
-        errorDetails: emailResult.errorDetails
+        errorDetails: emailResult.errorDetails,
+        isSmtpError: emailResult.isSmtpError,
+        service: emailResult.service
       };
     }
     
@@ -134,14 +137,16 @@ export const createClientInvitation = async (
         isTestMode: true,
         actualRecipient: emailResult.actualRecipient,
         intendedRecipient: clientEmail,
-        errorDetails: null
+        errorDetails: null,
+        service: emailResult.service
       };
     }
     
     return { 
       success: true, 
       message: "Convite enviado com sucesso",
-      errorDetails: null
+      errorDetails: null,
+      service: emailResult.service
     };
     
   } catch (error) {
