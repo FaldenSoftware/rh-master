@@ -68,7 +68,9 @@ export const registerUser = async ({
     // Add user role with retry mechanism
     if (role === "mentor") {
       let retries = 3;
-      while (retries > 0) {
+      let roleAdded = false;
+      
+      while (retries > 0 && !roleAdded) {
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert([{
@@ -78,6 +80,7 @@ export const registerUser = async ({
 
         if (!roleError) {
           console.log("Successfully added mentor role");
+          roleAdded = true;
           break;
         }
 
@@ -89,11 +92,22 @@ export const registerUser = async ({
     
     // Wait longer for profile creation trigger
     console.log("Waiting for profile creation trigger...");
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 4000));
     
-    // Get created profile
-    const userProfile = await getUserProfile(data.user.id);
-    console.log("Retrieved user profile:", userProfile);
+    // Get created profile with retry mechanism
+    let userProfile = null;
+    let profileRetries = 3;
+    
+    while (profileRetries > 0 && !userProfile) {
+      userProfile = await getUserProfile(data.user.id);
+      console.log(`Attempt ${4-profileRetries}/3 - Retrieved user profile:`, userProfile);
+      
+      if (userProfile) break;
+      
+      profileRetries--;
+      console.log("Profile not found yet, waiting and retrying...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
     
     if (!userProfile) {
       console.error("User profile not found after registration");

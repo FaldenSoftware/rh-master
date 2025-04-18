@@ -32,6 +32,12 @@ BEGIN
     RAISE EXCEPTION 'Company is required for mentors';
   END IF;
 
+  -- Check if profile already exists to avoid duplicate key errors
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE id = NEW.id) THEN
+    RAISE LOG 'handle_new_user: Profile already exists for user %', NEW.id;
+    RETURN NEW;
+  END IF;
+
   -- Insert profile with all necessary fields
   INSERT INTO public.profiles (
     id, 
@@ -63,3 +69,4 @@ EXCEPTION
     RAISE EXCEPTION 'Database error saving user profile: %', SQLERRM;
 END;
 $$;
+
