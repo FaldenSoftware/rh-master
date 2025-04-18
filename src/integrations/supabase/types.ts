@@ -221,6 +221,7 @@ export type Database = {
           bio: string | null
           company: string | null
           created_at: string
+          email: string | null
           id: string
           mentor_id: string | null
           name: string
@@ -233,6 +234,7 @@ export type Database = {
           bio?: string | null
           company?: string | null
           created_at?: string
+          email?: string | null
           id: string
           mentor_id?: string | null
           name: string
@@ -245,6 +247,7 @@ export type Database = {
           bio?: string | null
           company?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           mentor_id?: string | null
           name?: string
@@ -358,6 +361,7 @@ export type Database = {
           bio: string | null
           company: string | null
           created_at: string
+          email: string | null
           id: string
           mentor_id: string | null
           name: string
@@ -394,6 +398,7 @@ export type Database = {
           bio: string | null
           company: string | null
           created_at: string
+          email: string | null
           id: string
           mentor_id: string | null
           name: string

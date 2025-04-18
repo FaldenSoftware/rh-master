@@ -24,17 +24,25 @@ export const registerUser = async (
       throw new Error("Company is required for mentors");
     }
     
+    // Removendo espaços extras
+    const cleanedName = name.trim();
+    const cleanedCompany = company?.trim() || "";
+    const cleanedPhone = phone?.trim() || "";
+    const cleanedPosition = position?.trim() || "";
+    const cleanedBio = bio?.trim() || "";
+    
+    // Registrando usuário com dados limpos
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          name,
+          name: cleanedName,
           role,
-          company,
-          phone,
-          position,
-          bio
+          company: cleanedCompany,
+          phone: cleanedPhone,
+          position: cleanedPosition,
+          bio: cleanedBio
         }
       }
     });
@@ -49,8 +57,16 @@ export const registerUser = async (
       return null;
     }
 
-    console.log("User registered successfully, fetching profile");
-    return await getUserProfile(data.user.id);
+    console.log("User registered successfully with ID:", data.user.id);
+    
+    // Aguardar um momento para garantir que a trigger tenha tempo de criar o perfil
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Buscar o perfil criado
+    const userProfile = await getUserProfile(data.user.id);
+    console.log("Retrieved user profile:", userProfile);
+    
+    return userProfile;
   } catch (error) {
     console.error("Error registering user:", error);
     throw error;

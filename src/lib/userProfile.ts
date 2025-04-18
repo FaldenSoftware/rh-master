@@ -47,7 +47,7 @@ export const getUserProfile = async (userId: string): Promise<AuthUser | null> =
     }
     
     // Fallback to get user metadata from auth API
-    const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
       console.error("Erro ao buscar usuário:", userError);
