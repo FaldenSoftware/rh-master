@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthState, AuthUser, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin, updateUserProfile } from "@/lib/auth";
+import { AuthUser, AuthState, registerUser, loginUser, logoutUser, getCurrentUser, devModeLogin, updateUserProfile } from "@/lib/auth";
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<AuthUser | null>;
@@ -184,7 +184,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ): Promise<AuthUser | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     try {
-      const user = await registerUser(email, password, name, role, company, phone, position, bio);
+      const user = await registerUser({
+        email, 
+        password, 
+        name, 
+        role, 
+        company,
+        phone,
+        position,
+        bio
+      });
+      
       setState({
         user,
         isAuthenticated: !!user,
