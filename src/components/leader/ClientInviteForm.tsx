@@ -1,12 +1,14 @@
 
-import { useState } from "react";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import InviteFormFields from "./InviteFormFields";
 import { createClientInvitation } from "@/services/invitations";
-import InviteErrorAlert from "./invitation/InviteErrorAlert";
-import InviteSuccessAlert from "./invitation/InviteSuccessAlert";
-import InviteFormActions from "./invitation/InviteFormActions";
+import useNotifications from "@/hooks/useNotifications";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientInviteFormProps {
   onCancel: () => void;
@@ -16,131 +18,71 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [useAlternativeMethod, setUseAlternativeMethod] = useState(false);
-  const [inviteStatus, setInviteStatus] = useState<{
-    success?: boolean;
-    message?: string;
-    error?: string;
-    errorDetails?: any;
-    isApiKeyError?: boolean;
-    isDomainError?: boolean;
-    isSmtpError?: boolean;
-    isTestMode?: boolean;
-    actualRecipient?: string;
-    intendedRecipient?: string;
-    service?: string;
-  } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [configStatus, setConfigStatus] = useState<'checking' | 'configured' | 'not_configured'>('checking');
+  
   const { user } = useAuth();
+  const notify = useNotifications();
+
+  // Verificar configuração de email ao carregar
+  useEffect(() => {
+    const checkEmailConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-email-config');
+        
+        if (error || !data?.configured) {
+          setConfigStatus('not_configured');
+          setErrorMessage('Sistema de email não configurado. Contate o administrador.');
+        } else {
+          setConfigStatus('configured');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar configuração:', error);
+        setConfigStatus('not_configured');
+        setErrorMessage('Erro ao verificar configuração de email.');
+      }
+    };
+    
+    checkEmailConfig();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await sendInvite();
-  };
-  
-  const sendInvite = async (useAlternative = false) => {
-    // Validação
-    if (!clientName.trim() || !clientEmail.trim()) {
-      toast.error("Por favor, preencha todos os campos");
-      return;
-    }
     
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(clientEmail)) {
-      toast.error("Por favor, informe um email válido");
+    if (configStatus !== 'configured') {
+      notify.error('Sistema de email não configurado. Contate o administrador.');
       return;
     }
     
     setIsSubmitting(true);
-    setInviteStatus(null);
+    setErrorMessage(null);
     
     try {
-      // Mostrar toast de carregamento
-      const loadingToast = toast.loading("Enviando convite...");
-      
       const result = await createClientInvitation(clientEmail, clientName, user);
       
-      // Remover toast de carregamento
-      toast.dismiss(loadingToast);
-      
-      if (!result.success) {
-        // Check if this is an API key configuration error
-        const isApiKeyError = result.isApiKeyError || 
-                            (result.error && (
-                              result.error.includes("Configuração de email ausente") || 
-                              result.error.includes("API key") ||
-                              result.error.includes("ausente")));
-                              
-        // Check if this is a domain verification error
-        const isDomainError = result.isDomainError || 
-                            (result.error && (
-                              result.error.includes("domínio") || 
-                              result.error.includes("verify") ||
-                              result.error.includes("verification")));
+      if (result.success) {
+        notify.success(result.message || 'Convite enviado com sucesso!');
+        setClientEmail('');
+        setClientName('');
+      } else {
+        setErrorMessage(result.error || 'Erro ao enviar convite');
         
-        // Check if this is an SMTP error
-        const isSmtpError = result.isSmtpError || 
-                           (result.error && (
-                             result.error.includes("SMTP") || 
-                             result.error.includes("smtp") ||
-                             result.error.includes("email") ||
-                             result.error.includes("Email") ||
-                             result.error.includes("connection")
-                           ));
-        
-        // Exibir mensagem de erro mais detalhada
-        const errorMsg = result.error || "Erro ao enviar convite";
-        toast.error(errorMsg);
-        setInviteStatus({
-          success: false,
-          error: errorMsg,
-          errorDetails: result.errorDetails,
-          isApiKeyError: isApiKeyError,
-          isDomainError: isDomainError,
-          isSmtpError: isSmtpError,
-          service: result.service
-        });
-        console.error("Falha ao enviar convite:", errorMsg, result.errorDetails);
-        return;
+        // Feedback específico baseado no tipo de erro
+        if (result.isSmtpError) {
+          notify.error('Erro de configuração de email. Contate o administrador.');
+        } else if (result.isDomainError) {
+          notify.error('Domínio de email não verificado. Contate o administrador.');
+        } else {
+          notify.error('Falha ao enviar convite. Tente novamente mais tarde.');
+        }
       }
-      
-      // Atualizar status e mostrar sucesso
-      setInviteStatus({
-        success: true,
-        message: result.message || `Convite enviado com sucesso para ${clientName}`,
-        isTestMode: result.isTestMode,
-        actualRecipient: result.actualRecipient,
-        intendedRecipient: result.intendedRecipient,
-        service: result.service
-      });
-      
-      toast.success(`Convite enviado para ${clientName}`);
-      
-    } catch (error) {
-      console.error("Erro ao enviar convite:", error);
-      // Mensagem de erro mais informativa
-      const errorMessage = "Erro ao enviar convite. Verifique a conexão com o servidor e tente novamente.";
-      
-      toast.error(errorMessage);
-      setInviteStatus({
-        success: false,
-        error: errorMessage,
-        errorDetails: error
-      });
+    } catch (error: any) {
+      console.error('Erro ao criar convite:', error);
+      setErrorMessage('Erro interno ao processar convite');
+      notify.error('Ocorreu um erro inesperado. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleReset = () => {
-    setInviteStatus(null);
-    setClientName("");
-    setClientEmail("");
-  };
-  
-  const handleRetry = () => {
-    setUseAlternativeMethod(true);
-    sendInvite(true);
   };
 
   return (
@@ -148,46 +90,66 @@ const ClientInviteForm = ({ onCancel }: ClientInviteFormProps) => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium">Convidar Novo Cliente</h3>
       </div>
-      
-      {!inviteStatus?.success ? (
-        <InviteFormFields 
-          clientName={clientName}
-          setClientName={setClientName}
-          clientEmail={clientEmail}
-          setClientEmail={setClientEmail}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          onCancel={onCancel}
-        />
-      ) : (
-        <div className="space-y-4">
-          <InviteSuccessAlert 
-            message={inviteStatus.message}
-            isTestMode={inviteStatus.isTestMode}
-            actualRecipient={inviteStatus.actualRecipient}
-            intendedRecipient={inviteStatus.intendedRecipient}
-            clientEmail={clientEmail}
-            serviceName={inviteStatus.service}
-          />
-          
-          <InviteFormActions 
-            onCancel={onCancel}
-            onReset={handleReset}
-            isSuccess={true}
+
+      {configStatus === 'not_configured' && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Configuração Incompleta</AlertTitle>
+          <AlertDescription>
+            O sistema de email não está configurado. Contate o administrador para configurar as variáveis SMTP_USERNAME e SMTP_PASSWORD no Supabase.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="clientName">Nome completo</Label>
+          <Input
+            id="clientName"
+            placeholder="Digite o nome do cliente"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
+            required
+            disabled={isSubmitting || configStatus !== 'configured'}
           />
         </div>
-      )}
-      
-      {inviteStatus?.success === false && (
-        <InviteErrorAlert 
-          error={inviteStatus.error}
-          errorDetails={inviteStatus.errorDetails}
-          isApiKeyError={inviteStatus.isApiKeyError}
-          isDomainError={inviteStatus.isDomainError}
-          isSmtpError={inviteStatus.isSmtpError}
-          onRetry={handleRetry}
-        />
-      )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="clientEmail">Email</Label>
+          <Input
+            id="clientEmail"
+            type="email"
+            placeholder="cliente@empresa.com"
+            value={clientEmail}
+            onChange={(e) => setClientEmail(e.target.value)}
+            required
+            disabled={isSubmitting || configStatus !== 'configured'}
+          />
+        </div>
+        
+        {errorMessage && (
+          <div className="text-red-500 text-sm">{errorMessage}</div>
+        )}
+        
+        <div className="pt-2 flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || configStatus !== 'configured'}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              "Enviar Convite"
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };

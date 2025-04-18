@@ -51,13 +51,16 @@ export interface TestResult {
   client_test?: ClientTest;
 }
 
+/**
+ * Representa um código de convite gerado para um cliente
+ */
 export interface InvitationCode {
   id: string;
-  code: string;
   mentor_id: string;
   email: string;
+  code: string;
   is_used: boolean;
-  used_by?: string;
+  used_by?: string | null;
   created_at: string;
   expires_at: string;
 }

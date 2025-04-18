@@ -26,6 +26,9 @@ export const createErrorResponse = (
   const responseBody: ErrorResponse = { 
     success: false, 
     error: errorMessage,
+    isDomainError,
+    isApiKeyError,
+    isSmtpError
   };
 
   // Add domain-specific error details
@@ -60,7 +63,7 @@ export const errorResponse = (
   message: string,
   details?: any
 ): Response => {
-  // Check if details explicitly has isSmtpError flag
+  // Check specific error types
   const isSmtpError = 
     Boolean(details?.isSmtpError) || 
     message.includes('SMTP') ||
@@ -71,11 +74,17 @@ export const errorResponse = (
     message.includes('API key') ||
     message.includes('Configuração de e-mail') ||
     message.includes('ausente');
+    
+  const isDomainError =
+    message.includes('domínio') ||
+    message.includes('domain') ||
+    message.includes('verify') ||
+    message.includes('validation_error');
 
   return createErrorResponse(
     message, 
     details, 
-    false, 
+    isDomainError,
     isApiKeyError,
     isSmtpError
   );
@@ -99,6 +108,7 @@ export const isDomainVerificationError = (error: any): boolean => {
   
   // Check if the error is related to domain verification
   if (errorMessage.includes('domain') || 
+      errorMessage.includes('domínio') ||
       errorMessage.includes('verify') ||
       errorMessage.includes('validation_error')) {
     return true;

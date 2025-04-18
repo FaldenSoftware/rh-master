@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Sends an invitation email to a client
+ * Envia um email de convite para um cliente
  */
 export const sendInviteEmail = async (
   clientEmail: string, 
@@ -16,6 +16,7 @@ export const sendInviteEmail = async (
   errorDetails?: any;
   service?: string;
   isSmtpError?: boolean;
+  isDomainError?: boolean;
 }> => {
   try {
     console.log(`Iniciando envio de email para ${clientEmail}`);
@@ -38,7 +39,8 @@ export const sendInviteEmail = async (
         success: false, 
         error: "Erro ao enviar email: " + error.message,
         errorDetails: error,
-        isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email'))
+        isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email')),
+        isDomainError: Boolean(error.message?.includes('domínio') || error.message?.includes('domain'))
       };
     }
     
@@ -48,7 +50,8 @@ export const sendInviteEmail = async (
         success: false,
         error: "Resposta inválida do servidor (sem dados de retorno)",
         errorDetails: { invalidResponse: true },
-        isSmtpError: false
+        isSmtpError: false,
+        isDomainError: false
       };
     }
 
@@ -56,22 +59,29 @@ export const sendInviteEmail = async (
       const errorMsg = data?.error || "Resposta inválida do servidor";
       console.error("Erro detalhado:", data?.details || "Sem detalhes adicionais");
       
-      // Se for um erro de SMTP, encaminhar detalhes específicos
-      if (data?.details?.isSmtpError || data?.isSmtpError) {
-        return {
-          success: false,
-          error: "Erro de conexão SMTP. Verifique as credenciais de email.",
-          errorDetails: data?.details,
-          isSmtpError: true,
-          isTestMode: data?.isTestMode
-        };
-      }
+      // Determinar tipo de erro
+      const isSmtpError = Boolean(
+        data?.details?.isSmtpError || 
+        data?.isSmtpError || 
+        errorMsg.includes('SMTP') || 
+        errorMsg.includes('email') ||
+        errorMsg.includes('connection')
+      );
+      
+      const isDomainError = Boolean(
+        data?.details?.isDomainError || 
+        data?.isDomainError || 
+        errorMsg.includes('domínio') || 
+        errorMsg.includes('domain') || 
+        errorMsg.includes('verification')
+      );
       
       return { 
         success: false, 
         error: errorMsg,
         errorDetails: data?.details,
-        isSmtpError: Boolean(data?.isSmtpError)
+        isSmtpError: isSmtpError,
+        isDomainError: isDomainError
       };
     }
     
@@ -84,7 +94,8 @@ export const sendInviteEmail = async (
       actualRecipient: data.actualRecipient,
       errorDetails: null, 
       service: data.service,
-      isSmtpError: false
+      isSmtpError: false,
+      isDomainError: false
     };
   } catch (error: any) {
     console.error("Erro ao enviar email:", error);
@@ -92,7 +103,8 @@ export const sendInviteEmail = async (
       success: false, 
       error: "Erro interno ao enviar email",
       errorDetails: error,
-      isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email'))
+      isSmtpError: Boolean(error.message?.includes('SMTP') || error.message?.includes('email')),
+      isDomainError: Boolean(error.message?.includes('domínio') || error.message?.includes('domain'))
     };
   }
 };

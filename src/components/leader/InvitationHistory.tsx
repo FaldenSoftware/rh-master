@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
   Table, 
   TableBody, 
@@ -10,20 +10,21 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mail, Loader2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
-import { sendInviteEmail } from '@/services/invitations';
+import useNotifications from '@/hooks/useNotifications';
 import { InvitationCode } from '@/types/models';
 
 export const InvitationHistory = () => {
   const { user } = useAuth();
+  const notify = useNotifications();
   const [sendingEmails, setSendingEmails] = useState<Record<string, boolean>>({});
   
-  const { data: invitations, isLoading, error } = useQuery({
+  const { data: invitations, isLoading, error, refetch } = useQuery({
     queryKey: ['invitation-history'],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -36,7 +37,7 @@ export const InvitationHistory = () => {
         
       if (error) {
         console.error("Erro ao buscar histórico de convites:", error);
-        toast.error("Erro ao carregar histórico de convites");
+        notify.error("Erro ao carregar histórico de convites");
         throw error;
       }
       
@@ -48,6 +49,33 @@ export const InvitationHistory = () => {
   if (error) {
     console.error("Erro na query de convites:", error);
   }
+
+  // Mutation para reenviar convite
+  const resendMutation = useMutation({
+    mutationFn: async (inviteId: string) => {
+      setSendingEmails(prev => ({ ...prev, [inviteId]: true }));
+      
+      const { data, error } = await supabase.functions.invoke('resend-invitation', {
+        body: { inviteId }
+      });
+      
+      if (error || !data?.success) {
+        throw error || new Error(data?.error || "Erro desconhecido");
+      }
+      
+      return data;
+    },
+    onSuccess: (data, inviteId) => {
+      notify.success(data.message || "Convite reenviado com sucesso!");
+      setSendingEmails(prev => ({ ...prev, [inviteId]: false }));
+      refetch(); // Atualizar a lista
+    },
+    onError: (error, inviteId) => {
+      console.error("Erro ao reenviar convite:", error);
+      notify.error("Falha ao reenviar convite. Tente novamente mais tarde.");
+      setSendingEmails(prev => ({ ...prev, [inviteId]: false }));
+    }
+  });
   
   const formatDate = (dateString: string) => {
     try {
@@ -56,27 +84,35 @@ export const InvitationHistory = () => {
       return "Data inválida";
     }
   };
-  
-  const handleResendInvite = async (inviteId: string, email: string) => {
-    if (!user) return;
-    
-    try {
-      setSendingEmails(prev => ({ ...prev, [inviteId]: true }));
-      
-      // Fix: Pass clientName as undefined and mentorName as user.name instead of user object
-      const result = await sendInviteEmail(email, undefined, user.name);
-      
-      if (result.success) {
-        toast.success(`E-mail de convite reenviado para ${email}`);
-      } else {
-        toast.error(`Erro ao reenviar convite: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Erro ao reenviar convite:", error);
-      toast.error("Erro ao reenviar convite");
-    } finally {
-      setSendingEmails(prev => ({ ...prev, [inviteId]: false }));
+
+  const getStatusBadge = (invite: InvitationCode) => {
+    if (invite.is_used) {
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-200 flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" /> Utilizado
+        </Badge>
+      );
     }
+    
+    const expiresAt = new Date(invite.expires_at);
+    if (expiresAt < new Date()) {
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <XCircle className="h-3 w-3" /> Expirado
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-200 flex items-center gap-1">
+        <Clock className="h-3 w-3" /> Pendente
+      </Badge>
+    );
+  };
+  
+  const isInviteExpired = (invite: InvitationCode): boolean => {
+    const expiresAt = new Date(invite.expires_at);
+    return expiresAt < new Date();
   };
 
   if (isLoading) {
@@ -93,8 +129,8 @@ export const InvitationHistory = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Email</TableHead>
-            <TableHead>Data de envio</TableHead>
-            <TableHead>Expira em</TableHead>
+            <TableHead className="hidden md:table-cell">Data de envio</TableHead>
+            <TableHead className="hidden md:table-cell">Expira em</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -103,22 +139,24 @@ export const InvitationHistory = () => {
           {invitations && invitations.length > 0 ? (
             invitations.map((invitation: InvitationCode) => (
               <TableRow key={invitation.id}>
-                <TableCell>{invitation.email}</TableCell>
-                <TableCell>{formatDate(invitation.created_at)}</TableCell>
-                <TableCell>{formatDate(invitation.expires_at)}</TableCell>
                 <TableCell>
-                  {invitation.is_used ? (
-                    <span className="text-green-600 font-medium">Utilizado</span>
-                  ) : (
-                    <span className="text-amber-600 font-medium">Pendente</span>
-                  )}
+                  {invitation.email}
+                  <div className="md:hidden text-xs text-gray-500 mt-1">
+                    Enviado: {formatDate(invitation.created_at)}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(invitation.created_at)}</TableCell>
+                <TableCell className="hidden md:table-cell">{formatDate(invitation.expires_at)}</TableCell>
+                <TableCell>
+                  {getStatusBadge(invitation)}
                 </TableCell>
                 <TableCell>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleResendInvite(invitation.id, invitation.email)}
-                    disabled={sendingEmails[invitation.id]}
+                    onClick={() => resendMutation.mutate(invitation.id)}
+                    disabled={sendingEmails[invitation.id] || invitation.is_used}
+                    className={invitation.is_used ? "opacity-50 cursor-not-allowed" : ""}
                   >
                     {sendingEmails[invitation.id] ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

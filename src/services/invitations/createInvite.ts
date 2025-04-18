@@ -108,15 +108,33 @@ export const createClientInvitation = async (
       }
       
       // Check if the error is related to domain verification
-      if (emailResult.error && 
-          (emailResult.error.includes('domain') || 
-           emailResult.error.includes('verify') ||
-           emailResult.error.includes('validation_error'))) {
+      if (emailResult.isDomainError || 
+          (emailResult.error && 
+           (emailResult.error.includes('domínio') || 
+            emailResult.error.includes('domain') ||
+            emailResult.error.includes('verify') ||
+            emailResult.error.includes('validation_error')))) {
         return { 
           success: false, 
-          error: "É necessário verificar um domínio no Resend para enviar emails. Acesse https://resend.com/domains",
+          error: "É necessário verificar um domínio no sistema de email. Entre em contato com o administrador.",
           isDomainError: true,
           errorDetails: emailResult.errorDetails
+        };
+      }
+      
+      // Check if the error is related to SMTP configuration
+      if (emailResult.isSmtpError || 
+          (emailResult.error && 
+           (emailResult.error.includes('SMTP') || 
+            emailResult.error.includes('email') ||
+            emailResult.error.includes('conexão') ||
+            emailResult.error.includes('connection')))) {
+        return { 
+          success: false, 
+          error: "Erro de configuração do servidor de email. Entre em contato com o administrador.",
+          isSmtpError: true,
+          errorDetails: emailResult.errorDetails,
+          service: emailResult.service
         };
       }
       
@@ -125,6 +143,7 @@ export const createClientInvitation = async (
         error: emailResult.error || "Erro ao enviar email",
         errorDetails: emailResult.errorDetails,
         isSmtpError: emailResult.isSmtpError,
+        isDomainError: emailResult.isDomainError,
         service: emailResult.service
       };
     }
@@ -133,7 +152,7 @@ export const createClientInvitation = async (
     if (emailResult.isTestMode && emailResult.actualRecipient !== clientEmail) {
       return { 
         success: true, 
-        message: "Convite criado com sucesso, mas o email foi enviado para o proprietário da conta Resend (modo de teste)",
+        message: "Convite criado com sucesso, mas o email foi enviado para o proprietário da conta de email (modo de teste)",
         isTestMode: true,
         actualRecipient: emailResult.actualRecipient,
         intendedRecipient: clientEmail,

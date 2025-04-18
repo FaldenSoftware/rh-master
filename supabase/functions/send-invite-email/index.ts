@@ -60,6 +60,7 @@ async function handleRequest(req: Request): Promise<Response> {
     
     // Envio principal via GoDaddy para todos os emails
     try {
+      console.log("Tentando enviar email via GoDaddy SMTP...");
       const result = await sendWithGoDaddy(
         actualRecipient,
         subject,
