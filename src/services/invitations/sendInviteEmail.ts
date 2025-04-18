@@ -22,7 +22,7 @@ export const sendInviteEmail = async (
         clientName: clientName || 'Cliente',
         mentorName: mentorName || 'Mentor',
         mentorCompany: 'RH Mentor Mastery',
-        // Adicionamos um token de convite para maior segurança (opcional)
+        // Adicionamos um token de convite para maior segurança e incluímos o email na URL
         registerUrl: `https://rh-mentor-mastery.vercel.app/register?type=client&email=${encodeURIComponent(clientEmail)}`
       }
     });

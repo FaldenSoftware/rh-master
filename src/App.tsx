@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -47,7 +46,6 @@ const App = () => {
                 <Route path="/register" element={<Register />} />
                 <Route path="/client/register" element={<Navigate to="/register?type=client" replace />} />
                 
-                {/* Leader (Mentor) Routes - Protected */}
                 <Route 
                   path="/leader" 
                   element={
@@ -105,7 +103,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Client Routes - Protected */}
                 <Route 
                   path="/client" 
                   element={
@@ -179,7 +176,6 @@ const App = () => {
                   } 
                 />
                 
-                {/* Catch-all route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>
