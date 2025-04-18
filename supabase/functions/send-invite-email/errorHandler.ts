@@ -1,118 +1,23 @@
 
-// Error handling utilities for the email sending function
-import { corsHeaders } from './types.ts';
+import { corsHeaders } from "./types.ts";
 
-export interface ErrorResponse {
-  success: boolean;
-  error: string;
-  details?: any;
-  message?: string;
-  action?: string;
-  isDomainError?: boolean;
-  isApiKeyError?: boolean;
-  isSmtpError?: boolean;
-}
-
-export const createErrorResponse = (
-  error: string | Error, 
-  details?: any,
-  isDomainError = false,
-  isApiKeyError = false,
-  isSmtpError = false
-): Response => {
-  const errorMessage = error instanceof Error ? error.message : error;
-  console.error(`Error response: ${errorMessage}`, details ? { details } : "");
+export function errorResponse(message: string, details?: Record<string, any>): Response {
+  console.error(`Error: ${message}`, details || {});
   
-  const responseBody: ErrorResponse = { 
-    success: false, 
-    error: errorMessage,
-    isDomainError,
-    isApiKeyError,
-    isSmtpError
-  };
-
-  // Add domain-specific error details
-  if (isDomainError) {
-    responseBody.isDomainError = true;
-    responseBody.message = "O domínio rhmentormastery.com.br não está verificado";
-    responseBody.action = "Por favor, verifique o domínio rhmentormastery.com.br em https://resend.com/domains";
-  } 
-  // Add API key configuration error details
-  else if (isApiKeyError) {
-    responseBody.isApiKeyError = true;
-    responseBody.message = "Configuração de e-mail ausente. Contate o administrador do sistema";
-  }
-  // Add SMTP error details
-  else if (isSmtpError) {
-    responseBody.isSmtpError = true;
-    responseBody.message = "Erro de conexão com o servidor SMTP";
-  }
-  
-  // Include error details if provided
-  if (details) {
-    responseBody.details = details;
-  }
-
   return new Response(
-    JSON.stringify(responseBody),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    JSON.stringify({
+      success: false,
+      error: message,
+      details: details || null,
+      timestamp: new Date().toISOString(),
+      ...details
+    }),
+    {
+      status: 200, // Using 200 even for errors to ensure the client receives the error message
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders
+      }
+    }
   );
-};
-
-export const errorResponse = (
-  message: string,
-  details?: any
-): Response => {
-  // Check specific error types
-  const isSmtpError = 
-    Boolean(details?.isSmtpError) || 
-    message.includes('SMTP') ||
-    message.includes('email') ||
-    message.includes('connection');
-
-  const isApiKeyError =
-    message.includes('API key') ||
-    message.includes('Configuração de e-mail') ||
-    message.includes('ausente');
-    
-  const isDomainError =
-    message.includes('domínio') ||
-    message.includes('domain') ||
-    message.includes('verify') ||
-    message.includes('validation_error');
-
-  return createErrorResponse(
-    message, 
-    details, 
-    isDomainError,
-    isApiKeyError,
-    isSmtpError
-  );
-};
-
-export const handleServiceError = (error: any): boolean => {
-  const errorMessage = error?.message || 'Erro desconhecido';
-  
-  // Check if the error is related to API keys
-  if (errorMessage.includes('API key') || 
-      errorMessage.includes('Configuração de e-mail') ||
-      errorMessage.includes('ausente')) {
-    return true;
-  }
-  
-  return false;
-};
-
-export const isDomainVerificationError = (error: any): boolean => {
-  const errorMessage = error?.message || '';
-  
-  // Check if the error is related to domain verification
-  if (errorMessage.includes('domain') || 
-      errorMessage.includes('domínio') ||
-      errorMessage.includes('verify') ||
-      errorMessage.includes('validation_error')) {
-    return true;
-  }
-  
-  return false;
-};
+}
