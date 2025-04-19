@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { createClientInvitation } from "@/services/invitations";
 import useNotifications from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { InvitationService } from '@/services/invitationService';
 
 const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
   const [clientName, setClientName] = useState("");
@@ -60,7 +59,11 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
     }, 15000);
     setSendTimeout(timeout);
     try {
-      const result = await createClientInvitation(clientEmail, clientName, user);
+      const result = await InvitationService.createClientInvitation(
+        clientEmail, 
+        clientName, 
+        user
+      );
       
       if (result.success) {
         notify.success(result.message || 'Convite enviado com sucesso!');
@@ -69,7 +72,7 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
       } else {
         setErrorMessage(result.error || 'Erro ao enviar convite');
         
-        // Feedback específico baseado no tipo de erro
+        // Specific error handling
         if (result.isSmtpError) {
           notify.error('Erro de configuração de email. Contate o administrador.');
         } else if (result.isDomainError) {
@@ -78,7 +81,7 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
           notify.error('Falha ao enviar convite. Tente novamente mais tarde.');
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro ao criar convite:', error);
       setErrorMessage('Erro interno ao processar convite');
       notify.error('Ocorreu um erro inesperado. Tente novamente.');

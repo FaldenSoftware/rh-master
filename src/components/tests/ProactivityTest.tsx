@@ -5,16 +5,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-// Questions for the proactivity test
-const questions = [
-  // Exemplo de estrutura correta para cada pergunta:
-  // {
-  //   id: 'q1',
-  //   text: 'Exemplo de pergunta',
-  //   options: [
-  //     { id: 'q1o1', text: 'Nunca', value: 1 },
-  //     { id: 'q1o2', text: 'Às vezes', value: 2 },
-  //     { id: 'q1o3', text: 'Sempre', value: 3 }
+// Add type definitions
+type ProactivityOption = {
+  id: string;
+  text: string;
+  value: number;
+};
+
+type ProactivityQuestion = {
+  id: string;
+  question: string;
+  options: ProactivityOption[];
+};
+
+// Update questions to match the type
+const questions: ProactivityQuestion[] = [
   {
     id: 'q1',
     question: "Quando identifico um problema no trabalho, prefiro:",
@@ -79,10 +84,10 @@ const questions = [
     id: 'q7',
     question: "Em situações de crise ou pressão no trabalho:",
     options: [
-      { id: 'a', text: 'Tomo a iniciativa de organizar e coordenar as ações necessárias' },
-      { id: 'b', text: 'Aguardo orientações claras antes de agir' },
-      { id: 'c', text: 'Mantenho a calma e foco nas minhas responsabilidades específicas' },
-      { id: 'd', text: 'Prefiro dar suporte a quem está liderando a resolução da crise' }
+      { id: 'a', text: 'Tomo a iniciativa de organizar e coordenar as ações necessárias', value: 3 },
+      { id: 'b', text: 'Aguardo orientações claras antes de agir', value: 2 },
+      { id: 'c', text: 'Mantenho a calma e foco nas minhas responsabilidades específicas', value: 2 },
+      { id: 'd', text: 'Prefiro dar suporte a quem está liderando a resolução da crise', value: 1 }
     ]
   },
   {

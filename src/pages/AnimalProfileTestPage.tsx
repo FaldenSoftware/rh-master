@@ -1,16 +1,16 @@
 
-import React from "react";
-import ClientLayout from "@/components/client/ClientLayout";
-import AnimalProfileTest from "@/components/tests/AnimalProfileTest";
+import React from 'react';
+import AnimalProfileTest from '@/components/tests/AnimalProfileTest';
+import { useParams } from 'react-router-dom';
 
-const AnimalProfileTestPage = () => {
-  return (
-    <ClientLayout title="Perfil Comportamental">
-      <div className="max-w-4xl mx-auto">
-        <AnimalProfileTest />
-      </div>
-    </ClientLayout>
-  );
+const AnimalProfileTestPage: React.FC = () => {
+  const { clientTestId } = useParams<{ clientTestId: string }>();
+
+  if (!clientTestId) {
+    return <div>Erro: ID do teste não encontrado</div>;
+  }
+
+  return <AnimalProfileTest clientTestId={clientTestId} />;
 };
 
 export default AnimalProfileTestPage;

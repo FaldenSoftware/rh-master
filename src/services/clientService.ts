@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "@/lib/authTypes";
 
@@ -9,10 +8,10 @@ export const getMentorClients = async (mentorId: string) => {
   try {
     console.log(`Buscando clientes para o mentor: ${mentorId}`);
     
-    // Tentativa 1: Usar a função RPC otimizada
+    // Update the RPC call to use the correct parameter name
     const { data: clientsData, error: rpcError } = await supabase
-      .rpc('get_mentor_clients', {
-        input_mentor_id: mentorId
+      .rpc('get_mentor_clients', { 
+        input_mentor_id: mentorId  // Ensure this matches the function signature
       });
 
     if (rpcError) {
@@ -39,7 +38,7 @@ export const getMentorClients = async (mentorId: string) => {
     
     return clientsData;
   } catch (error) {
-    console.error("Todos os métodos de busca de clientes falharam", error);
+    console.error("Erro ao buscar clientes:", error);
     return [];
   }
 };
