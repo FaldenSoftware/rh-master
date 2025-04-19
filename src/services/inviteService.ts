@@ -1,4 +1,27 @@
 
-// This file reexports functionality from the invitations module
-// to maintain backward compatibility
-export { createClientInvitation, sendInviteEmail } from './invitations';
+import { InvitationService } from './invitationService';
+import { supabase } from "@/integrations/supabase/client";
+
+export const createClientInvitation = async (email: string, name: string, mentorId: string) => {
+  const mentor = { id: mentorId, name: 'Mentor' }; // Simplificado para compatibilidade
+  return InvitationService.createInvitation(email, name, mentor);
+};
+
+export const sendInviteEmail = async (inviteId: string) => {
+  // Adaptar para usar o método de reenvio do InvitationService
+  const mentorId = await getMentorIdFromInvite(inviteId);
+  if (!mentorId) {
+    throw new Error("Convite não encontrado");
+  }
+  return InvitationService.resendInvitation(inviteId, mentorId);
+};
+
+// Função auxiliar para obter o mentor_id de um convite
+async function getMentorIdFromInvite(inviteId: string) {
+  const { data } = await supabase
+    .from('invitation_codes')
+    .select('mentor_id')
+    .eq('id', inviteId)
+    .single();
+  return data?.mentor_id;
+}
