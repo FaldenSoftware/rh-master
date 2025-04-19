@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { AuthUser } from '@/lib/authTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,9 +29,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadSession = async () => {
     setIsLoading(true);
     try {
+      console.log("Carregando sessão...");
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session) {
+        console.log("Sessão encontrada:", session.user.id);
+        
+        // Adicionar um pequeno atraso para garantir que as políticas RLS estejam aplicadas
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -43,7 +48,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error("Erro ao buscar perfil:", error);
           setIsAuthenticated(false);
           setUser(null);
+          
+          // Tentar um fallback usando os metadados do usuário
+          const { data: userData } = await supabase.auth.getUser();
+          if (userData.user) {
+            console.log("Usando dados do usuário como fallback:", userData.user);
+            const userMeta = userData.user.user_metadata || {};
+            
+            setIsAuthenticated(true);
+            setUser({
+              id: session.user.id,
+              email: userData.user.email || "",
+              name: userMeta.name || "Usuário",
+              role: (userMeta.role as "mentor" | "client") || "client",
+              company: userMeta.company || "",
+              phone: userMeta.phone || "",
+              position: userMeta.position || "",
+              bio: userMeta.bio || "",
+              avatar_url: null,
+              createdAt: userData.user.created_at || new Date().toISOString(),
+              mentor_id: userMeta.mentor_id,
+              cnpj: null,
+              industry: null,
+              address: null,
+              city: null,
+              state: null,
+              zipCode: null,
+              website: null,
+              is_master_account: userMeta.is_master_account || false
+            });
+          }
         } else {
+          console.log("Perfil encontrado:", profile);
           setIsAuthenticated(true);
           // Type casting the profile to ensure TypeScript recognizes all properties
           const typedProfile = profile as Profile;
@@ -71,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
       } else {
+        console.log("Nenhuma sessão encontrada");
         setIsAuthenticated(false);
         setUser(null);
       }
@@ -110,15 +147,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Tentando login com email:", email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro de login:", error.message);
+        throw error;
+      }
+      
+      console.log("Login bem-sucedido, dados:", data);
+      
+      // Aguardar um momento para garantir que a sessão seja estabelecida
+      await new Promise(resolve => setTimeout(resolve, 500));
       await loadSession();
     } catch (error) {
-      if (error instanceof Error) setError(error.message);
+      if (error instanceof Error) {
+        console.error("Erro capturado durante login:", error.message);
+        setError(error.message);
+      }
       throw error;
     } finally {
       setIsLoading(false);
