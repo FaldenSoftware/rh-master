@@ -9,15 +9,41 @@ export const getMentorClients = async (mentorId: string): Promise<Profile[]> => 
     if (!mentorId) {
       throw new Error("ID do mentor não fornecido");
     }
-    const { data, error } = await supabase
+
+    // Primeiro, tente usar a função RPC
+    try {
+      console.log("Tentando buscar clientes via RPC...");
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_mentor_clients' as any, { mentor_id: mentorId });
+
+      // Se a RPC funcionou, retorne os dados
+      if (!rpcError) {
+        console.log("RPC bem-sucedida, retornando dados...");
+        return (rpcData as Profile[]) || [];
+      }
+      
+      // Se chegou aqui, a RPC falhou. Vamos logar o erro e tentar o método alternativo
+      console.error("Erro específico retornado pela RPC 'get_mentor_clients':", JSON.stringify(rpcError, null, 2));
+      console.warn("A RPC falhou, tentando consulta direta à tabela...");
+    } catch (rpcCatchError) {
+      console.error("Exceção ao chamar a RPC:", rpcCatchError);
+      console.warn("Exceção na chamada da RPC, tentando consulta direta à tabela...");
+    }
+
+    // Método alternativo: consulta direta à tabela profiles com filtro
+    console.log("Executando consulta direta à tabela profiles...");
+    const { data: directData, error: directError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('mentor_id', mentorId);
-    if (error) {
-      console.error("Erro ao buscar clientes:", error);
-      throw new Error(`Erro ao buscar clientes: ${error.message}`);
+      .eq('mentor_id', mentorId)
+      .eq('role', 'client');
+
+    if (directError) {
+      console.error("Erro na consulta direta à tabela profiles:", JSON.stringify(directError, null, 2));
+      throw new Error(`Erro ao buscar clientes: ${directError.message}`);
     }
-    return data || [];
+
+    console.log(`Consulta direta retornou ${directData?.length || 0} registros.`);
+    return directData || [];
   } catch (error: any) {
     console.error("Erro no serviço de clientes:", error);
     throw new Error(error.message || "Erro ao buscar clientes");

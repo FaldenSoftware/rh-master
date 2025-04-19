@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { errorResponse } from "./errorHandler.ts";
 import { responseWithCORS } from "./responseFormatter.ts";
@@ -39,6 +38,10 @@ async function handleRequest(req: Request): Promise<Response> {
     if (!email) {
       return errorResponse("Email do destinatário é necessário.");
     }
+    // Adicionar validação para registerUrl
+    if (!registerUrl) {
+      return errorResponse("URL de registro é necessária.");
+    }
     
     const companyName = mentorCompany || "RH Mentor Mastery";
     const mentorDisplayName = mentorName || "Mentor";
@@ -46,7 +49,8 @@ async function handleRequest(req: Request): Promise<Response> {
     
     // Construir o conteúdo do email
     const subject = `Convite para participar da plataforma ${companyName}`;
-    const htmlContent = buildInviteEmailHtml(clientDisplayName, mentorDisplayName, companyName);
+    // Passar o registerUrl recebido do frontend (ou undefined, que o builder lida com isso)
+    const htmlContent = buildInviteEmailHtml(clientDisplayName, mentorDisplayName, companyName, registerUrl);
     
     console.log(`Tentando enviar email para ${email}`);
     

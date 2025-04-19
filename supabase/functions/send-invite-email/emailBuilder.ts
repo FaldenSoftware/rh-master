@@ -1,8 +1,13 @@
-
-export const buildInviteEmailHtml = (clientName: string | undefined, mentorName: string, mentorCompany: string) => {
+export const buildInviteEmailHtml = (
+  clientName: string | undefined, 
+  mentorName: string, 
+  mentorCompany: string,
+  registerUrl?: string
+) => {
   const clientNameText = clientName ? `Olá ${clientName},` : 'Olá,';
-  // Atualizando a URL de registro para o caminho correto
-  const registerUrl = `https://rh-mentor-mastery.vercel.app/register?type=client`;
+  
+  // Se registerUrl não for fornecido, usa o domínio padrão
+  const finalRegisterUrl = registerUrl || `https://rhmaster.space/register?type=client`;
   
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
@@ -13,7 +18,7 @@ export const buildInviteEmailHtml = (clientName: string | undefined, mentorName:
       <p>Para se registrar, clique no link abaixo:</p>
       
       <p style="text-align: center;">
-        <a href="${registerUrl}" style="background-color: #4F46E5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Registrar-se Agora</a>
+        <a href="${finalRegisterUrl}" style="background-color: #4F46E5; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Registrar-se Agora</a>
       </p>
       
       <p><em>Este convite é válido por 7 dias.</em></p>

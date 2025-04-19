@@ -1,5 +1,3 @@
-
-<<<<<<< HEAD
 import React, { useState } from 'react';
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -17,67 +15,64 @@ const questions = [
   //     { id: 'q1o1', text: 'Nunca', value: 1 },
   //     { id: 'q1o2', text: 'Às vezes', value: 2 },
   //     { id: 'q1o3', text: 'Sempre', value: 3 }
-  //   ]
-  // },
-
   {
     id: 'q1',
     question: "Quando identifico um problema no trabalho, prefiro:",
     options: [
-      { id: 'a', text: 'Resolvê-lo imediatamente, mesmo que não seja minha responsabilidade' },
-      { id: 'b', text: 'Informar meu supervisor e aguardar instruções' },
-      { id: 'c', text: 'Analisar o problema e propor possíveis soluções ao meu supervisor' },
-      { id: 'd', text: 'Aguardar para ver se o problema se resolve sozinho' }
+      { id: 'a', text: 'Resolvê-lo imediatamente, mesmo que não seja minha responsabilidade', value: 3 },
+      { id: 'b', text: 'Informar meu supervisor e aguardar instruções', value: 2 },
+      { id: 'c', text: 'Analisar o problema e propor possíveis soluções ao meu supervisor', value: 3 },
+      { id: 'd', text: 'Aguardar para ver se o problema se resolve sozinho', value: 1 }
     ]
   },
   {
     id: 'q2',
     question: "Em relação a novas habilidades profissionais, eu geralmente:",
     options: [
-      { id: 'a', text: 'Espero que a empresa ofereça treinamentos quando necessário' },
-      { id: 'b', text: 'Busco constantemente aprender novas habilidades por conta própria' },
-      { id: 'c', text: 'Aprendo apenas o necessário para cumprir minhas funções atuais' },
-      { id: 'd', text: 'Prefiro me especializar profundamente em uma única área' }
+      { id: 'a', text: 'Espero que a empresa ofereça treinamentos quando necessário', value: 1 },
+      { id: 'b', text: 'Busco constantemente aprender novas habilidades por conta própria', value: 3 },
+      { id: 'c', text: 'Aprendo apenas o necessário para cumprir minhas funções atuais', value: 2 },
+      { id: 'd', text: 'Prefiro me especializar profundamente em uma única área', value: 2 }
     ]
   },
   {
     id: 'q3',
     question: "Quando surge uma oportunidade de liderar um projeto:",
     options: [
-      { id: 'a', text: 'Me voluntario imediatamente, mesmo que seja desafiador' },
-      { id: 'b', text: 'Espero ser convidado para assumir a responsabilidade' },
-      { id: 'c', text: 'Avalio se tenho as habilidades necessárias antes de me oferecer' },
-      { id: 'd', text: 'Prefiro trabalhar como parte da equipe sem responsabilidade de liderança' }
+      { id: 'a', text: 'Me voluntario imediatamente, mesmo que seja desafiador', value: 3 },
+      { id: 'b', text: 'Espero ser convidado para assumir a responsabilidade', value: 2 },
+      { id: 'c', text: 'Avalio se tenho as habilidades necessárias antes de me oferecer', value: 2 },
+      { id: 'd', text: 'Prefiro trabalhar como parte da equipe sem responsabilidade de liderança', value: 1 }
     ]
   },
   {
     id: 'q4',
     question: "Quando a empresa implementa uma mudança significativa, eu:",
     options: [
-      { id: 'a', text: 'Resisto inicialmente e depois me adapto gradualmente' },
-      { id: 'b', text: 'Aceito passivamente e sigo as novas diretrizes' },
-      { id: 'c', text: 'Abraço a mudança e busco maneiras de contribuir para o sucesso' },
-      { id: 'd', text: 'Analiso criticamente os prós e contras antes de me posicionar' }
+      { id: 'a', text: 'Resisto inicialmente e depois me adapto gradualmente', value: 1 },
+      { id: 'b', text: 'Aceito passivamente e sigo as novas diretrizes', value: 2 },
+      { id: 'c', text: 'Abraço a mudança e busco maneiras de contribuir para o sucesso', value: 3 },
+      { id: 'd', text: 'Analiso criticamente os prós e contras antes de me posicionar', value: 2 }
     ]
   },
   {
     id: 'q5',
     question: "Em relação ao estabelecimento de metas pessoais:",
     options: [
-      { id: 'a', text: 'Estabeleço regularmente metas desafiadoras e monitoro meu progresso' },
-      { id: 'b', text: 'Prefiro trabalhar com as metas estabelecidas pela empresa' },
-      { id: 'c', text: 'Estabeleço metas apenas quando necessário para projetos específicos' },
-      { id: 'd', text: 'Trabalho melhor sem metas formalmente estabelecidas' }
+      { id: 'a', text: 'Estabeleço regularmente metas desafiadoras e monitoro meu progresso', value: 3 },
+      { id: 'b', text: 'Prefiro trabalhar com as metas estabelecidas pela empresa', value: 2 },
+      { id: 'c', text: 'Estabeleço metas apenas quando necessário para projetos específicos', value: 2 },
+      { id: 'd', text: 'Trabalho melhor sem metas formalmente estabelecidas', value: 1 }
     ]
   },
   {
     id: 'q6',
     question: "Quando vejo uma oportunidade de melhoria em um processo de trabalho:",
     options: [
-      { id: 'a', text: 'Implemento a melhoria por conta própria se estiver ao meu alcance' },
-      { id: 'b', text: 'Sugiro a melhoria ao meu supervisor e aguardo feedback' },
-      { id: 'c', text: 'Discuto com colegas para refinar a ideia antes de apresentá-la formalmente' },
-      { id: 'd', text: 'Não interfiro em processos já estabelecidos' }
+      { id: 'a', text: 'Implemento a melhoria por conta própria se estiver ao meu alcance', value: 3 },
+      { id: 'b', text: 'Sugiro a melhoria ao meu supervisor e aguardo feedback', value: 2 },
+      { id: 'c', text: 'Discuto com colegas para refinar a ideia antes de apresentá-la formalmente', value: 2 },
+      { id: 'd', text: 'Não interfiro em processos já estabelecidos', value: 1 }
     ]
   },
   {
@@ -121,13 +116,10 @@ const questions = [
     ]
   }
 ];
-=======
-import React, { useState } from "react";
-import { questions } from './proactivity/questions';
-import { calculateProactivityScore } from './proactivity/ScoreCalculator';
+
+
 import QuestionCard from './proactivity/QuestionCard';
 import ResultsCard from './proactivity/ResultsCard';
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
 
 const ProactivityTest: React.FC = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -156,10 +148,6 @@ const ProactivityTest: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
-  // Novo cálculo preciso da Proatividade
-  // Cálculo preciso de Proatividade
-  // Função de cálculo precisa de Proatividade
   const calculateProactivityScore = () => {
     let totalScore = 0;
     let maxPossibleScore = 0;
@@ -189,78 +177,16 @@ const ProactivityTest: React.FC = () => {
       level: level.level,
       description: level.description
     };
-=======
+  };
+
   const handleRetake = () => {
     setShowResults(false);
     setCurrentQuestion(0);
     setAnswers({});
->>>>>>> 83163dc2da42cde9e74e3a7d6f4a339951d4fa80
   };
-
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-    Object.entries(answers).forEach(([questionId, answerId]) => {
-      const question = questions.find(q => q.id === questionId);
-      if (question) {
-        const option = question.options.find(o => o.id === answerId);
-        if (option) {
-          totalScore += option.value;
-        }
-      }
-      maxPossibleScore += 3; // 3 é o valor máximo por pergunta
-    });
-    const percentScore = Math.round((totalScore / maxPossibleScore) * 100);
-    const proactivityLevels = [
-      { min: 85, level: 'Altamente Proativo', description: 'Você é altamente proativo.' },
-      { min: 70, level: 'Proativo', description: 'Você é proativo.' },
-      { min: 50, level: 'Moderadamente Proativo', description: 'Você é moderadamente proativo.' },
-      { min: 30, level: 'Reativo', description: 'Você é reativo.' },
-      { min: 0, level: 'Altamente Reativo', description: 'Você é altamente reativo.' }
-    ];
-    const level = proactivityLevels.find(l => percentScore >= l.min) || proactivityLevels[proactivityLevels.length - 1];
-    return {
-      score: totalScore,
-      maxScore: maxPossibleScore,
-      percentage: percentScore,
-      level: level.level,
-      description: level.description
-    };
-  };
-
-    let totalScore = 0;
-    let maxPossibleScore = 0;
-    Object.entries(answers).forEach(([questionId, answerId]) => {
-      const question = questions.find(q => q.id === questionId);
-      if (question) {
-        const option = question.options.find(o => o.id === answerId);
-        if (option) {
-          totalScore += option.value;
-        }
-      }
-      maxPossibleScore += 3; // 3 é a pontuação máxima por questão
-    });
-    const percentScore = Math.round((totalScore / maxPossibleScore) * 100);
-    // Definir níveis de proatividade
-    const proactivityLevels = [
-      { min: 85, level: 'Altamente Proativo', description: 'Você é altamente proativo.' },
-      { min: 70, level: 'Proativo', description: 'Você é proativo.' },
-      { min: 50, level: 'Moderadamente Proativo', description: 'Você é moderadamente proativo.' },
-      { min: 30, level: 'Reativo', description: 'Você é reativo.' },
-      { min: 0, level: 'Altamente Reativo', description: 'Você é altamente reativo.' }
-    ];
-    const level = proactivityLevels.find(l => percentScore >= l.min) || proactivityLevels[proactivityLevels.length - 1];
-    return {
-      score: totalScore,
-      maxScore: maxPossibleScore,
-      percentage: percentScore,
-      level: level.level,
-      description: level.description
-    };
-  };
-
 
   if (showResults) {
-    const result = calculateProactivityScore(answers, questions);
+    const result = calculateProactivityScore();
     return (
       <ResultsCard
         result={result}

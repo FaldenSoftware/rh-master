@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Edit, Trash, UserX } from "lucide-react";
+import { MoreVertical, Edit, Trash, UserX, AlertCircle, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -45,129 +45,81 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const fetchClientsData = async () => {
+    if (!user || !user.id) {
+      setError("Usuário não autenticado");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setError(null);
+      const clientsData = await getMentorClients(user.id);
+      const formattedClients = (clientsData || []).map((profile: Profile) => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email || 'Email não disponível',
+        company: profile.company
+      }));
+      setClients(formattedClients as Client[]);
+    } catch (error: any) {
+      console.error("Erro ao carregar clientes:", error);
+      setError(error.message || "Não foi possível carregar a lista de clientes.");
+      toast({
+        title: "Erro ao carregar clientes",
+        description: error.message || "Ocorreu um erro ao carregar a lista de clientes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user && user.id) {
       fetchClientsData();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, retryCount]);
 
-  // Função para buscar clientes
-  const fetchClients = async () => {
-    try {
-      if (!user || !user.id) {
-        throw new Error("Usuário não autenticado");
-      }
-      // Buscar clientes usando nosso serviço
-      const data = await getMentorClients(user.id);
-      if (!data || data.length === 0) {
-        return [];
-      }
-      // Formatar os dados
-      const formattedClients = data.map((profile: Profile) => ({
-        id: profile.id,
-        name: profile.name || 'Nome não disponível',
-        email: profile.email || 'Email não disponível',
-        company: profile.company || ''
-      }));
-      return formattedClients;
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      throw error;
-    }
-  };
-
-  // Função para buscar clientes com retry
-  const fetchClientsData = async (retryCount = 0) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const clientsData = await fetchClients();
-      setClients(clientsData as Client[]);
-    } catch (error: any) {
-      console.error("Erro ao carregar clientes:", error);
-      // Tentar novamente até 3 vezes em caso de erro de rede
-      if (retryCount < 3 && error.message?.includes('network')) {
-        setTimeout(() => fetchClientsData(retryCount + 1), 1000);
-        return;
-      }
-      setError(error.message || "Ocorreu um erro ao carregar a lista de clientes.");
-      toast({
-        title: "Erro ao carregar clientes",
-        description: error.message || "Ocorreu um erro ao carregar a lista de clientes.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-    try {
-      if (!user || !user.id) {
-        throw new Error("Usuário não autenticado");
-      }
-      // Buscar clientes usando nosso serviço
-      const data = await getMentorClients(user.id);
-      if (!data || data.length === 0) {
-        return [];
-      }
-      // Formatar os dados
-      const formattedClients = data.map((profile: Profile) => ({
-        id: profile.id,
-        name: profile.name || 'Nome não disponível',
-        email: profile.email || 'Email não disponível',
-        company: profile.company || ''
-      }));
-      return formattedClients;
-    } catch (error) {
-      console.error("Erro ao buscar clientes:", error);
-      throw error;
-    }
-  };
-
-  const fetchClientsData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const clientsData = await fetchClients();
-      setClients(clientsData as Client[]);
-    } catch (error: any) {
-      console.error("Erro ao carregar clientes:", error);
-      setError(error.message || "Ocorreu um erro ao carregar a lista de clientes.");
-      toast({
-        title: "Erro ao carregar clientes",
-        description: error.message || "Ocorreu um erro ao carregar a lista de clientes.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
   };
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <span className="ml-2 text-gray-600">Carregando clientes...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-        <p className="font-medium">Erro ao carregar clientes</p>
-        <p className="text-sm">{error}</p>
-        <Button 
-          onClick={() => fetchClientsData()} 
-          variant="outline" 
-          size="sm" 
-          className="mt-2"
-        >
-          Tentar novamente
-        </Button>
-      </div>
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Erro ao carregar clientes</AlertTitle>
+        <AlertDescription>
+          <p>{error}</p>
+          <p className="text-sm mt-2">
+            Isso pode ser causado por um problema de permissões ou conectividade com o banco de dados.
+          </p>
+          <Button 
+            onClick={handleRetry} 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 flex items-center"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Tentar novamente
+          </Button>
+        </AlertDescription>
+      </Alert>
     );
   }
 

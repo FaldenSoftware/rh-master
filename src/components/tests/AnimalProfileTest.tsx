@@ -34,60 +34,60 @@ const questions = [
     id: 'q1',
     question: "What type of home environment would be best for Buddy?",
     options: [
-      { id: 'a', text: 'A small apartment in the city' },
-      { id: 'b', text: 'A suburban home with a yard' },
-      { id: 'c', text: 'A rural farm with lots of space' },
-      { id: 'd', text: 'Any environment with loving owners' }
+      { id: 'a', text: 'A small apartment in the city', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'A suburban home with a yard', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'A rural farm with lots of space', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Any environment with loving owners', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q2',
     question: "How much exercise does Buddy need daily?",
     options: [
-      { id: 'a', text: 'Minimal exercise' },
-      { id: 'b', text: 'A short walk once a day' },
-      { id: 'c', text: 'Multiple walks and playtime' },
-      { id: 'd', text: 'Constant activity throughout the day' }
+      { id: 'a', text: 'Minimal exercise', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'A short walk once a day', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'Multiple walks and playtime', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Constant activity throughout the day', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q3',
     question: "How would Buddy likely interact with other pets?",
     options: [
-      { id: 'a', text: 'Would be aggressive toward other animals' },
-      { id: 'b', text: 'Would be fearful and hide' },
-      { id: 'c', text: 'Would be friendly and sociable' },
-      { id: 'd', text: 'Would be indifferent to other animals' }
+      { id: 'a', text: 'Would be aggressive toward other animals', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Would be fearful and hide', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'Would be friendly and sociable', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Would be indifferent to other animals', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q4',
     question: "What type of training would Buddy respond to best?",
     options: [
-      { id: 'a', text: 'Strict, discipline-based training' },
-      { id: 'b', text: 'Reward-based positive reinforcement' },
-      { id: 'c', text: 'No training needed' },
-      { id: 'd', text: 'Professional training only' }
+      { id: 'a', text: 'Strict, discipline-based training', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Reward-based positive reinforcement', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'No training needed', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Professional training only', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q5',
     question: "How would Buddy likely behave around children?",
     options: [
-      { id: 'a', text: 'Would be cautious and reserved' },
-      { id: 'b', text: 'Would be playful but gentle' },
-      { id: 'c', text: 'Would be too energetic for small children' },
-      { id: 'd', text: 'Would prefer homes without children' }
+      { id: 'a', text: 'Would be cautious and reserved', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Would be playful but gentle', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'Would be too energetic for small children', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Would prefer homes without children', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
     id: 'q6',
     question: "What is Buddy's likely energy level?",
     options: [
-      { id: 'a', text: 'Very low - prefers lounging all day' },
-      { id: 'b', text: 'Moderate - active but also enjoys relaxing' },
-      { id: 'c', text: 'High - needs constant stimulation' },
-      { id: 'd', text: 'Variable - energetic at times, calm at others' }
+      { id: 'a', text: 'Very low - prefers lounging all day', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'b', text: 'Moderate - active but also enjoys relaxing', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'c', text: 'High - needs constant stimulation', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } },
+      { id: 'd', text: 'Variable - energetic at times, calm at others', traits: { dinâmico: 0, expressivo: 0, analítico: 0, preciso: 0, amigável: 0, estável: 0, cauteloso: 0 } }
     ]
   },
   {
@@ -135,7 +135,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { questions } from "./animalProfile/questions";
+
 import { profiles } from "./animalProfile/profiles";
 import { calculateAnimalProfile } from "./animalProfile/calculator";
 
@@ -260,64 +260,6 @@ const AnimalProfileTest: React.FC = () => {
         score,
         percentage: Math.round((score / (Object.values(profileScores).reduce((a, b) => a + b, 0))) * 100)
       }));
-    return {
-      dominantProfile: dominantProfile.profile,
-      percentageScore: Math.min(percentageScore, 100),
-      profileScores: sortedProfiles,
-      traits
-    };
-  };
-
-    const traits = {
-      dinâmico: 0,
-      expressivo: 0,
-      analítico: 0,
-      preciso: 0,
-      amigável: 0,
-      estável: 0,
-      cauteloso: 0
-    };
-    let totalPoints = 0;
-    Object.entries(answers).forEach(([questionId, answerId]) => {
-      const question = questions.find(q => q.id === questionId);
-      if (question) {
-        const option = question.options.find(o => o.id === answerId);
-        if (option && option.traits) {
-          Object.entries(option.traits).forEach(([trait, score]) => {
-            traits[trait as keyof typeof traits] += score as number;
-            totalPoints += score as number;
-          });
-        }
-      }
-    });
-    const profileScores = {
-      águia: (traits.dinâmico + traits.expressivo) / 2,
-      lobo: (traits.analítico + traits.preciso) / 2,
-      golfinho: (traits.expressivo + traits.amigável) / 2,
-      coruja: (traits.estável + traits.cauteloso) / 2
-    };
-    let dominantProfile = Object.entries(profileScores).reduce(
-      (max, [profile, score]) => score > max.score ? { profile, score } : max,
-      { profile: '', score: 0 }
-    );
-    const maxPossibleScore = 30; // Considerando 10 perguntas com média de 3 pontos cada
-    const percentageScore = Math.round((totalPoints / maxPossibleScore) * 100);
-    const sortedProfiles = Object.entries(profileScores)
-      .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-      .map(([profile, score]) => ({
-        profile,
-        score,
-        percentage: Math.round((score / (Object.values(profileScores).reduce((a, b) => a + b, 0))) * 100)
-      }));
-    return {
-      dominantProfile: dominantProfile.profile,
-      percentageScore: Math.min(percentageScore, 100),
-      profileScores: sortedProfiles,
-      traits
-    };
-  };
-
-
   if (showResults) {
     const result = calculateAnimalProfile(answers, questions);
     const dominantProfile = profiles[result.dominantProfile];
