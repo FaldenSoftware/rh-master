@@ -1,14 +1,11 @@
 -- Função para buscar clientes de um mentor
-CREATE OR REPLACE FUNCTION get_mentor_clients(mentor_id UUID)
+CREATE OR REPLACE FUNCTION get_mentor_clients(input_mentor_id UUID)
 RETURNS SETOF profiles
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
 AS $$
-BEGIN
-  RETURN QUERY
-  SELECT *
-  FROM profiles
-  WHERE mentor_id = $1
-  AND role = 'client';
-END;
+  SELECT p.*
+  FROM profiles p
+  WHERE p.mentor_id = input_mentor_id
+  AND p.role = 'client';
 $$;

@@ -44,7 +44,12 @@ const LeaderHeader: React.FC<LeaderHeaderProps> = ({ title }) => {
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="container flex h-16 items-center justify-between py-4">
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">{title}</h1>
+          {user?.is_master_account && (
+            <span className="rounded-full bg-yellow-500 px-2 py-1 text-xs font-semibold text-black">Conta Mestre</span>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon">
             <Bell className="h-[1.2rem] w-[1.2rem]" />

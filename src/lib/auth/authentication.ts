@@ -27,15 +27,6 @@ export const loginUser = async (email: string, password: string): Promise<AuthUs
 
 export const logoutUser = async (): Promise<void> => {
   try {
-    // Check if in dev mode first
-    if (localStorage.getItem('devModeActive') === 'true') {
-      localStorage.removeItem('devModeActive');
-      localStorage.removeItem('devModeUser');
-      console.log("DEV MODE: Logged out");
-      return;
-    }
-
-    // Regular logout
     const { error } = await supabase.auth.signOut();
     if (error) {
       throw new Error(error.message);
@@ -48,16 +39,7 @@ export const logoutUser = async (): Promise<void> => {
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
   try {
-    // Check if in dev mode first
-    if (localStorage.getItem('devModeActive') === 'true') {
-      const devModeUser = localStorage.getItem('devModeUser');
-      if (devModeUser) {
-        console.log("DEV MODE: Getting current user");
-        return JSON.parse(devModeUser) as AuthUser;
-      }
-    }
-
-    // Regular authentication check
+    // Authentication check
     const { data: { session }, error } = await supabase.auth.getSession();
     
     if (error) {

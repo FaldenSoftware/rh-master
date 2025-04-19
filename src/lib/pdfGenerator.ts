@@ -2,6 +2,7 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { AnimalProfileResult } from "./animalProfileService";
 import { animalProfiles } from "./animalProfileService";
+import { getTestResult, TestResult } from "@/services/testResultsService";
 
 // Define types for data needed to generate PDFs
 interface UserProfile {
@@ -17,6 +18,70 @@ const animalImages = {
   tubarao: '/public/lovable-uploads/f30d7eb3-1488-45a8-bb1c-81b98ac060bc.png',
   aguia: '/public/lovable-uploads/b44d9c5c-1f4a-41d3-9416-e555359e608b.png',
   gato: '/public/lovable-uploads/fa1f3bb8-13ee-41f6-a1a5-a08a1b273fe5.png'
+};
+
+/**
+ * Gera um PDF a partir do ID de um resultado de teste
+ * @param resultId ID do resultado de teste a ser usado para gerar o PDF
+ * @returns Promise que resolve quando o PDF é gerado
+ */
+export const generatePDFFromResultId = async (resultId: string): Promise<void> => {
+  try {
+    // Obtém os dados completos do resultado do teste
+    const testResult = await getTestResult(resultId);
+    
+    if (!testResult) {
+      throw new Error(`Resultado de teste com ID ${resultId} não encontrado`);
+    }
+    
+    // Verifica se temos dados do usuário
+    if (!testResult.user) {
+      throw new Error("Dados do usuário não disponíveis para este resultado de teste");
+    }
+    
+    // Prepara o objeto UserProfile a partir dos dados do usuário
+    const userProfile = {
+      id: testResult.user_id,
+      name: testResult.user.name || "Usuário",
+      company: testResult.user.company,
+      email: testResult.user.email
+    };
+    
+    // Determina o animal predominante
+    const scores = {
+      score_tubarao: testResult.score_tubarao || 0,
+      score_lobo: testResult.score_lobo || 0,
+      score_aguia: testResult.score_aguia || 0,
+      score_gato: testResult.score_gato || 0
+    };
+    
+    // Encontra o animal com maior pontuação
+    const animalPredominante = Object.entries(scores)
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0].replace('score_', ''))[0];
+    
+    // Cria um objeto AnimalProfileResult a partir do TestResult
+    const animalProfileResult: AnimalProfileResult = {
+      id: testResult.id || "",
+      user_id: testResult.user_id,
+      score_tubarao: testResult.score_tubarao || 0,
+      score_gato: testResult.score_gato || 0,
+      score_lobo: testResult.score_lobo || 0,
+      score_aguia: testResult.score_aguia || 0,
+      animal_predominante: animalPredominante,
+      completed_at: testResult.created_at || new Date().toISOString(),
+      created_at: testResult.created_at,
+      updated_at: testResult.updated_at
+    };
+    
+    // Gera o PDF usando a função existente
+    await generateAnimalProfilePDF(animalProfileResult, userProfile);
+    
+    console.log(`PDF gerado com sucesso para o resultado ${resultId}`);
+  } catch (error: any) {
+    console.error("Erro ao gerar PDF a partir do ID do resultado:", error);
+    throw new Error(`Falha ao gerar PDF: ${error.message}`);
+  }
 };
 
 export const generateAnimalProfilePDF = async (

@@ -28,6 +28,7 @@ import AnimalProfileTestPage from "./pages/AnimalProfileTestPage";
 import AnimalProfileResultsPage from "./pages/AnimalProfileResultsPage";
 import EgogramaTestPage from "./pages/EgogramaTestPage";
 import ProactivityTestPage from "./pages/ProactivityTestPage";
+import TestResultPage from "./pages/TestResultPage";
 
 const queryClient = new QueryClient();
 
@@ -154,6 +155,14 @@ const App = () => {
                   element={
                     <ProtectedRoute requiredRole="client">
                       <ClientResults />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/results/:resultId" 
+                  element={
+                    <ProtectedRoute requiredRole="client">
+                      <TestResultPage />
                     </ProtectedRoute>
                   } 
                 />

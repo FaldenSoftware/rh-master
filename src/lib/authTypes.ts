@@ -18,6 +18,7 @@ export interface AuthUser {
   state?: string;
   zipCode?: string;
   website?: string;
+  is_master_account?: boolean;
 }
 
 export interface AuthState {

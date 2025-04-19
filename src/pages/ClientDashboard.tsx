@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, CheckCircle, Clock, Brain, TrendingUp, Award, Calendar, ChevronRight, Loader2, FileText } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Brain, TrendingUp, Award, Calendar, ChevronRight, Loader2, FileText, ClipboardList } from "lucide-react";
 import ClientLayout from "@/components/client/ClientLayout";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useTestResults } from "@/hooks/useTestResults";
 import { assignAnimalProfileTestToClient } from "@/lib/animalProfileService";
+import TestResultsList from "@/components/dashboard/TestResultsList";
 
 const ClientDashboard = () => {
   const { toast } = useToast();
@@ -429,6 +430,12 @@ const ClientDashboard = () => {
           <TabsList className="mb-4">
             <TabsTrigger value="recommendations">Recomendações</TabsTrigger>
             <TabsTrigger value="calendar">Agenda</TabsTrigger>
+            <TabsTrigger value="test-results">
+              <span className="flex items-center gap-1">
+                <ClipboardList className="h-4 w-4" />
+                Resultados de Testes
+              </span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="recommendations">
@@ -494,6 +501,14 @@ const ClientDashboard = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+          
+          <TabsContent value="test-results">
+            <Card>
+              <CardContent className="pt-6">
+                <TestResultsList />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

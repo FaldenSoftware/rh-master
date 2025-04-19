@@ -23,5 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Arquivos de ambiente
+.env
+
 # windsurf rules
 .windsurfrules

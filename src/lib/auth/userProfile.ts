@@ -35,7 +35,8 @@ export const getUserProfile = async (userId: string): Promise<AuthUser | null> =
         position: typedProfileData.position || '',
         bio: typedProfileData.bio || '',
         createdAt: typedProfileData.created_at || new Date().toISOString(),
-        avatar_url: typedProfileData.avatar_url || ''
+        avatar_url: typedProfileData.avatar_url || '',
+        is_master_account: typedProfileData.is_master_account || false
       };
     }
     
@@ -59,6 +60,7 @@ export const getUserProfile = async (userId: string): Promise<AuthUser | null> =
       phone: userMetadata.phone || '',
       position: userMetadata.position || '',
       bio: userMetadata.bio || '',
+      is_master_account: userMetadata.is_master_account || false,
       createdAt: user.created_at || new Date().toISOString(),
       avatar_url: userMetadata.avatar_url || ''
     };

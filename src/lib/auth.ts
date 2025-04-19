@@ -20,4 +20,4 @@ export * from "./auth/types";
 export * from "./auth/authentication";
 export * from "./auth/registration";
 export * from "./auth/userProfile";
-export * from "./auth/devMode";
+

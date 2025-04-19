@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MoreVertical, Edit, Trash, UserX, AlertCircle, RefreshCw } from "lucide-react";
+import { MoreVertical, Edit, Trash, UserX, AlertCircle, RefreshCw, Mail } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { getMentorClients } from "@/services/clientService";
+import { v4 as uuidv4 } from 'uuid';
 
 interface Client {
   id: string;
@@ -46,6 +47,8 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -88,6 +91,45 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);
+  };
+
+  const handleInviteClient = async (email: string) => {
+    try {
+      setIsSendingInvite(true);
+      setInviteError(null);
+
+      // Gerar um código de convite único (ajuste conforme sua lógica)
+      const inviteCode = uuidv4(); // ou obtenha do backend/supabase
+
+      // Inserir código de convite no banco (se necessário)
+      const { data: inviteData, error } = await supabase
+        .from('invitation_codes')
+        .insert([{ code: inviteCode, email, mentor_id: user?.id }])
+        .select('code')
+        .single();
+
+      if (error) {
+        throw new Error(`Erro ao gerar convite: ${error.message}`);
+      }
+
+      // Gerar HTML do email de convite
+      const { generateInviteEmailHTML } = await import('@/services/emailService');
+      const htmlContent = generateInviteEmailHTML(inviteCode, user?.email || 'Equipe RH Mentor Mastery');
+
+      // Enviar email usando Resend
+      const { sendInviteEmail } = await import('@/services/emailService');
+      await sendInviteEmail(email, undefined, 'Convite para RH Mentor Mastery', htmlContent);
+
+      toast({
+        title: 'Convite Enviado',
+        description: `Convite enviado com sucesso para ${email}.`,
+      });
+    } catch (err) {
+      console.error('Erro ao enviar convite:', err);
+      setInviteError(err instanceof Error ? err.message : 'Erro ao enviar convite. Tente novamente.');
+    } finally {
+      setIsSendingInvite(false);
+    }
   };
 
   if (isLoading) {
@@ -165,6 +207,9 @@ const ClientsList: React.FC<ClientsListProps> = ({ onEdit, onDelete }) => {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-500">
                   <Trash className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleInviteClient(client.email)} className="text-green-500">
+                  <Mail className="mr-2 h-4 w-4" /> Convidar
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
