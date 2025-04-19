@@ -3,6 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { AuthUser } from '@/lib/authTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { Profile } from '@/types/profile';
 
 export interface AuthContextType {
   user: AuthUser | null;
@@ -44,26 +45,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         } else {
           setIsAuthenticated(true);
+          // Type casting the profile to ensure TypeScript recognizes all properties
+          const typedProfile = profile as Profile;
+          
           setUser({
-            id: profile.id,
-            email: profile.email,
-            name: profile.name,
-            role: profile.role as "mentor" | "client",
-            company: profile.company,
-            phone: profile.phone,
-            position: profile.position,
-            bio: profile.bio,
-            avatar_url: profile.avatar_url || null,
-            createdAt: profile.created_at,
-            mentor_id: profile.mentor_id,
-            cnpj: profile.cnpj || null,
-            industry: profile.industry || null,
-            address: profile.address || null,
-            city: profile.city || null,
-            state: profile.state || null,
-            zipCode: profile.zipCode || null,
-            website: profile.website || null,
-            is_master_account: profile.is_master_account
+            id: typedProfile.id,
+            email: typedProfile.email || null,
+            name: typedProfile.name || '',
+            role: typedProfile.role as "mentor" | "client",
+            company: typedProfile.company,
+            phone: typedProfile.phone,
+            position: typedProfile.position,
+            bio: typedProfile.bio,
+            avatar_url: typedProfile.avatar_url || null,
+            createdAt: typedProfile.created_at,
+            mentor_id: typedProfile.mentor_id,
+            cnpj: typedProfile.cnpj || null,
+            industry: typedProfile.industry || null,
+            address: typedProfile.address || null,
+            city: typedProfile.city || null,
+            state: typedProfile.state || null,
+            zipCode: typedProfile.zipCode || null,
+            website: typedProfile.website || null,
+            is_master_account: typedProfile.is_master_account
           });
         }
       } else {
