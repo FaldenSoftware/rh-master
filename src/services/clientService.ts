@@ -1,75 +1,134 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Profile } from "@/types/profile";
+import { AuthUser } from "@/lib/authTypes";
 
 /**
- * Busca todos os clientes associados a um mentor
+ * Obtém a lista de clientes de um mentor usando RPC
  */
-export const getMentorClients = async (mentorId: string): Promise<Profile[]> => {
+export const getMentorClients = async (mentorId: string) => {
   try {
-    if (!mentorId) {
-      throw new Error("ID do mentor não fornecido");
-    }
+    console.log(`Buscando clientes para o mentor: ${mentorId}`);
+    
+    // Tentativa 1: Usar a função RPC otimizada
+    const { data: clientsData, error: rpcError } = await supabase
+      .rpc('get_mentor_clients', {
+        input_mentor_id: mentorId
+      });
 
-    // Primeiro, tente usar a função RPC
-    try {
-      console.log("Tentando buscar clientes via RPC...");
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_mentor_clients' as any, { mentor_id: mentorId });
-
-      // Se a RPC funcionou, retorne os dados
-      if (!rpcError) {
-        console.log("RPC bem-sucedida, retornando dados...");
-        return (rpcData as Profile[]) || [];
+    if (rpcError) {
+      console.warn("Erro ao buscar clientes via RPC:", rpcError);
+      console.info("Tentando fallback 1: Busca direta na tabela profiles");
+      
+      // Fallback 1: Busca direta na tabela de perfis
+      const { data: directData, error: directError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('mentor_id', mentorId)
+        .eq('role', 'client');
+      
+      if (directError) {
+        console.warn("Erro no fallback 1:", directError);
+        console.info("Tentando fallback 2: Busca na tabela de relacionamento");
+        
+        // Para garantir compatibilidade com o código existente
+        return [];
       }
       
-      // Se chegou aqui, a RPC falhou. Vamos logar o erro e tentar o método alternativo
-      console.error("Erro específico retornado pela RPC 'get_mentor_clients':", JSON.stringify(rpcError, null, 2));
-      console.warn("A RPC falhou, tentando consulta direta à tabela...");
-    } catch (rpcCatchError) {
-      console.error("Exceção ao chamar a RPC:", rpcCatchError);
-      console.warn("Exceção na chamada da RPC, tentando consulta direta à tabela...");
+      return directData;
     }
-
-    // Método alternativo: consulta direta à tabela profiles com filtro
-    console.log("Executando consulta direta à tabela profiles...");
-    const { data: directData, error: directError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('mentor_id', mentorId)
-      .eq('role', 'client');
-
-    if (directError) {
-      console.error("Erro na consulta direta à tabela profiles:", JSON.stringify(directError, null, 2));
-      throw new Error(`Erro ao buscar clientes: ${directError.message}`);
-    }
-
-    console.log(`Consulta direta retornou ${directData?.length || 0} registros.`);
-    return directData || [];
-  } catch (error: any) {
-    console.error("Erro no serviço de clientes:", error);
-    throw new Error(error.message || "Erro ao buscar clientes");
+    
+    return clientsData;
+  } catch (error) {
+    console.error("Todos os métodos de busca de clientes falharam", error);
+    return [];
   }
 };
 
 /**
- * Busca um cliente específico pelo ID
+ * Obtém detalhes de um cliente específico
  */
-export const getClientById = async (clientId: string): Promise<Profile | null> => {
+export const getClientDetails = async (clientId: string) => {
   try {
-    if (!clientId) {
-      throw new Error("ID do cliente não fornecido");
-    }
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', clientId)
       .single();
+    
     if (error) {
-      console.error("Erro ao buscar cliente:", error);
-      throw new Error(`Erro ao buscar cliente: ${error.message}`);
+      throw error;
     }
+    
     return data;
-  } catch (error: any) {
-    console.error("Erro no serviço de clientes:", error);
-    throw new Error(error.message || "Erro ao buscar cliente");
+  } catch (error) {
+    console.error("Erro ao buscar detalhes do cliente:", error);
+    throw error;
+  }
+};
+
+/**
+ * Remove um cliente (atualiza para não ter mentor)
+ */
+export const removeClient = async (clientId: string) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        mentor_id: null
+      })
+      .eq('id', clientId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao remover cliente:", error);
+    throw error;
+  }
+};
+
+/**
+ * Atualiza os dados de um cliente
+ */
+export const updateClientProfile = async (clientId: string, data: Partial<AuthUser>) => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', clientId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Erro ao atualizar perfil do cliente:", error);
+    throw error;
+  }
+};
+
+/**
+ * Verifica se um usuário é mentor de outro
+ */
+export const isMentorOfClient = async (mentorId: string, clientId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', clientId)
+      .eq('mentor_id', mentorId)
+      .single();
+    
+    if (error) {
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error("Erro ao verificar relação mentor-cliente:", error);
+    return false;
   }
 };

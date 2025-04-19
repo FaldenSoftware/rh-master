@@ -289,6 +289,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_master_account: boolean | null
           mentor_id: string | null
           name: string
           phone: string | null
@@ -302,6 +303,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          is_master_account?: boolean | null
           mentor_id?: string | null
           name: string
           phone?: string | null
@@ -315,6 +317,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_master_account?: boolean | null
           mentor_id?: string | null
           name?: string
           phone?: string | null
@@ -334,25 +337,46 @@ export type Database = {
       }
       test_results: {
         Row: {
+          answers: Json | null
           client_test_id: string
           created_at: string
           data: Json
           id: string
+          metadata: Json | null
+          score_aguia: number | null
+          score_gato: number | null
+          score_lobo: number | null
+          score_tubarao: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
+          answers?: Json | null
           client_test_id: string
           created_at?: string
           data: Json
           id?: string
+          metadata?: Json | null
+          score_aguia?: number | null
+          score_gato?: number | null
+          score_lobo?: number | null
+          score_tubarao?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
+          answers?: Json | null
           client_test_id?: string
           created_at?: string
           data?: Json
           id?: string
+          metadata?: Json | null
+          score_aguia?: number | null
+          score_gato?: number | null
+          score_lobo?: number | null
+          score_tubarao?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -360,6 +384,13 @@ export type Database = {
             columns: ["client_test_id"]
             isOneToOne: false
             referencedRelation: "client_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_results_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -425,9 +456,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_table_structure: {
+        Args: { tbl_name: string }
+        Returns: Json
+      }
       client_can_access_test: {
         Args: { client_id: string; test_id: string }
         Returns: boolean
+      }
+      create_master_accounts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      exec_sql: {
+        Args: { sql: string }
+        Returns: undefined
       }
       get_client_tests_for_user: {
         Args: { user_id: string }
@@ -442,6 +485,27 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_mentor_clients: {
+        Args: { mentor_id: string }
+        Returns: {
+          bio: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_master_account: boolean | null
+          mentor_id: string | null
+          name: string
+          phone: string | null
+          position: string | null
+          role: string
+          updated_at: string
+        }[]
+      }
+      get_policies: {
+        Args: { table_name: string }
+        Returns: Json
+      }
       get_profile_by_id: {
         Args: { user_id: string }
         Returns: {
@@ -450,6 +514,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_master_account: boolean | null
           mentor_id: string | null
           name: string
           phone: string | null
@@ -472,11 +537,18 @@ export type Database = {
       get_test_results_for_client_test: {
         Args: { client_test_id: string }
         Returns: {
+          answers: Json | null
           client_test_id: string
           created_at: string
           data: Json
           id: string
+          metadata: Json | null
+          score_aguia: number | null
+          score_gato: number | null
+          score_lobo: number | null
+          score_tubarao: number | null
           updated_at: string
+          user_id: string | null
         }[]
       }
       get_user_profile: {
@@ -487,6 +559,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_master_account: boolean | null
           mentor_id: string | null
           name: string
           phone: string | null

@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Search, UserPlus, Mail } from "lucide-react";
+import { Loader2, Search, UserPlus, Mail, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { getMentorClients } from "@/services/clientService";
 
 import {
   Card,
@@ -25,6 +26,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 type Client = {
   id: string;
@@ -41,24 +44,32 @@ export function ClientsList() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const loadClients = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setError("Usuário não autenticado");
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
+    setError(null);
+    
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("role", "client")
-        .eq("mentor_id", user.id)
-        .order("name");
-        
-      if (error) throw error;
+      const clientsData = await getMentorClients(user.id);
       
-      setClients(data || []);
-    } catch (error) {
+      if (!clientsData || clientsData.length === 0) {
+        console.log("Nenhum cliente encontrado");
+      } else {
+        console.log(`${clientsData.length} clientes encontrados`);
+      }
+      
+      setClients(clientsData || []);
+    } catch (error: any) {
       console.error("Erro ao carregar clientes:", error);
+      setError(error.message || "Não foi possível carregar a lista de clientes.");
       toast({
         variant: "destructive",
         title: "Erro ao carregar clientes",
@@ -70,8 +81,10 @@ export function ClientsList() {
   };
   
   useEffect(() => {
-    loadClients();
-  }, [user?.id]);
+    if (user?.id) {
+      loadClients();
+    }
+  }, [user?.id, retryCount]);
   
   const filteredClients = clients.filter(client => 
     client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,6 +93,7 @@ export function ClientsList() {
   );
   
   const getInitials = (name: string) => {
+    if (!name) return "??";
     return name
       .split(" ")
       .map(part => part[0])
@@ -87,6 +101,41 @@ export function ClientsList() {
       .join("")
       .toUpperCase();
   };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+  };
+  
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Seus Clientes</CardTitle>
+          <CardDescription>
+            Gerencie seus clientes e veja seus detalhes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro ao carregar clientes</AlertTitle>
+            <AlertDescription>
+              <p>{error}</p>
+              <Button 
+                onClick={handleRetry} 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Tentar novamente
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card>
@@ -103,7 +152,7 @@ export function ClientsList() {
           onClick={loadClients}
           disabled={isLoading}
         >
-          <Loader2 className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
       </CardHeader>
@@ -163,7 +212,10 @@ export function ClientsList() {
                     <TableCell>{client.email}</TableCell>
                     <TableCell>{client.position || "-"}</TableCell>
                     <TableCell>
-                      {format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      {client.created_at ? 
+                        format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR }) :
+                        "-"
+                      }
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>
