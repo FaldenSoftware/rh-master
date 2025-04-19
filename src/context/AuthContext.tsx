@@ -7,9 +7,12 @@ export interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isDevMode?: boolean;  // Add this line
+  isDevMode?: boolean;
+  error?: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  register: (email: string, password: string, name: string, role: "mentor" | "client", company?: string, phone?: string, position?: string, bio?: string) => Promise<AuthUser | null>;
+  updateProfile: (data: Partial<AuthUser>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDevMode, setIsDevMode] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -44,22 +48,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               id: profile.id,
               email: profile.email,
               name: profile.name,
-              role: profile.role,
+              role: profile.role as "mentor" | "client",
               company: profile.company,
               phone: profile.phone,
               position: profile.position,
               bio: profile.bio,
-              avatar_url: profile.avatar_url,
+              avatar_url: profile.avatar_url || '',
               createdAt: profile.created_at,
               mentor_id: profile.mentor_id,
-              cnpj: profile.cnpj,
-              industry: profile.industry,
-              address: profile.address,
-              city: profile.city,
-              state: profile.state,
-              zipCode: profile.zipCode,
-              website: profile.website,
-              is_master_account: profile.is_master_account,
+              cnpj: profile.cnpj || '',
+              industry: profile.industry || '',
+              address: profile.address || '',
+              city: profile.city || '',
+              state: profile.state || '',
+              zipCode: profile.zipCode || '',
+              website: profile.website || '',
+              is_master_account: profile.is_master_account
             });
           }
         } else {
@@ -75,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Check if the app is running in a development environment
     if (import.meta.env.DEV) {
       setIsDevMode(true);
       console.log("App is running in development mode");
@@ -83,7 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     loadSession();
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state change:", event);
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
@@ -101,24 +103,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password,
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (error) {
-        console.error("Erro ao fazer login:", error);
-        setIsAuthenticated(false);
-        setUser(null);
-      } else {
-        console.log("Login bem-sucedido:", data);
-        await loadSession();
-      }
+      if (error) throw error;
+      await loadSession();
     } catch (error) {
-      console.error("Erro durante o login:", error);
-      setIsAuthenticated(false);
-      setUser(null);
+      if (error instanceof Error) setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const register = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: "mentor" | "client",
+    company?: string,
+    phone?: string,
+    position?: string,
+    bio?: string
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data: { user }, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role,
+            company,
+            phone,
+            position,
+            bio
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      if (user) {
+        await loadSession();
+        return user as AuthUser;
+      }
+      return null;
+    } catch (error) {
+      if (error instanceof Error) setError(error.message);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateProfile = async (data: Partial<AuthUser>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(data)
+        .eq('id', user?.id);
+
+      if (error) throw error;
+      await loadSession();
+    } catch (error) {
+      if (error instanceof Error) setError(error.message);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -128,30 +186,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
-
-      if (error) {
-        console.error("Erro ao fazer logout:", error);
-      } else {
-        console.log("Logout bem-sucedido");
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    } catch (error) {
-      console.error("Erro durante o logout:", error);
+      if (error) throw error;
       setIsAuthenticated(false);
       setUser(null);
+      navigate('/');
+    } catch (error) {
+      if (error instanceof Error) setError(error.message);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const value: AuthContextType = {
+  const value = {
     user,
     isAuthenticated,
     isLoading,
     isDevMode,
+    error,
     login,
     logout,
+    register,
+    updateProfile
   };
 
   return (

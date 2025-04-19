@@ -486,7 +486,7 @@ export type Database = {
         }[]
       }
       get_mentor_clients: {
-        Args: { mentor_id: string }
+        Args: { input_mentor_id: string }
         Returns: {
           bio: string | null
           company: string | null

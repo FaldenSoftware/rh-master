@@ -8,17 +8,15 @@ export const getMentorClients = async (mentorId: string) => {
   try {
     console.log(`Buscando clientes para o mentor: ${mentorId}`);
     
-    // Update the RPC call to use the correct parameter name
     const { data: clientsData, error: rpcError } = await supabase
       .rpc('get_mentor_clients', { 
-        input_mentor_id: mentorId  // Ensure this matches the function signature
+        mentor_id: mentorId  
       });
 
     if (rpcError) {
       console.warn("Erro ao buscar clientes via RPC:", rpcError);
-      console.info("Tentando fallback 1: Busca direta na tabela profiles");
       
-      // Fallback 1: Busca direta na tabela de perfis
+      // Fallback: direct table query
       const { data: directData, error: directError } = await supabase
         .from('profiles')
         .select('*')
@@ -26,10 +24,7 @@ export const getMentorClients = async (mentorId: string) => {
         .eq('role', 'client');
       
       if (directError) {
-        console.warn("Erro no fallback 1:", directError);
-        console.info("Tentando fallback 2: Busca na tabela de relacionamento");
-        
-        // Para garantir compatibilidade com o código existente
+        console.warn("Erro no fallback:", directError);
         return [];
       }
       

@@ -1,7 +1,7 @@
 
-export interface AuthUser {
+export type AuthUser = {
   id: string;
-  email: string;
+  email: string | null;
   name: string;
   role: "mentor" | "client";
   company?: string;
@@ -9,7 +9,7 @@ export interface AuthUser {
   position?: string;
   bio?: string;
   avatar_url?: string;
-  createdAt: string;
+  createdAt?: string;
   mentor_id?: string;
   cnpj?: string;
   industry?: string;
@@ -19,11 +19,4 @@ export interface AuthUser {
   zipCode?: string;
   website?: string;
   is_master_account?: boolean;
-}
-
-export interface AuthState {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-}
+};
