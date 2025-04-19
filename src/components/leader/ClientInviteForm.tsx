@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import useNotifications from "@/hooks/useNotifications";
@@ -59,7 +60,7 @@ const ClientInviteForm = ({ onCancel }: { onCancel: () => void }) => {
     }, 15000);
     setSendTimeout(timeout);
     try {
-      const result = await InvitationService.createClientInvitation(
+      const result = await InvitationService.createInvitation(
         clientEmail, 
         clientName, 
         user

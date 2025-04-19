@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
@@ -18,7 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import useNotifications from '@/hooks/useNotifications';
 import { InvitationCode } from '@/types/models';
 
-export const InvitationHistory = () => {
+const InvitationHistory = () => {
   const { user } = useAuth();
   const notify = useNotifications();
   const [sendingEmails, setSendingEmails] = useState<Record<string, boolean>>({});
@@ -182,5 +183,4 @@ export const InvitationHistory = () => {
   );
 };
 
-export { InvitationHistory };
 export default InvitationHistory;

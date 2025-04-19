@@ -40,7 +40,7 @@ const handleResend = async (inviteId: string, mentorId: string) => {
   }
 };
 
-export const InvitationHistory = () => {
+export function InvitationHistory() {
   const { user } = useAuth();
   const notify = useNotifications();
   const [sendingEmails, setSendingEmails] = useState<Record<string, boolean>>({});
@@ -202,7 +202,6 @@ export const InvitationHistory = () => {
       </Table>
     </div>
   );
-};
+}
 
-// Export as both named export and default export for backward compatibility
 export default InvitationHistory;

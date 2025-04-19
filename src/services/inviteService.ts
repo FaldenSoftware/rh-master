@@ -1,10 +1,11 @@
 
 import { InvitationService } from './invitationService';
 import { supabase } from "@/integrations/supabase/client";
+import { AuthUser } from '@/lib/authTypes';
 
 export const createClientInvitation = async (email: string, name: string, mentorId: string) => {
   const mentor = { id: mentorId, name: 'Mentor' }; // Simplificado para compatibilidade
-  return InvitationService.createInvitation(email, name, mentor);
+  return InvitationService.createInvitation(email, name, mentor as AuthUser);
 };
 
 export const sendInviteEmail = async (inviteId: string) => {
