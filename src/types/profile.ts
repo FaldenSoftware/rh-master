@@ -1,3 +1,4 @@
+
 export interface Profile {
   id: string;
   name?: string;
@@ -6,5 +7,17 @@ export interface Profile {
   mentor_id?: string;
   created_at?: string;
   updated_at?: string;
-  // Adicione outros campos conforme necessário
+  role?: string;
+  phone?: string;
+  position?: string;
+  bio?: string;
+  avatar_url?: string;
+  cnpj?: string;
+  industry?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  website?: string;
+  is_master_account?: boolean;
 }

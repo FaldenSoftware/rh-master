@@ -8,16 +8,16 @@ export type AuthUser = {
   phone?: string;
   position?: string;
   bio?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   createdAt?: string;
   mentor_id?: string;
-  cnpj?: string;
-  industry?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  website?: string;
+  cnpj?: string | null;
+  industry?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  website?: string | null;
   is_master_account?: boolean;
 };
 
