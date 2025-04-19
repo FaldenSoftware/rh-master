@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { 
@@ -203,4 +204,5 @@ export const InvitationHistory = () => {
   );
 };
 
+// Export as both named export and default export for backward compatibility
 export default InvitationHistory;

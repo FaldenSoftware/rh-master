@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { AuthUser } from '@/lib/authTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,60 +26,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadSession = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
+  const loadSession = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-        if (session) {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+      if (session) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
 
-          if (error) {
-            console.error("Erro ao buscar perfil:", error);
-            setIsAuthenticated(false);
-            setUser(null);
-          } else {
-            setIsAuthenticated(true);
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              role: profile.role as "mentor" | "client",
-              company: profile.company,
-              phone: profile.phone,
-              position: profile.position,
-              bio: profile.bio,
-              avatar_url: profile.avatar_url || '',
-              createdAt: profile.created_at,
-              mentor_id: profile.mentor_id,
-              cnpj: profile.cnpj || '',
-              industry: profile.industry || '',
-              address: profile.address || '',
-              city: profile.city || '',
-              state: profile.state || '',
-              zipCode: profile.zipCode || '',
-              website: profile.website || '',
-              is_master_account: profile.is_master_account
-            });
-          }
-        } else {
+        if (error) {
+          console.error("Erro ao buscar perfil:", error);
           setIsAuthenticated(false);
           setUser(null);
+        } else {
+          setIsAuthenticated(true);
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            role: profile.role as "mentor" | "client",
+            company: profile.company,
+            phone: profile.phone,
+            position: profile.position,
+            bio: profile.bio,
+            avatar_url: profile.avatar_url,
+            createdAt: profile.created_at,
+            mentor_id: profile.mentor_id,
+            cnpj: profile.cnpj,
+            industry: profile.industry,
+            address: profile.address,
+            city: profile.city,
+            state: profile.state,
+            zipCode: profile.zipCode,
+            website: profile.website,
+            is_master_account: profile.is_master_account
+          });
         }
-      } catch (error) {
-        console.error("Erro ao carregar sessão:", error);
+      } else {
         setIsAuthenticated(false);
         setUser(null);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Erro ao carregar sessão:", error);
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (import.meta.env.DEV) {
       setIsDevMode(true);
       console.log("App is running in development mode");
@@ -133,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      const { data: { user }, error } = await supabase.auth.signUp({
+      const { data: { user: authUser }, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -150,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      if (user) {
+      if (authUser) {
         await loadSession();
         return user as AuthUser;
       }

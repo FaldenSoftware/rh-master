@@ -20,3 +20,9 @@ export type AuthUser = {
   website?: string;
   is_master_account?: boolean;
 };
+
+export type AuthState = {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+};

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { AuthUser } from "@/lib/authTypes";
 
@@ -10,7 +11,7 @@ export const getMentorClients = async (mentorId: string) => {
     
     const { data: clientsData, error: rpcError } = await supabase
       .rpc('get_mentor_clients', { 
-        mentor_id: mentorId  
+        input_mentor_id: mentorId  
       });
 
     if (rpcError) {

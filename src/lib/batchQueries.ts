@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Safely get client tests for a specific user
@@ -84,7 +85,7 @@ export const getMentorClients = async (mentorId: string) => {
   try {
     const { data: clientsData, error: rpcError } = await supabase
       .rpc('get_mentor_clients', { 
-        mentor_id: mentorId  
+        input_mentor_id: mentorId  
       });
 
     if (rpcError) {
